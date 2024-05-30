@@ -9,24 +9,24 @@ namespace Ebus;
 /**
  * Define write direction.
  */
-extern dec write(target: Model|Namespace);
+extern dec write(target: Model);
 
 /**
  * Define passive only.
  */
-extern dec passive(target: Model|Namespace);
+extern dec passive(target: Model);
 
 /**
  * Define the source address.
  * @param value the source address QQ.
  */
-extern dec qq(source: Model|Namespace, value?: valueof Source);
+extern dec qq(source: Model, value: valueof Source);
 
 /**
  * Define the target address.
  * @param value the target address ZZ.
  */
-extern dec zz(target: Model|Namespace, value?: valueof Target);
+extern dec zz(target: Model|Namespace, value: valueof Target);
 
 /**
  * Define the whole message ID.
@@ -34,7 +34,7 @@ extern dec zz(target: Model|Namespace, value?: valueof Target);
  * @param sb the secondary message ID.
  * @param id further message ID parts.
  */
-extern dec id(target: Model|Namespace, pb: valueof Pb, sb: valueof Sb, ...id: valueof Symbol[]);
+extern dec id(target: Model, pb: valueof Pb, sb: valueof Sb, ...id: valueof Symbol[]);
 
 /**
  * Define the base message ID to be combined with an extension ID.
@@ -42,13 +42,13 @@ extern dec id(target: Model|Namespace, pb: valueof Pb, sb: valueof Sb, ...id: va
  * @param sb the secondary message ID.
  * @param id further message ID parts.
  */
-extern dec base(target: Model|Namespace, pb: valueof Pb, sb: valueof Sb, ...id: valueof Symbol[]);
+extern dec base(target: Model, pb: valueof Pb, sb: valueof Sb, ...id: valueof Symbol[]);
 
 /**
  * Define the extension message ID to be combined with a base ID.
  * @param id message ID extensions parts.
  */
-extern dec ext(target: Model|Namespace, ...id: valueof Symbol[]);
+extern dec ext(target: Model, ...id: valueof Symbol[]);
 
 /**
  * Define the inherited model(s).
@@ -70,13 +70,19 @@ extern dec in(target: ModelProperty);
  * Define the unit.
  * @param value the unit.
  */
-extern dec unit(target: Scalar|ModelProperty, value?: valueof string);
+extern dec unit(target: numeric|ModelProperty, value: valueof string);
 
 /**
  * Define the divisor.
  * @param value the divisor.
  */
-extern dec divisor(target: Scalar|ModelProperty, value?: valueof numeric);
+extern dec divisor(target: numeric|plainTime|ModelProperty, value?: valueof numeric);
+
+/**
+ * Define the known values.
+ * @param value the divisor.
+ */
+extern dec values(target: numeric|ModelProperty, values: Enum);
 
 
 namespace internal {

@@ -3,7 +3,7 @@ import { compilerAssert, DiagnosticTarget, EmitContext, emitFile, getDoc, getNam
 import { DuplicateTracker } from "@typespec/compiler/utils";
 import {code, Context, Declaration, EmittedSourceFile, EmitterOutput, RawCode, Scope, ScopeBase, SourceFile, SourceFileScope, StringBuilder, TypeEmitter, TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
 import {EbusdEmitterOptions, reportDiagnostic} from "./lib.js";
-import {getDivisor, getId, getInherit, getOut, getPassive, getQq, getUnit, getWrite, getZz} from "./decorators.js";
+import {getDivisor, getId, getInherit, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {basename, extname} from "path";
 
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
@@ -32,18 +32,27 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
     const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
     const decls: string[] = [];
+    //todo auto for read/write depending on zz, throw if invalid
+    //todo detect invalid in with broadcast
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       const baseFields = inheritFrom&&(this.emitter.emitModelProperties(inheritFrom) as RawCode<string>).value;
       const fields = (this.emitter.emitModelProperties(model) as RawCode<string>).value;
       //todo could decline when either one is undefined
-      const write = getWrite(program, model) ?? getWrite(program, inheritFrom);
-      const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
-      const direction = write ? (passive ? 'uw' : 'w') : (passive ? 'u' : 'r');
+      let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
+      let passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
       const namespace = model.namespace ?? inheritFrom?.namespace;
+      const zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? (namespace&&getZz(program, namespace));
+      if (zz === 0xfe) {
+        // special: broadcast
+        passive ??= true;
+        write ??= true;
+      } else if (isSourceAddr(zz)) {
+        write ??= true;
+      }
+      const direction = write ? (passive ? 'uw' : 'w') : (passive ? 'u' : 'r');
       const circuit = namespace ? getNamespaceFullName(namespace) : '';
       const comment = getDoc(program, model) ?? getDoc(program, inheritFrom);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom);
-      const zz = getZz(program, model) ?? getZz(program, inheritFrom);
       //when inheriting id, only one of them may have pbsb, rest of id is concatenated
       const baseId = getId(program, inheritFrom);//todo could allow <2 bytes for inherited or child id when combining
       const id = [...(baseId||[]), ...(getId(program, model)||[])];
@@ -62,11 +71,12 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     const b = new StringBuilder()
     let first = true
     const program = this.emitter.getProgram();
+    //todo could use optional fields for e.g. not being used on write
     model.properties.forEach(p => {
       if (p.type.kind!=='Scalar') {
         return;//todo report
       }
-      let res = {} as {name: string, dir?: 'm'|'s', divisor?: number, unit?: string, comment?: string};
+      let res = {} as {name: string, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
       let s: ModelProperty|Scalar = p;
       let isOwn = false;
       do {
@@ -85,6 +95,14 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         if (d!==undefined && d!==0) {
           res.divisor = (res.divisor||1) * d;
         }
+        if (!res.divisor && !res.values) {
+          const members = getValues(program, s)?.members;
+          if (members) {
+            const values: string[] = [];
+            members.forEach(m => m.value!==undefined && values.push(m.value+'='+m.name));
+            res.values = values;
+          }
+        }
         if (!res.unit) {
           res.unit = getUnit(program, s);
         }
@@ -102,7 +120,9 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       } while (true);
       //todo if (!isOwn) throw
       // field,part (m/s),type / templates,divider / values,unit,comment
-      const field = [p.name,res.dir,res.name,res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor):undefined,res.unit,res.comment];
+      const divisor = res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor)
+      : res.values?.join(';');
+      const field = [p.name,res.dir,res.name,divisor,res.unit,res.comment];
       if (first) {
         first = false;
       } else {

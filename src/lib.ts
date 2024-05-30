@@ -67,6 +67,7 @@ export const $lib = createTypeSpecLibrary({
     reverse: { description: "reverse representation" },
     unit: { description: "unit" },
     divisor: { description: "divisor" },
+    values: { description: "known values" },
   },
 });
 

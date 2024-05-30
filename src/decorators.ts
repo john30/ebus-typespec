@@ -1,5 +1,5 @@
-import {DecoratorContext, Model, ModelProperty, Namespace, Program, Scalar, setTypeSpecNamespace} from "@typespec/compiler";
-import {StateKeys, reportDiagnostic} from "./lib.js";
+import {DecoratorContext, Enum, isNumericType, Model, ModelProperty, Namespace, Program, Scalar, setTypeSpecNamespace} from "@typespec/compiler";
+import {reportDiagnostic, StateKeys} from "./lib.js";
 
 export const namespace = "Ebus";
 
@@ -9,7 +9,7 @@ export const namespace = "Ebus";
  * @param context Decorator context.
  * @param target Decorator target.
  */
-export function $write(context: DecoratorContext, target: Model|Namespace) {
+export function $write(context: DecoratorContext, target: Model) {
   context.program.stateMap(StateKeys.write).set(target, true);
 }
 
@@ -20,7 +20,7 @@ export function $write(context: DecoratorContext, target: Model|Namespace) {
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getWrite(program: Program, target: Model|Namespace): boolean {
+export function getWrite(program: Program, target: Model): boolean {
   return program.stateMap(StateKeys.write).has(target);
 }
 
@@ -30,7 +30,7 @@ export function getWrite(program: Program, target: Model|Namespace): boolean {
  * @param context Decorator context.
  * @param target Decorator target.
  */
-export function $passive(context: DecoratorContext, target: Model|Namespace) {
+export function $passive(context: DecoratorContext, target: Model) {
   context.program.stateMap(StateKeys.passive).set(target, true);
 }
 
@@ -41,7 +41,7 @@ export function $passive(context: DecoratorContext, target: Model|Namespace) {
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getPassive(program: Program, target: Model|Namespace): boolean {
+export function getPassive(program: Program, target: Model): boolean {
   return program.stateMap(StateKeys.passive).has(target);
 }
 
@@ -53,6 +53,7 @@ const validSource: Uint8Array = new Uint8Array([
   0xf0,0xf1,0xf3,0xf7,0xff,
 ]);
 const invalidTarget: Uint8Array = new Uint8Array([0xa9,0xaa]);
+export const isSourceAddr = (qq?: number) => qq!==undefined && validSource.includes(qq);
 
 /**
  * Implementation of the `@qq` decorator.
@@ -61,7 +62,7 @@ const invalidTarget: Uint8Array = new Uint8Array([0xa9,0xaa]);
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $qq(context: DecoratorContext, target: Model|Namespace, value?: number) {
+export function $qq(context: DecoratorContext, target: Model, value?: number) {
   if (value !== undefined && !validSource.includes(value)) {
     reportDiagnostic(context.program, {
       code: "banned-source-address",
@@ -79,7 +80,7 @@ export function $qq(context: DecoratorContext, target: Model|Namespace, value?: 
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getQq(program: Program, target: Model|Namespace): number | undefined {
+export function getQq(program: Program, target: Model): number | undefined {
   return program.stateMap(StateKeys.qq).get(target);
 }
 
@@ -328,4 +329,34 @@ export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty
  */
 export function getDivisor(program: Program, target: Scalar|ModelProperty): number | undefined {
   return program.stateMap(StateKeys.divisor).get(target);
+}
+
+/**
+ * Implementation of the `@values` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $values(context: DecoratorContext, target: Scalar|ModelProperty, value: Enum) {
+  if (!isNumericType(context.program, target)) {
+    // context.program.reportDiagnostic(createDiagnostic({
+    //   code: "decorator-wrong-target",
+    //   format: { decorator: "@knownValues", to: "type, it is  not a string or numeric" },
+    //   target,
+    // }));
+    return;//todo check
+  }
+  context.program.stateMap(StateKeys.values).set(target, value);
+}
+
+/**
+ * Accessor for the `@values` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getValues(program: Program, target: Scalar|ModelProperty): Enum | undefined {
+  return program.stateMap(StateKeys.values).get(target);
 }

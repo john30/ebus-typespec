@@ -82,4 +82,23 @@ describe("emitting models", () => {
       "r,test,foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x\n"
     );
   });
+  it("works with values", async () => {
+    const files = await emit(`
+      using Ebus.num;
+      @values(men)
+      scalar man extends UCH;
+      enum men {
+        One: 1,
+        Two: 2,
+      }
+      @id(0,1)
+      model Foo {
+        m: man,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "r,test,foo,,,,0001,,m,,UCH,1=One;2=Two,,\n"
+    );
+  });
 });
