@@ -1,10 +1,9 @@
-import { stringify } from "yaml";
-import { compilerAssert, DiagnosticTarget, EmitContext, emitFile, getDoc, getNamespaceFullName, getRelativePathFromDirectory, isDeclaredInNamespace, Model, ModelProperty, Node, Program, resolvePath, Scalar, Type, TypeSpecScriptNode } from "@typespec/compiler";
-import { DuplicateTracker } from "@typespec/compiler/utils";
-import {code, Context, Declaration, EmittedSourceFile, EmitterOutput, RawCode, Scope, ScopeBase, SourceFile, SourceFileScope, StringBuilder, TypeEmitter, TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
-import {EbusdEmitterOptions, reportDiagnostic} from "./lib.js";
-import {getDivisor, getId, getInherit, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {DiagnosticTarget, emitFile, getDoc, getNamespaceFullName, isDeclaredInNamespace, Model, ModelProperty, Node, Program, Scalar, Type, TypeSpecScriptNode} from "@typespec/compiler";
+import {code, Context, EmittedSourceFile, EmitterOutput, Scope, SourceFile, SourceFileScope, StringBuilder, TypeEmitter, TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
+import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
+import {getDivisor, getId, getInherit, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {EbusdEmitterOptions, reportDiagnostic} from "./lib.js";
 
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
@@ -35,21 +34,20 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     //todo auto for read/write depending on zz, throw if invalid
     //todo detect invalid in with broadcast
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
-      const baseFields = inheritFrom&&(this.emitter.emitModelProperties(inheritFrom) as RawCode<string>).value;
-      const fields = (this.emitter.emitModelProperties(model) as RawCode<string>).value;
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
-      let passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
+      const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
       const namespace = model.namespace ?? inheritFrom?.namespace;
-      const zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? (namespace&&getZz(program, namespace));
-      if (zz === 0xfe) {
-        // special: broadcast
-        passive ??= true;
+      let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? (namespace&&getZz(program, namespace));
+      if (zz === 0xfe || isSourceAddr(zz)) {
+        // special: broadcast or source as target
         write ??= true;
-      } else if (isSourceAddr(zz)) {
-        write ??= true;
+      } else if (zz===0xaa) {
+        zz = undefined;
       }
       const direction = write ? (passive ? 'uw' : 'w') : (passive ? 'u' : 'r');
+      const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive);
+      const fields = this.modelPropertiesRw(model, write&&!passive);
       const circuit = namespace ? getNamespaceFullName(namespace) : '';
       const comment = getDoc(program, model) ?? getDoc(program, inheritFrom);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom);
@@ -67,14 +65,17 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     return this.emitter.result.declaration(name, decls.join('\n'));
   }
 
-  modelProperties(model: Model): EmitterOutput<string> {
+  modelPropertiesRw(model: Model, activeWrite?: boolean): EmitterOutput<string> {
     const b = new StringBuilder()
     let first = true
     const program = this.emitter.getProgram();
-    //todo could use optional fields for e.g. not being used on write
     model.properties.forEach(p => {
       if (p.type.kind!=='Scalar') {
         return;//todo report
+      }
+      if (p.optional && activeWrite) {
+        // optional fields are omitted for write
+        return;
       }
       let res = {} as {name: string, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
       let s: ModelProperty|Scalar = p;

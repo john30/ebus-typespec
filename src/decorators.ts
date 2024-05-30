@@ -21,7 +21,7 @@ export function $write(context: DecoratorContext, target: Model) {
  * @returns value if provided on the given target or undefined.
  */
 export function getWrite(program: Program, target: Model): boolean {
-  return program.stateMap(StateKeys.write).has(target);
+  return program.stateMap(StateKeys.write).get(target);
 }
 
 /**
@@ -42,7 +42,7 @@ export function $passive(context: DecoratorContext, target: Model) {
  * @returns value if provided on the given target or undefined.
  */
 export function getPassive(program: Program, target: Model): boolean {
-  return program.stateMap(StateKeys.passive).has(target);
+  return program.stateMap(StateKeys.passive).get(target);
 }
 
 const validSource: Uint8Array = new Uint8Array([
@@ -99,7 +99,7 @@ export function $zz(context: DecoratorContext, target: Model|Namespace, value?: 
       format: { value: value.toString() },
     });
   }
-  context.program.stateMap(StateKeys.zz).set(target, value);
+  context.program.stateMap(StateKeys.zz).set(target, value===undefined?0xaa:value);
 }
 
 /**

@@ -20,13 +20,13 @@ extern dec passive(target: Model);
  * Define the source address.
  * @param value the source address QQ.
  */
-extern dec qq(source: Model, value: valueof Source);
+extern dec qq(source: Model, value?: valueof Source);
 
 /**
  * Define the target address.
  * @param value the target address ZZ.
  */
-extern dec zz(target: Model|Namespace, value: valueof Target);
+extern dec zz(target: Model|Namespace, value?: valueof Target);
 
 /**
  * Define the whole message ID.

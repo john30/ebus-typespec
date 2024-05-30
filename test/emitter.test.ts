@@ -82,6 +82,29 @@ describe("emitting models", () => {
       "r,test,foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x\n"
     );
   });
+  it("works with multi inherit", async () => {
+    const files = await emit(`
+      using Ebus.num;
+      @base(0,1)
+      model r {
+      }
+      @write
+      @base(0,1)
+      model w {
+      }
+      @ext
+      @inherit(r,w)
+      model Foo {
+        x: UCH,
+        y?: UCH,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "r,test,foo,,,,0001,,x,,UCH,,,,y,,UCH,,,\n"+
+      "w,test,foo,,,,0001,,x,,UCH,,,\n"
+    );
+  });
   it("works with values", async () => {
     const files = await emit(`
       using Ebus.num;
