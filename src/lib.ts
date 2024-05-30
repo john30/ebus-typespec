@@ -31,6 +31,7 @@ export const $lib = createTypeSpecLibrary({
     inherit: { description: "inherited model(s)" },
     bcd: { description: 'BCD encoding' },
     hex: { description: 'HEX encoding' },
+    out: { description: 'outbound/inbound message part' },
     reverse: { description: "reverse representation" },
     unit: { description: "unit" },
     divisor: { description: "divisor" },

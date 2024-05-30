@@ -1,4 +1,4 @@
-import {DecoratorContext, Model, Namespace, Program, Scalar} from "@typespec/compiler";
+import {DecoratorContext, Model, ModelProperty, Namespace, Program, Scalar, setTypeSpecNamespace} from "@typespec/compiler";
 import {StateKeys, reportDiagnostic} from "./lib.js";
 
 export const namespace = "Ebus";
@@ -120,14 +120,31 @@ export function getZz(program: Program, target: Model|Namespace): number | undef
  * @param value the value to set.
  */
 export function $id(context: DecoratorContext, target: Model, pb: number, sb: number, ...dd: number[]) {
-  // if (value !== undefined && invalidTarget.includes(value)) {
-  //   reportDiagnostic(context.program, {
-  //     code: "banned-target-address",
-  //     target: context.getArgumentTarget(0)!,
-  //     format: { value: value.toString() },
-  //   });
-  // }
   context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
+  context.program.stateSet(StateKeys.id).add(target);
+}
+
+/**
+ * Implementation of the `@base` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $base(context: DecoratorContext, target: Model, pb: number, sb: number, ...dd: number[]) {
+  context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
+}
+
+/**
+ * Implementation of the `@ext` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $ext(context: DecoratorContext, target: Model, ...dd: number[]) {
+  context.program.stateMap(StateKeys.id).set(target, dd);
+  context.program.stateSet(StateKeys.id).add(target);
 }
 
 /**
@@ -149,8 +166,8 @@ export function getId(program: Program, target: Model): number[] | undefined {
  * @param target Decorator target.
  * @param value the inherited models.
  */
-export function $inherit(context: DecoratorContext, target: Model, ...value: Model[]) {
-  context.program.stateMap(StateKeys.inherit).set(target, value);
+export function $inherit(context: DecoratorContext, target: Model, first: Model, ...other: Model[]) {
+  context.program.stateMap(StateKeys.inherit).set(target, [first, ...other]);
 }
 
 /**
@@ -227,6 +244,39 @@ export function $hex(context: DecoratorContext, target: Scalar) {
 export function getHex(program: Program, target: Scalar): boolean {
   return program.stateMap(StateKeys.hex).has(target);
 }
+setTypeSpecNamespace("internal", $reverse, $bcd, $hex);
+
+
+/**
+ * Implementation of the `@in` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ */
+export function $in(context: DecoratorContext, target: Scalar) {
+  context.program.stateMap(StateKeys.out).set(target, false);
+}
+
+/**
+ * Implementation of the `@out` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ */
+export function $out(context: DecoratorContext, target: Scalar) {
+  context.program.stateMap(StateKeys.out).set(target, true);
+}
+
+/**
+ * Accessor for the `@in`/`@out` decorators.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target (true when `out`, false when `in`), or undefined.
+ */
+export function getOut(program: Program, target: Scalar): boolean {
+  return program.stateMap(StateKeys.out).get(target);
+}
 
 /**
  * Implementation of the `@unit` decorator.
@@ -235,7 +285,7 @@ export function getHex(program: Program, target: Scalar): boolean {
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $unit(context: DecoratorContext, target: Scalar, value?: string) {
+export function $unit(context: DecoratorContext, target: Scalar|ModelProperty, value?: string) {
   context.program.stateMap(StateKeys.unit).set(target, value);
 }
 
@@ -246,7 +296,7 @@ export function $unit(context: DecoratorContext, target: Scalar, value?: string)
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getUnit(program: Program, target: Scalar): string | undefined {
+export function getUnit(program: Program, target: Scalar|ModelProperty): string | undefined {
   return program.stateMap(StateKeys.unit).get(target);
 }
 
@@ -257,14 +307,15 @@ export function getUnit(program: Program, target: Scalar): string | undefined {
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $divisor(context: DecoratorContext, target: Scalar, value?: number) {
-  if (value !== undefined && invalidTarget.includes(value)) {
-    reportDiagnostic(context.program, {
-      code: "banned-divisor",
-      target: context.getArgumentTarget(0)!,
-      format: { value: value.toString() },
-    });
-  }
+export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty, value?: number) {
+  //todo only allow on numeric
+  // if (value !== undefined && invalidTarget.includes(value)) {
+  //   reportDiagnostic(context.program, {
+  //     code: "banned-divisor",
+  //     target: context.getArgumentTarget(0)!,
+  //     format: { value: value.toString() },
+  //   });
+  // }
   context.program.stateMap(StateKeys.divisor).set(target, value);
 }
 
@@ -275,6 +326,6 @@ export function $divisor(context: DecoratorContext, target: Scalar, value?: numb
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getDivisor(program: Program, target: Scalar): number | undefined {
+export function getDivisor(program: Program, target: Scalar|ModelProperty): number | undefined {
   return program.stateMap(StateKeys.divisor).get(target);
 }

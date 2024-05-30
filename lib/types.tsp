@@ -27,14 +27,14 @@ namespace num {
   @divisor(2)
   scalar D1C extends uint8
 
-  @reverse
-  @bcd
+  @internal.reverse
+  @internal.bcd
   scalar PIN extends uint16
   scalar UIN extends uint16
-  @reverse
+  @internal.reverse
   scalar UIR extends UIN
   scalar SIN extends int16
-  @reverse
+  @internal.reverse
   scalar SIR extends SIN
 
   @divisor(256)
@@ -45,20 +45,20 @@ namespace num {
 
   @divisor(1000)
   scalar FLT extends int16
-  @reverse
+  @internal.reverse
   scalar FLR extends FLT
 
   //todo 3 byte int
 
   scalar ULG extends uint32
-  @reverse
+  @internal.reverse
   scalar ULR extends ULG
   scalar SLG extends int32
-  @reverse
+  @internal.reverse
   scalar SLR extends SLG
 
   scalar EXP extends float32
-  @reverse
+  @internal.reverse
   scalar EXR extends EXP
 }
 
@@ -69,35 +69,35 @@ namespace str {
   scalar NTS extends string // todo mark as special
   @maxLength(31)
   scalar IGN extends string // todo bytes would be more logical, but have not length limit
-  @hex
+  @internal.hex
   @maxLength(31)
   scalar HEX extends string
 }
 
 namespace dtm {
-  @bcd
+  @internal.bcd
   scalar BDA extends plainDate
   alias BDA4 = BDA;
   scalar BDA3 extends BDA
   scalar BDZ extends BDA
-  @hex
+  @internal.hex
   scalar HDA extends plainDate
   alias HDA4 = HDA;
   scalar HDA3 extends HDA
   scalar DAY extends plainDate // todo uint16 based
   scalar DTM extends offsetDateTime
 
-  @bcd
+  @internal.bcd
   scalar BTI extends plainTime
-  @hex
+  @internal.hex
   scalar HTI extends plainTime
-  @reverse
+  @internal.reverse
   scalar VTI extends HTI
-  @bcd
+  @internal.bcd
   scalar BTM extends plainTime // todo uint16 based
-  @reverse
+  @internal.reverse
   scalar VTM extends BTM
-  @hex
+  @internal.hex
   scalar HTM extends plainTime // todo uint16 based
   scalar MIN extends plainTime // todo check if rather duration
   @divisor(10)
