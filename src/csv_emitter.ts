@@ -1,8 +1,8 @@
-import {DiagnosticTarget, emitFile, getDoc, getNamespaceFullName, isDeclaredInNamespace, Model, ModelProperty, Node, Program, Scalar, Type, TypeSpecScriptNode} from "@typespec/compiler";
+import {DiagnosticTarget, emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, Model, ModelProperty, Node, Program, Scalar, Type, TypeSpecScriptNode} from "@typespec/compiler";
 import {code, Context, EmittedSourceFile, EmitterOutput, Scope, SourceFile, SourceFileScope, StringBuilder, TypeEmitter, TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
-import {getDivisor, getId, getInherit, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {EbusdEmitterOptions, reportDiagnostic} from "./lib.js";
 
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
@@ -41,7 +41,9 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? (namespace&&getZz(program, namespace));
       if (zz === 0xfe || isSourceAddr(zz)) {
         // special: broadcast or source as target
-        write ??= true;
+        if (passive===undefined) {
+          write ??= true;
+        }
       } else if (zz===0xaa) {
         zz = undefined;
       }
@@ -77,15 +79,25 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         // optional fields are omitted for write
         return;
       }
-      let res = {} as {name: string, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
+      let res = {} as {name: string, length?: number, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
       let s: ModelProperty|Scalar = p;
       let isOwn = false;
       do {
         res = {...res, name: s.name};
         if (s.kind!=='ModelProperty' && this.#isStdType(s, true)) {
           isOwn = true;
+          // set length depending on difference to max in base type
+          if (res.length!==undefined) {
+            const length = isNumericType(program, s) ? getMaxBits(program, s) : getMaxLength(program, s);
+            if (!length || res.length > length) {
+              res.length = undefined; // todo rather throw?
+            } else if (length === res.length) {
+              res.length = undefined;
+            }
+          }
           break; // ebus base type reached
         }
+        res.length ??= isNumericType(program, s) ? getMaxBits(program, s) : getMaxLength(program, s);
         if (!res.dir && s.kind==='ModelProperty') {
           const out = getOut(program, s as ModelProperty);
           if (out!==undefined) {
@@ -104,12 +116,8 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
             res.values = values;
           }
         }
-        if (!res.unit) {
-          res.unit = getUnit(program, s);
-        }
-        if (!res.comment) {
-          res.comment = getDoc(program, s);
-        }
+        res.unit ??= getUnit(program, s);
+        res.comment ??= getDoc(program, s);
         if (s.kind==='ModelProperty') {
           s = p.type as Scalar;
         } else {
@@ -119,11 +127,23 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
           s = s.baseScalar;
         }
       } while (true);
-      //todo if (!isOwn) throw
+      if (!isOwn) {
+        return; // todo throw?
+      }
       // field,part (m/s),type / templates,divider / values,unit,comment
       const divisor = res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor)
       : res.values?.join(';');
-      const field = [p.name,res.dir,res.name,divisor,res.unit,res.comment];
+      let typ = res.name;
+      if (typ.length>4 && typ[3]==='_') {
+        // expect to end with digits e.g. BI3_1
+        typ = typ.substring(0, 3)+':'+typ.substring(4);
+      } else if (typ.length>3) {
+        // expect to end with digits e.g. BCD4
+        typ = typ.substring(0, 3)+':'+typ.substring(3);
+      } else if (res.length) {
+        typ += ':'+res.length;
+      }
+      const field = [p.name,res.dir,typ,divisor,res.unit,res.comment];
       if (first) {
         first = false;
       } else {

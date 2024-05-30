@@ -124,4 +124,42 @@ describe("emitting models", () => {
       "r,test,foo,,,,0001,,m,,UCH,1=One;2=Two,,\n"
     );
   });
+  it("works with bits", async () => {
+    const files = await emit(`
+      using Ebus.num;
+      @id(0,1)
+      model Foo {
+        b0: BI0,
+        b1: BI1,
+        b2: BI2,
+        b3: BI3,
+        b4: BI4,
+        b5: BI5,
+        b6: BI6,
+        b7: BI7,
+        n: BI0_7,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "r,test,foo,,,,0001,,b0,,BI0,,,,b1,,BI1,,,,b2,,BI2,,,,b3,,BI3,,,,b4,,BI4,,,,b5,,BI5,,,,b6,,BI6,,,,b7,,BI7,,,,n,,BI0:7,,,\n"
+    );
+  });
+  it("works with var length str", async () => {
+    const files = await emit(`
+      using Ebus.str;
+      @id(0,1)
+      model Foo {
+        s: STR,
+        @maxLength(1)
+        s1: STR,
+        @maxLength(10)
+        s5: STR,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "r,test,foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:10,,,\n"
+    );
+  });
 });

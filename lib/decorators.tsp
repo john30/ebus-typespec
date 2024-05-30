@@ -100,4 +100,10 @@ namespace internal {
    * Define HEX encoding.
    */
   extern dec hex(target: Scalar);
+
+  /**
+   * Define the max bits.
+   * @param value the max bits.
+   */
+  extern dec maxBits(target: numeric, value: valueof numeric);
 }

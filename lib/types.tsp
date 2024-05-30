@@ -12,22 +12,23 @@ scalar Sb extends Symbol
 
 namespace num {
   @encode("uint8")
-  scalar BI0_1 extends boolean
+  scalar BI0 extends boolean
   @encode("uint8")
-  scalar BI1_1 extends boolean
+  scalar BI1 extends boolean
   @encode("uint8")
-  scalar BI2_1 extends boolean
+  scalar BI2 extends boolean
   @encode("uint8")
-  scalar BI3_1 extends boolean
+  scalar BI3 extends boolean
   @encode("uint8")
-  scalar BI4_1 extends boolean
+  scalar BI4 extends boolean
   @encode("uint8")
-  scalar BI5_1 extends boolean
+  scalar BI5 extends boolean
   @encode("uint8")
-  scalar BI6_1 extends boolean
+  scalar BI6 extends boolean
   @encode("uint8")
-  //todo longer bits
   scalar BI7 extends boolean
+  @internal.maxBits(7)
+  scalar BI0_7 extends uint8
 
   scalar UCH extends uint8
   scalar SCH extends int8
@@ -84,15 +85,12 @@ namespace num {
 
 namespace str {
   @maxLength(31)
-  scalar UCH extends string
-  @maxLength(31)
+  scalar STR extends string
   @encode("nullterm") // todo
-  scalar NTS extends string
-  @maxLength(31)
-  scalar IGN extends string // todo bytes would be more logical, but have not length limit
+  scalar NTS extends STR
+  scalar IGN extends STR // todo bytes would be more logical, but have not length limit
   @internal.hex
-  @maxLength(31)
-  scalar HEX extends string
+  scalar HEX extends STR
 }
 
 namespace dtm {

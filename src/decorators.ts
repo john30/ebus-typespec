@@ -245,7 +245,30 @@ export function $hex(context: DecoratorContext, target: Scalar) {
 export function getHex(program: Program, target: Scalar): boolean {
   return program.stateMap(StateKeys.hex).has(target);
 }
-setTypeSpecNamespace("internal", $reverse, $bcd, $hex);
+
+/**
+ * Implementation of the `@maxBits` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $maxBits(context: DecoratorContext, target: Scalar, value: number) {
+  context.program.stateMap(StateKeys.maxBits).set(target, value);
+}
+
+/**
+ * Accessor for the `@maxBits` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getMaxBits(program: Program, target: Scalar): number | undefined {
+  return program.stateMap(StateKeys.maxBits).get(target);
+}
+
+setTypeSpecNamespace("internal", $reverse, $bcd, $hex, $maxBits);
 
 
 /**
