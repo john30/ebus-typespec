@@ -1,4 +1,27 @@
-import { createTypeSpecLibrary, paramMessage } from "@typespec/compiler";
+import { createTypeSpecLibrary, JSONSchemaType, paramMessage } from "@typespec/compiler";
+
+export type FileType = "csv" | "yaml" | "json";
+
+export interface EbusdEmitterOptions {
+  /**
+   * Serialize the schema as either csv, yaml, or json.
+   * @default yaml
+   */
+  "file-type"?: FileType;
+}
+
+export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    "file-type": {
+      type: "string",
+      enum: ["csv", "yaml", "json"],
+      nullable: true,
+      description: "Serialize the schema as either csv, yaml, or json.",
+    },
+  },
+}
 
 export const $lib = createTypeSpecLibrary({
   name: "ebus",
@@ -21,6 +44,15 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Invalid divisor value "${"value"}".`,
       },
     },
+    "duplicate-id": {
+      severity: "error",
+      messages: {
+        default: paramMessage`There are multiple types with the same id "${"id"}".`,
+      },
+    },
+  },
+  emitter: {
+    options: EmitterOptionsSchema as JSONSchemaType<EbusdEmitterOptions>,
   },
   state: {
     write: { description: "write direction" },
