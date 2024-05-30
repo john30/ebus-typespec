@@ -3,7 +3,7 @@ import { compilerAssert, DiagnosticTarget, EmitContext, emitFile, getDoc, getNam
 import { DuplicateTracker } from "@typespec/compiler/utils";
 import {code, Context, Declaration, EmittedSourceFile, EmitterOutput, RawCode, Scope, ScopeBase, SourceFile, SourceFileScope, StringBuilder, TypeEmitter, TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
 import {EbusdEmitterOptions, reportDiagnostic} from "./lib.js";
-import {getDivisor, getId, getInherit, getPassive, getQq, getUnit, getWrite, getZz} from "./decorators.js";
+import {getDivisor, getId, getInherit, getOut, getPassive, getQq, getUnit, getWrite, getZz} from "./decorators.js";
 import {basename, extname} from "path";
 
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
@@ -66,7 +66,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       if (p.type.kind!=='Scalar') {
         return;//todo report
       }
-      let res = {} as {name: string, divisor?: number, unit?: string, comment?: string};
+      let res = {} as {name: string, dir?: 'm'|'s', divisor?: number, unit?: string, comment?: string};
       let s: ModelProperty|Scalar = p;
       let isOwn = false;
       do {
@@ -74,6 +74,12 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         if (s.kind!=='ModelProperty' && this.#isStdType(s, true)) {
           isOwn = true;
           break; // ebus base type reached
+        }
+        if (!res.dir && s.kind==='ModelProperty') {
+          const out = getOut(program, s as ModelProperty);
+          if (out!==undefined) {
+            res.dir = out ? 'm' : 's';
+          }
         }
         const d = getDivisor(program, s);
         if (d!==undefined && d!==0) {
@@ -96,7 +102,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       } while (true);
       //todo if (!isOwn) throw
       // field,part (m/s),type / templates,divider / values,unit,comment
-      const field = [p.name,,res.name,res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor):undefined,res.unit,res.comment];
+      const field = [p.name,res.dir,res.name,res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor):undefined,res.unit,res.comment];
       if (first) {
         first = false;
       } else {

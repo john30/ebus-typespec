@@ -14,12 +14,14 @@ describe("emitting models", () => {
         /** an x */
         @unit("y")
         @divisor(10)
-        x: UCH;
+        @out
+        x: UCH,
+        z: UCH,
       }
     `);
     const file = files["main.csv"];
     assert.strictEqual(file,
-      "r,test,foo,a foo,01,08,0001,02,x,,UCH,10,y,an x\n"
+      "r,test,foo,a foo,01,08,0001,02,x,m,UCH,10,y,an x,z,,UCH,,,\n"
     );
   });
   it("works with multiple", async () => {
@@ -27,12 +29,12 @@ describe("emitting models", () => {
       using Ebus.num;
       @id(0,1)
       model Foo {
-        x: UCH;
+        x: UCH,
       }
       @id(0,2,1)
       model Bar {
-        y: UCH;
-        z: UCH;
+        y: UCH,
+        z: UCH,
       }
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo', 'test.Bar']});
     const file = files["main.csv"];
@@ -49,7 +51,7 @@ describe("emitting models", () => {
       scalar temp extends UCH;
       @id(0,1)
       model Foo {
-        x: temp;
+        x: temp,
       }
     `);
     const file = files["main.csv"];
@@ -64,18 +66,20 @@ describe("emitting models", () => {
       @base(0,1,2)
       /** a base */
       model base {
-        b: UCH;
+        /** the b */
+        b: UCH,
       }
       @ext(3,4)
       @inherit(base)
       /** a test */
       model Foo {
-        x: UCH;
+        /** an x */
+        x: UCH,
       }
     `);
     const file = files["main.csv"];
     assert.strictEqual(file,
-      "r,test,foo,a test,,08,0001,020304,b,,UCH,,,,x,,UCH,,,\n"
+      "r,test,foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x\n"
     );
   });
 });

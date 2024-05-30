@@ -253,7 +253,7 @@ setTypeSpecNamespace("internal", $reverse, $bcd, $hex);
  * @param context Decorator context.
  * @param target Decorator target.
  */
-export function $in(context: DecoratorContext, target: Scalar) {
+export function $in(context: DecoratorContext, target: ModelProperty) {
   context.program.stateMap(StateKeys.out).set(target, false);
 }
 
@@ -263,7 +263,7 @@ export function $in(context: DecoratorContext, target: Scalar) {
  * @param context Decorator context.
  * @param target Decorator target.
  */
-export function $out(context: DecoratorContext, target: Scalar) {
+export function $out(context: DecoratorContext, target: ModelProperty) {
   context.program.stateMap(StateKeys.out).set(target, true);
 }
 
@@ -274,7 +274,7 @@ export function $out(context: DecoratorContext, target: Scalar) {
  * @param target Decorator target.
  * @returns value if provided on the given target (true when `out`, false when `in`), or undefined.
  */
-export function getOut(program: Program, target: Scalar): boolean {
+export function getOut(program: Program, target: ModelProperty): boolean {
   return program.stateMap(StateKeys.out).get(target);
 }
 
