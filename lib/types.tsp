@@ -11,19 +11,31 @@ scalar Pb extends Symbol
 scalar Sb extends Symbol
 
 namespace num {
+  @encode("uint8")
   scalar BI0_1 extends boolean
+  @encode("uint8")
   scalar BI1_1 extends boolean
+  @encode("uint8")
   scalar BI2_1 extends boolean
+  @encode("uint8")
   scalar BI3_1 extends boolean
+  @encode("uint8")
   scalar BI4_1 extends boolean
+  @encode("uint8")
   scalar BI5_1 extends boolean
+  @encode("uint8")
   scalar BI6_1 extends boolean
+  @encode("uint8")
+  //todo longer bits
   scalar BI7 extends boolean
 
   scalar UCH extends uint8
   scalar SCH extends int8
   alias D1B = SCH;
-
+  @internal.bcd
+  scalar BCD extends uint8
+  @internal.hex
+  scalar HCD extends uint8
   @divisor(2)
   scalar D1C extends uint8
 
@@ -36,6 +48,10 @@ namespace num {
   scalar SIN extends int16
   @internal.reverse
   scalar SIR extends SIN
+  @internal.bcd
+  scalar BCD2 extends uint16
+  @internal.hex
+  scalar HCD2 extends uint16
 
   @divisor(256)
   scalar D2B extends int16
@@ -48,7 +64,7 @@ namespace num {
   @internal.reverse
   scalar FLR extends FLT
 
-  //todo 3 byte int
+  //todo 3 byte int, bcd:3, hcd:3
 
   scalar ULG extends uint32
   @internal.reverse
@@ -56,6 +72,10 @@ namespace num {
   scalar SLG extends int32
   @internal.reverse
   scalar SLR extends SLG
+  @internal.bcd
+  scalar BCD4 extends uint32
+  @internal.hex
+  scalar HCD4 extends uint32
 
   scalar EXP extends float32
   @internal.reverse
@@ -66,7 +86,8 @@ namespace str {
   @maxLength(31)
   scalar UCH extends string
   @maxLength(31)
-  scalar NTS extends string // todo mark as special
+  @encode("nullterm") // todo
+  scalar NTS extends string
   @maxLength(31)
   scalar IGN extends string // todo bytes would be more logical, but have not length limit
   @internal.hex
@@ -76,34 +97,44 @@ namespace str {
 
 namespace dtm {
   @internal.bcd
+  @encode("", uint32)
   scalar BDA extends plainDate
   alias BDA4 = BDA;
-  scalar BDA3 extends BDA
+  scalar BDA3 extends BDA // todo 3 bytes
   scalar BDZ extends BDA
   @internal.hex
+  @encode("", uint32)
   scalar HDA extends plainDate
   alias HDA4 = HDA;
   scalar HDA3 extends HDA
-  scalar DAY extends plainDate // todo uint16 based
+  @encode("", uint16)
+  scalar DAY extends plainDate
+  @encode("", uint32)
   scalar DTM extends offsetDateTime
 
   @internal.bcd
-  scalar BTI extends plainTime
+  scalar BTI extends plainTime // todo 3 bytes
   @internal.hex
-  scalar HTI extends plainTime
+  scalar HTI extends plainTime // todo 3 bytes
   @internal.reverse
   scalar VTI extends HTI
   @internal.bcd
-  scalar BTM extends plainTime // todo uint16 based
+  @encode("", uint16)
+  scalar BTM extends plainTime
   @internal.reverse
   scalar VTM extends BTM
   @internal.hex
-  scalar HTM extends plainTime // todo uint16 based
+  @encode("", uint16)
+  scalar HTM extends plainTime
+  @encode("", uint16)
   scalar MIN extends plainTime // todo check if rather duration
   @divisor(10)
+  @encode("", uint8)
   scalar TTM extends plainTime
   @divisor(30)
+  @encode("", uint8)
   scalar TTH extends plainTime
   @divisor(15)
+  @encode("", uint8) // todo actually 7 bits
   scalar TTQ extends plainTime
 }
