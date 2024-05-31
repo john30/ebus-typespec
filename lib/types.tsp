@@ -49,8 +49,6 @@ namespace num {
   scalar SIN extends int16
   @internal.reverse
   scalar SIR extends SIN
-  @internal.bcd
-  scalar BCD2 extends uint16
   @internal.hex
   scalar HCD2 extends uint16
 
@@ -65,7 +63,11 @@ namespace num {
   @internal.reverse
   scalar FLR extends FLT
 
-  //todo 3 byte int, bcd:3, hcd:3
+  //todo 3 byte int
+  @internal.bcd
+  scalar BCD3 extends uint32 // todo 3 bytes
+  @internal.hex
+  scalar HCD3 extends uint32 // todo 3 bytes
 
   scalar ULG extends uint32
   @internal.reverse
@@ -94,6 +96,8 @@ namespace str {
 }
 
 namespace dtm {
+  scalar BDY extends uint8 // todo weekday
+  scalar HDY extends uint8 // todo weekday
   @internal.bcd
   @encode("", uint32)
   scalar BDA extends plainDate
