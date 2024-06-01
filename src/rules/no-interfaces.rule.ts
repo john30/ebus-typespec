@@ -1,4 +1,4 @@
-import { createRule } from "@typespec/compiler";
+import {createRule} from "@typespec/compiler";
 
 export const noInterfaceRule = createRule({
   name: "no-interface",

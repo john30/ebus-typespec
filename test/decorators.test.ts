@@ -1,5 +1,5 @@
-import {Model} from "@typespec/compiler";
-import {BasicTestRunner, expectDiagnostics} from "@typespec/compiler/testing";
+import {type Model} from "@typespec/compiler";
+import {expectDiagnostics, type BasicTestRunner} from "@typespec/compiler/testing";
 import {strictEqual} from "node:assert";
 import {beforeEach, describe, it} from "node:test";
 import {getQq, getZz} from "../src/decorators.js";

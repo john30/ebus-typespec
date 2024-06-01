@@ -1,5 +1,8 @@
-import {DecoratorContext, Enum, isNumericType, Model, ModelProperty, Namespace, Program, Scalar, setTypeSpecNamespace} from "@typespec/compiler";
-import {reportDiagnostic, StateKeys} from "./lib.js";
+import {
+  isNumericType, setTypeSpecNamespace, type DecoratorContext, type Enum,
+  type Model, type ModelProperty, type Namespace, type Program, type Scalar,
+} from "@typespec/compiler";
+import {StateKeys, reportDiagnostic} from "./lib.js";
 
 export const namespace = "Ebus";
 

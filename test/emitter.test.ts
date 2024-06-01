@@ -1,6 +1,6 @@
-import assert, { deepStrictEqual } from "assert";
-import { describe, it } from "node:test";
-import { emit } from "./utils.js";
+import assert from "assert";
+import {describe, it} from "node:test";
+import {emit} from "./utils.js";
 
 describe("emitting models", () => {
   it("works", async () => {

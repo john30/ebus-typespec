@@ -1,10 +1,10 @@
 import {
-  LinterRuleTester,
   createLinterRuleTester,
   createTestRunner,
+  type LinterRuleTester,
 } from "@typespec/compiler/testing";
-import { beforeEach, describe, it } from "node:test";
-import { noInterfaceRule } from "../../src/rules/no-interfaces.rule.js";
+import {beforeEach, describe, it} from "node:test";
+import {noInterfaceRule} from "../../src/rules/no-interfaces.rule.js";
 
 describe("noInterfaceRule", () => {
   let ruleTester: LinterRuleTester;

@@ -1,9 +1,9 @@
-import {DiagnosticTarget, emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, Model, ModelProperty, Node, Program, Scalar, Type, TypeSpecScriptNode} from "@typespec/compiler";
-import {code, Context, EmittedSourceFile, EmitterOutput, Scope, SourceFile, SourceFileScope, StringBuilder, TypeEmitter, TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
+import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
+import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope, type TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
 import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
-import {EbusdEmitterOptions, reportDiagnostic} from "./lib.js";
+import {reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();

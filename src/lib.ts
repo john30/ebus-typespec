@@ -1,4 +1,4 @@
-import { createTypeSpecLibrary, JSONSchemaType, paramMessage } from "@typespec/compiler";
+import {createTypeSpecLibrary, paramMessage, type JSONSchemaType} from "@typespec/compiler";
 
 export type FileType = "csv" | "yaml" | "json";
 

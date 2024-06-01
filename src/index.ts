@@ -1,9 +1,9 @@
-import {EmitContext, Model, Program} from "@typespec/compiler";
+import type {EmitContext, Model, Program} from "@typespec/compiler";
 import {EbusdEmitter} from "./csv_emitter.js";
-import {EbusdEmitterOptions, StateKeys} from "./lib.js";
+import {StateKeys, type EbusdEmitterOptions} from "./lib.js";
 
-export { getWrite, getPassive, getQq, getZz, getId, getInherit, getUnit, getDivisor, getValues, getReverse, getBcd, getHex, getMaxBits} from "./decorators.js";
-export { $lib } from "./lib.js";
+export {getBcd, getDivisor, getHex, getId, getInherit, getMaxBits, getPassive, getQq, getReverse, getUnit, getValues, getWrite, getZz} from "./decorators.js";
+export {$lib} from "./lib.js";
 
 export async function $onEmit(context: EmitContext<EbusdEmitterOptions>) {
   const emitter =

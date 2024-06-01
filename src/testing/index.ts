@@ -1,4 +1,4 @@
-import {createTestLibrary, findTestPackageRoot, TypeSpecTestLibrary} from "@typespec/compiler/testing";
+import {createTestLibrary, findTestPackageRoot, type TypeSpecTestLibrary} from "@typespec/compiler/testing";
 
 export const EbusTestLibrary: TypeSpecTestLibrary = createTestLibrary({
   name: "ebus",

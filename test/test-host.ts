@@ -1,5 +1,5 @@
-import { createTestHost, createTestWrapper } from "@typespec/compiler/testing";
-import { EbusTestLibrary } from "../src/testing/index.js";
+import {createTestHost, createTestWrapper} from "@typespec/compiler/testing";
+import {EbusTestLibrary} from "../src/testing/index.js";
 
 export async function createEbusTestHost() {
   return createTestHost({
