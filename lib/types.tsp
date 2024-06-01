@@ -1,15 +1,37 @@
 namespace Ebus;
 
+/** A symbol on the bus. */
 scalar Symbol extends uint8
 
+/** List of special symbols. */
+union symbols {
+  SYN: 0xaa,
+  ESC: 0xa9,
+  Symbol,
+}
+
+/** A source address 'QQ. */
 scalar Source extends Symbol
 
+/** A target address 'ZZ'. */
 scalar Target extends Symbol
 
+/** List of special target addresses. */
+union targets {
+  /** the special broadcast target address. */
+  Broadcast: 0xfe,
+  Target,
+}
+/** the special broadcast target address. */
+alias BROADCAST = 0xfe; // todo should be possible as targets.Broadcast someday
+
+/** the primary command symbol 'PB'. */
 scalar Pb extends Symbol
 
+/** the secondary command symbol 'SB'. */
 scalar Sb extends Symbol
 
+/** The known numeric base types. */
 namespace num {
   @encode("uint8")
   scalar BI0 extends boolean
@@ -85,6 +107,7 @@ namespace num {
   scalar EXR extends EXP
 }
 
+/** The known string base types. */
 namespace str {
   @maxLength(31)
   scalar STR extends string
@@ -95,6 +118,7 @@ namespace str {
   scalar HEX extends STR
 }
 
+/** The known date/time base types. */
 namespace dtm {
   scalar BDY extends uint8 // todo weekday
   scalar HDY extends uint8 // todo weekday

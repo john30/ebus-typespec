@@ -5,10 +5,6 @@ using Ebus.num;
 
 namespace id {
 
-  alias BAROADCAST = 0xfe;
-  alias SYN = 0xaa;
-  alias ESC = 0xa9;
-
   enum manufacturers {
     Dungs: 0x06,
     "FH Ostfalia": 0x0f,
@@ -36,16 +32,17 @@ namespace id {
     Weishaupt: 0xc5,
     "ebusd.eu": 0xfd,
     ebusd: 0xfd,
+    // Pb, // <= this is how to declare the base type as it seems for unions, see https://github.com/microsoft/typespec/issues/2737
   }
 
   @values(manufacturers)
-  scalar manufacturer extends num.UCH
+  scalar manufacturer extends UCH
 
   model id_read {}
-  @zz(BAROADCAST)
+  @zz(BROADCAST)
   @passive
   model id_bcast {}
-  @zz(BAROADCAST)
+  @zz(BROADCAST)
   model id_write {}
 
   /** identification */
