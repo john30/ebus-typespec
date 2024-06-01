@@ -3,7 +3,7 @@ import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, 
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
 import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
-import {reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
+import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
@@ -33,6 +33,9 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     const decls: string[] = [];
     //todo auto for read/write depending on zz, throw if invalid
     //todo detect invalid in with broadcast
+    if (!program.stateSet(StateKeys.id).has(model)) {
+      return this.emitter.result.none();
+    }
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
@@ -55,7 +58,8 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       const qq = getQq(program, model) ?? getQq(program, inheritFrom);
       //when inheriting id, only one of them may have pbsb, rest of id is concatenated
       const baseId = getId(program, inheritFrom);//todo could allow <2 bytes for inherited or child id when combining
-      const id = [...(baseId||[]), ...(getId(program, model)||[])];
+      const modelId = getId(program, model);
+      const id = [...(baseId||[]), ...(modelId||[])];
       if (id.length<2) {
         //todo throw
       } else {

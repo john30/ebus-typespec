@@ -182,7 +182,7 @@ describe("emitting models", () => {
     ]);
   });
   it("does not emit diagnostic on duplicate IDs/names in different namespaces", async () => {
-    const [_, diagnostics] = await emitWithDiagnostics(`
+    const files = await emit(`
       namespace Test1 {
         @id(1,2)
         model Foo {}
@@ -192,7 +192,21 @@ describe("emitting models", () => {
         model Foo {}
       }
     `);
-    expectDiagnostics(diagnostics, []);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "r,test.test1,foo,,,,0102,,\n"+
+      "r,test.test2,foo,,,,0102,,\n"
+    );
+  });
+  it("does not emit diagnostic on duplicate IDs in defaults", async () => {
+    const files = await emit(`
+      @base(1,2)
+      model r {}
+      @base(1,2)
+      model w {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file, '\n');
   });
 
 });
