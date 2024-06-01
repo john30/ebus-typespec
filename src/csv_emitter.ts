@@ -58,6 +58,8 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       const id = [...(baseId||[]), ...(getId(program, model)||[])];
       if (id.length<2) {
         //todo throw
+      } else {
+        this.#idDuplicateTracker.track([direction, qq, zz, ...id].join(), model);
       }
       const idh = hexs(id);
       // type (r[1-9];w;u),class,name,comment,QQ,ZZ,PBSB,ID
@@ -300,7 +302,8 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   }
 
   #fileExtension() {
-    return this.emitter.getOptions()["file-type"] === "json" ? "json"
-     : this.emitter.getOptions()["file-type"] === "yaml" ? "yaml" : "csv";
+    // return this.emitter.getOptions()["file-type"] === "json" ? "json"
+    //  : this.emitter.getOptions()["file-type"] === "yaml" ? "yaml" :
+    return "csv";
   }
 }

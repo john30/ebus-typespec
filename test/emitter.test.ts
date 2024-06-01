@@ -1,6 +1,7 @@
+import {expectDiagnostics} from "@typespec/compiler/testing";
 import assert from "assert";
 import {describe, it} from "node:test";
-import {emit} from "./utils.js";
+import {emit, emitWithDiagnostics} from "./utils.js";
 
 describe("emitting models", () => {
   it("works", async () => {
@@ -162,4 +163,25 @@ describe("emitting models", () => {
       "r,test,foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:10,,,\n"
     );
   });
+  it("emit diagnostic on duplicate IDs", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+        namespace Test1 {
+          @id(1,2)
+          model Foo {}
+          @id(1,2)
+          model Bar {}
+        }
+      `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/duplicate-id",
+        message: `There are multiple types with the same id "r,,,1,2".`,
+      },
+      {
+        code: "ebus/duplicate-id",
+        message: `There are multiple types with the same id "r,,,1,2".`,
+      },
+    ]);
+  });
+
 });
