@@ -1,7 +1,7 @@
-import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
-import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope, type TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
+import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
+import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
-import {basename, dirname, extname} from "path";
+import {basename, extname} from "path";
 import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
@@ -36,6 +36,10 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     if (!program.stateSet(StateKeys.id).has(model)) {
       return this.emitter.result.none();
     }
+    // const main = program.resolveTypeReference("Ebus")[0] as Namespace;
+    // if (isDeclaredInNamespace(model, main)) {
+    //   return this.emitter.result.none();;
+    // }
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
@@ -282,17 +286,18 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   //   }, 'program');
   //   return {scope};
   // }
-  #newFileScope(type: TypeSpecDeclaration) {
-    const program: Program = this.emitter.getProgram();
+  #newFileScope(type: Model) {
+    // const program: Program = this.emitter.getProgram();
     const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
     const fp = fileParent(type.node as Node);
-    // const fl = p.getSourceFileLocationContext(fp);
-    const path = fp?.path && dirname(fp.path);
+    // const fl = program.getSourceFileLocationContext(fp);
+    const nsf = type.namespace&&getNamespaceFullName(type.namespace);
+    const root = nsf && nsf.split('.')[0];
     const name = fp?.path && basename(fp.path, extname(fp.path)) || this.declarationName(type) || '';
     let sourceFile = this.#sourceFileByPath.get(name);
     if (!sourceFile) {
       sourceFile = this.emitter.createSourceFile(
-        `${path?path.split('/').filter(p=>p).join('.')+'.':''}${name}.${this.#fileExtension()}`
+        `${root&&root!==name?root+'.':''}${name}.${this.#fileExtension()}`
       );
       // ((sourceFile.globalScope as SourceFileScope<string>).sourceFile as any).program = program;
       sourceFile.meta.shouldEmit = true;

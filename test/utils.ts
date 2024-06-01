@@ -53,10 +53,10 @@ export async function emitWithDiagnostics(
   const files = await emitter.getProgram().host.readDir("./tsp-output");
 
   for (const file of files) {
-    if (file.includes('node_modules.') || testOptions.emitNamespace&&!file.startsWith('test.')) {
-      continue;
+    let name = file;
+    if (testOptions.emitNamespace && name.startsWith('test.')) {
+      name = name.substring(5);
     }
-    const name = testOptions.emitNamespace ? file.substring(5) : file;
     const sf = await emitter.getProgram().host.readFile(`./tsp-output/${file}`);
     if (options?.["file-type"] === "csv") {
       schemas[name] = sf.text;
