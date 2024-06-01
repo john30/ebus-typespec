@@ -194,8 +194,8 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(file,
-      "r,test.test1,foo,,,,0102,,\n"+
-      "r,test.test2,foo,,,,0102,,\n"
+      "r,test1,foo,,,,0102,,\n"+
+      "r,test2,foo,,,,0102,,\n"
     );
   });
   it("does not emit diagnostic on duplicate IDs in defaults", async () => {

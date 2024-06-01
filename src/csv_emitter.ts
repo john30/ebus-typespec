@@ -1,7 +1,7 @@
 import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
 import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope, type TypeSpecDeclaration} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
-import {basename, extname} from "path";
+import {basename, dirname, extname} from "path";
 import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
@@ -53,7 +53,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       const direction = write ? (passive ? 'uw' : 'w') : (passive ? 'u' : 'r');
       const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive);
       const fields = this.modelPropertiesRw(model, write&&!passive);
-      const circuit = namespace ? getNamespaceFullName(namespace) : '';
+      const circuit = namespace ? namespace.name : '';
       const comment = getDoc(program, model) ?? getDoc(program, inheritFrom);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom);
       //when inheriting id, only one of them may have pbsb, rest of id is concatenated
@@ -287,11 +287,12 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
     const fp = fileParent(type.node as Node);
     // const fl = p.getSourceFileLocationContext(fp);
+    const path = fp?.path && dirname(fp.path);
     const name = fp?.path && basename(fp.path, extname(fp.path)) || this.declarationName(type) || '';
     let sourceFile = this.#sourceFileByPath.get(name);
     if (!sourceFile) {
       sourceFile = this.emitter.createSourceFile(
-        `${name}.${this.#fileExtension()}`
+        `${path?path.split('/').filter(p=>p).join('.')+'.':''}${name}.${this.#fileExtension()}`
       );
       // ((sourceFile.globalScope as SourceFileScope<string>).sourceFile as any).program = program;
       sourceFile.meta.shouldEmit = true;

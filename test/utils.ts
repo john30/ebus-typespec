@@ -53,13 +53,17 @@ export async function emitWithDiagnostics(
   const files = await emitter.getProgram().host.readDir("./tsp-output");
 
   for (const file of files) {
+    if (file.includes('node_modules.') || testOptions.emitNamespace&&!file.startsWith('test.')) {
+      continue;
+    }
+    const name = testOptions.emitNamespace ? file.substring(5) : file;
     const sf = await emitter.getProgram().host.readFile(`./tsp-output/${file}`);
     if (options?.["file-type"] === "csv") {
-      schemas[file] = sf.text;
+      schemas[name] = sf.text;
     } else if (options?.["file-type"] === "yaml") {
-      schemas[file] = parse(sf.text);
+      schemas[name] = parse(sf.text);
     } else {
-      schemas[file] = JSON.parse(sf.text);
+      schemas[name] = JSON.parse(sf.text);
     }
   }
 
