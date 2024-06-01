@@ -76,13 +76,19 @@ extern dec unit(target: numeric|ModelProperty, value: valueof string);
  * Define the divisor.
  * @param value the divisor.
  */
-extern dec divisor(target: numeric|plainTime|ModelProperty, value?: valueof numeric);
+extern dec divisor(target: numeric|plainTime|ModelProperty, value: valueof numeric);
+
+/**
+ * Define the factor.
+ * @param value the factor.
+ */
+extern dec factor(target: numeric|plainTime|ModelProperty, value: valueof numeric);
 
 /**
  * Define the known values.
  * @param value the divisor.
  */
-extern dec values(target: numeric|ModelProperty, values: Enum);
+extern dec values(target: numeric|boolean|ModelProperty, values: Enum);
 
 
 namespace internal {

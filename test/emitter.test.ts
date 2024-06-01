@@ -16,13 +16,13 @@ describe("emitting models", () => {
         @unit("y")
         @divisor(10)
         @out
-        x: UCH,
+        x: BCD4,
         z: UCH,
       }
     `);
     const file = files["main.csv"];
     assert.strictEqual(file,
-      "r,test,foo,a foo,01,08,0001,02,x,m,UCH,10,y,an x,z,,UCH,,,\n"
+      "r,test,foo,a foo,01,08,0001,02,x,m,BCD:4,10,y,an x,z,,UCH,,,\n"
     );
   });
   it("works with multiple", async () => {

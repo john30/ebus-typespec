@@ -1,6 +1,7 @@
 import {
-  isNumericType, setTypeSpecNamespace, type DecoratorContext, type Enum,
-  type Model, type ModelProperty, type Namespace, type Program, type Scalar,
+  getPropertyType, isIntrinsicType, isNumericType,
+  setTypeSpecNamespace, type DecoratorContext, type Enum,
+  type Model, type ModelProperty, type Namespace, type Program, type Scalar
 } from "@typespec/compiler";
 import {StateKeys, reportDiagnostic} from "./lib.js";
 
@@ -72,6 +73,7 @@ export function $qq(context: DecoratorContext, target: Model, value?: number) {
       target: context.getArgumentTarget(0)!,
       format: { value: value.toString() },
     });
+    return;
   }
   context.program.stateMap(StateKeys.qq).set(target, value);
 }
@@ -101,6 +103,7 @@ export function $zz(context: DecoratorContext, target: Model|Namespace, value?: 
       target: context.getArgumentTarget(0)!,
       format: { value: value.toString() },
     });
+    return;
   }
   context.program.stateMap(StateKeys.zz).set(target, value===undefined?0xaa:value);
 }
@@ -334,16 +337,42 @@ export function getUnit(program: Program, target: Scalar|ModelProperty): string 
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty, value?: number) {
-  //todo only allow on numeric
-  // if (value !== undefined && invalidTarget.includes(value)) {
-  //   reportDiagnostic(context.program, {
-  //     code: "banned-divisor",
-  //     target: context.getArgumentTarget(0)!,
-  //     format: { value: value.toString() },
-  //   });
-  // }
+export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty, value: number) {
+  // this works only for direct Scalars, not for indirect ones via ModelProperty:
+  const isPlainTime = target.kind==='Scalar' && isIntrinsicType(context.program, target, 'plainTime'); // for internal time types
+  if (!(isNumericType(context.program, getPropertyType(target)) || isPlainTime)
+  || (typeof value !== 'number') || (value<=0)
+  || context.program.stateMap(StateKeys.values).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "banned-divisor",
+      target: context.getArgumentTarget(0)!,
+      format: { value: value.toString() },
+    });
+    return;
+  }
   context.program.stateMap(StateKeys.divisor).set(target, value);
+}
+
+/**
+ * Implementation of the `@factor` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $factor(context: DecoratorContext, target: Scalar|ModelProperty, value: number) {
+  const isPlainTime = target.kind==='Scalar' && isIntrinsicType(context.program, target, 'plainTime'); // for internal time types
+  if (!(isNumericType(context.program, getPropertyType(target)) || isPlainTime)
+  || (typeof value !== 'number') || (value<=0)
+  || context.program.stateMap(StateKeys.values).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "banned-factor",
+      target: context.getArgumentTarget(0)!,
+      format: { value: value.toString() },
+    });
+    return;
+  }
+  context.program.stateMap(StateKeys.divisor).set(target, 1.0/value);
 }
 
 /**
@@ -365,14 +394,16 @@ export function getDivisor(program: Program, target: Scalar|ModelProperty): numb
  * @param value the value to set.
  */
 export function $values(context: DecoratorContext, target: Scalar|ModelProperty, value: Enum) {
-  if (!isNumericType(context.program, target)) {
-    // context.program.reportDiagnostic(createDiagnostic({
-    //   code: "decorator-wrong-target",
-    //   format: { decorator: "@knownValues", to: "type, it is  not a string or numeric" },
-    //   target,
-    // }));
-    return;//todo check
-  }
+  //todo tolerated for now as check for boolean is missing
+  // if (!isNumericType(context.program, getPropertyType(target))
+  // || context.program.stateMap(StateKeys.divisor).has(target)) {
+  //   reportDiagnostic(context.program, {
+  //     code: "banned-values",
+  //     target: context.getArgumentTarget(0)!,
+  //     format: {},
+  //   });
+  //   return;
+  // }
   context.program.stateMap(StateKeys.values).set(target, value);
 }
 

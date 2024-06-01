@@ -44,6 +44,18 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Invalid divisor value "${"value"}".`,
       },
     },
+    "banned-factor": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid factor value "${"value"}".`,
+      },
+    },
+    "banned-values": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid values.`,
+      },
+    },
     "banned-type": {
       severity: "error",
       messages: {
