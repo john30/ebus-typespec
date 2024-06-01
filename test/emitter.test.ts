@@ -208,5 +208,15 @@ describe("emitting models", () => {
     const file = files["main.csv"];
     assert.strictEqual(file, '\n');
   });
-
+  it("does not shorten type names", async () => {
+    const files = await emit(`
+      model id is Ebus.id.id;
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "r,test,id,identification,,,0704,,mf,,manufacturer,,,device manufacturer,id,,PIN,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
+      "u,test,id,identification,,fe,0704,,mf,,manufacturer,,,device manufacturer,id,,PIN,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
+      "w,test,id,identification,,fe,0704,,\n"
+    );
+  });
 });

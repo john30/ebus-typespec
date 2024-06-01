@@ -5,6 +5,9 @@ import {basename, extname} from "path";
 import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
+const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
+const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
+
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
   #sourceFileByPath = new Map<string, SourceFile<any>>();
@@ -28,8 +31,6 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     //   schema.set("additionalProperties", this.emitter.emitTypeReference(model.indexer.value));
     // }
     const program = this.emitter.getProgram();
-    const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
-    const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
     const decls: string[] = [];
     //todo auto for read/write depending on zz, throw if invalid
     //todo detect invalid in with broadcast
@@ -143,11 +144,11 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       // field,part (m/s),type / templates,divider / values,unit,comment
       const divisor = res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor)
       : res.values?.join(';');
-      let typ = res.name;
+      let typ: string = res.name;
       if (typ.length>4 && typ[3]==='_') {
         // expect to end with digits e.g. BI3_1
         typ = typ.substring(0, 3)+':'+typ.substring(4);
-      } else if (typ.length>3) {
+      } else if (typ.length>3 && typ.toUpperCase()===typ) {
         // expect to end with digits e.g. BCD4
         typ = typ.substring(0, 3)+':'+typ.substring(3);
       } else if (res.length) {
