@@ -44,10 +44,22 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Invalid divisor value "${"value"}".`,
       },
     },
+    "banned-type": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid type ${"type"} with name "${"name"}".`,
+      },
+    },
     "duplicate-id": {
       severity: "error",
       messages: {
-        default: paramMessage`There are multiple types with the same id "${"id"}".`,
+        default: paramMessage`There are multiple models with the same id "${"id"}".`,
+      },
+    },
+    "duplicate-name": {
+      severity: "error",
+      messages: {
+        default: paramMessage`There are multiple models types with the same id "${"id"}".`,
       },
     },
   },

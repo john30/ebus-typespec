@@ -59,7 +59,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       if (id.length<2) {
         //todo throw
       } else {
-        this.#idDuplicateTracker.track([direction, qq, zz, ...id].join(), model);
+        this.#idDuplicateTracker.track([namespace?getNamespaceFullName(namespace):'',direction, qq, zz, ...id].join(), model);
       }
       const idh = hexs(id);
       // type (r[1-9];w;u),class,name,comment,QQ,ZZ,PBSB,ID

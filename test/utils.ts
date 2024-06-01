@@ -41,9 +41,7 @@ export async function emitWithDiagnostics(
     } as any
   );
   if (testOptions.emitTypes === undefined) {
-    for (const item of getEbusdTypes(host.program)) {
-      emitter.emitType(item);
-    }
+    emitter.emitProgram();
   } else {
     for (const name of testOptions.emitTypes) {
       emitter.emitType(host.program.resolveTypeReference(name)[0]!);

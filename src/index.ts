@@ -4,16 +4,14 @@ import {StateKeys, type EbusdEmitterOptions} from "./lib.js";
 
 export {getBcd, getDivisor, getHex, getId, getInherit, getMaxBits, getPassive, getQq, getReverse, getUnit, getValues, getWrite, getZz} from "./decorators.js";
 export {$lib} from "./lib.js";
+export {$linter} from "./linter.js";
 
 export async function $onEmit(context: EmitContext<EbusdEmitterOptions>) {
   const emitter =
   // context.options["file-type"]==='csv'?
   context.getAssetEmitter(EbusdEmitter)
   // :context.getAssetEmitter(EbusSchemaEmitter);
-
-  for (const item of getEbusdTypes(context.program)) {
-    emitter.emitType(item);
-  }
+  emitter.emitProgram();
   await emitter.writeOutput();
 }
 

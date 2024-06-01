@@ -77,7 +77,7 @@ describe("emitting models", () => {
         /** an x */
         x: UCH,
       }
-    `);
+    `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
     const file = files["main.csv"];
     assert.strictEqual(file,
       "r,test,foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x\n"
@@ -99,7 +99,7 @@ describe("emitting models", () => {
         x: UCH,
         y?: UCH,
       }
-    `);
+    `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
     const file = files["main.csv"];
     assert.strictEqual(file,
       "r,test,foo,,,,0001,,x,,UCH,,,,y,,UCH,,,\n"+
@@ -165,23 +165,34 @@ describe("emitting models", () => {
   });
   it("emit diagnostic on duplicate IDs", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
-        namespace Test1 {
-          @id(1,2)
-          model Foo {}
-          @id(1,2)
-          model Bar {}
-        }
-      `);
+      @id(1,2)
+      model Foo {}
+      @id(1,2)
+      model Bar {}
+    `);
     expectDiagnostics(diagnostics, [
       {
         code: "ebus/duplicate-id",
-        message: `There are multiple types with the same id "r,,,1,2".`,
+        message: `There are multiple models with the same id "test,r,,,1,2".`,
       },
       {
         code: "ebus/duplicate-id",
-        message: `There are multiple types with the same id "r,,,1,2".`,
+        message: `There are multiple models with the same id "test,r,,,1,2".`,
       },
     ]);
+  });
+  it("does not emit diagnostic on duplicate IDs/names in different namespaces", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      namespace Test1 {
+        @id(1,2)
+        model Foo {}
+      }
+      namespace Test2 {
+        @id(1,2)
+        model Foo {}
+      }
+    `);
+    expectDiagnostics(diagnostics, []);
   });
 
 });
