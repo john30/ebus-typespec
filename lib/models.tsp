@@ -51,7 +51,8 @@ namespace id {
     /** device manufacturer */
     mf?: manufacturer,
     /** device id */
-    id?: num.PIN,
+    @maxLength(5)
+    id?: str.STR,
     /** software version */
     sw?: num.PIN,
     /** hardware version */
