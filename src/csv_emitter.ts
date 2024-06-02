@@ -164,6 +164,8 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     })
     return code`${b}`
   }
+  //todo model combination
+  //todo auth
   modelPropertyLiteral(property: ModelProperty): EmitterOutput<string> {
     return code`a property named ${property.name} and a type of ${this.emitter.emitType(
       property.type

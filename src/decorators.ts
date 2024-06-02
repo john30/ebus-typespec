@@ -49,6 +49,36 @@ export function getPassive(program: Program, target: Model): boolean {
   return program.stateMap(StateKeys.passive).get(target);
 }
 
+/**
+ * Implementation of the `@auth` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $auth(context: DecoratorContext, target: Model, value: string) {
+  if (value && !/^[a-z]*$/.test(value)) {
+    reportDiagnostic(context.program, {
+      code: "banned-auth",
+      target: context.getArgumentTarget(0)!,
+      format: { value: value.toString() },
+    });
+    return;
+  }
+  context.program.stateMap(StateKeys.auth).set(target, value);
+}
+
+/**
+ * Accessor for the `@auth` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getAuth(program: Program, target: Model): string | undefined {
+  return program.stateMap(StateKeys.auth).get(target);
+}
+
 const validSource: Uint8Array = new Uint8Array([
   0x00,0x01,0x03,0x07,0x0f,
   0x10,0x11,0x13,0x17,0x1f,
@@ -400,7 +430,7 @@ export function $values(context: DecoratorContext, target: Scalar|ModelProperty,
   //   reportDiagnostic(context.program, {
   //     code: "banned-values",
   //     target: context.getArgumentTarget(0)!,
-  //     format: {},
+  //     format: { detail },
   //   });
   //   return;
   // }

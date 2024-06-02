@@ -17,6 +17,11 @@ extern dec write(target: Model);
 extern dec passive(target: Model);
 
 /**
+ * Define authentication.
+ */
+extern dec auth(target: Model, auth: valueof string);
+
+/**
  * Define the source address.
  * @param value the source address QQ.
  */

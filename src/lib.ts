@@ -38,6 +38,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Invalid target address "${"value"}".`,
       },
     },
+    "banned-auth": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid auth "${"value"}".`,
+      },
+    },
     "banned-divisor": {
       severity: "error",
       messages: {
@@ -53,7 +59,7 @@ export const $lib = createTypeSpecLibrary({
     "banned-values": {
       severity: "error",
       messages: {
-        default: paramMessage`Invalid values.`,
+        default: paramMessage`Invalid values ${"detail"}.`,
       },
     },
     "banned-type": {
@@ -81,6 +87,7 @@ export const $lib = createTypeSpecLibrary({
   state: {
     write: { description: "write direction" },
     passive: { description: "passive only" },
+    auth: { description: "authentication level" },
     qq: { description: "source address QQ" },
     zz: { description: "target address ZZ" },
     id: { description: "message ID" },

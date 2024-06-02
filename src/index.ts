@@ -2,7 +2,7 @@ import type {EmitContext, Model, Program} from "@typespec/compiler";
 import {EbusdEmitter} from "./csv_emitter.js";
 import {StateKeys, type EbusdEmitterOptions} from "./lib.js";
 
-export {getBcd, getDivisor, getHex, getId, getInherit, getMaxBits, getPassive, getQq, getReverse, getUnit, getValues, getWrite, getZz} from "./decorators.js";
+export {getAuth, getBcd, getDivisor, getHex, getId, getInherit, getMaxBits, getPassive, getQq, getReverse, getUnit, getValues, getWrite, getZz} from "./decorators.js";
 export {$lib} from "./lib.js";
 export {$linter} from "./linter.js";
 
