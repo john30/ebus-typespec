@@ -1,15 +1,15 @@
 import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
-import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type SourceFile} from "@typespec/compiler/emitter-framework";
+import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type SourceFile} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
-import {getAuth, getConds, getDivisor, getId, getInherit, getMaxBits, getPassive, getOut, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {getAuth, getConds, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
 const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
 
-export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
+export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
   #sourceFileByPath = new Map<string, SourceFile<any>>();
 
@@ -53,7 +53,6 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
       return `[${c[0].name+values}]`;
     }).join('');
-    // todo auth
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
@@ -83,8 +82,10 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         this.#idDuplicateTracker.track([model.namespace?getNamespaceFullName(model.namespace):'',direction, qq, zz, ...id].join(), model);
       }
       const idh = hexs(id);
-      // type (r[1-9];w;u),class,name,comment,QQ,ZZ,PBSB,ID
-      const message = [conds+direction, circuit.toLowerCase(), name.toLowerCase(), comment, hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
+      const level = getAuth(program, model);
+      // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields
+      // field: name,part,type,divisor/values,unit,comment
+      const message = [conds+direction, circuit.toLowerCase(), level, name.toLowerCase(), comment, hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
       decls.push([...message, ...(baseFields?[baseFields]:[]), fields].join());
     }
     return this.emitter.result.declaration(name, decls.join('\n'));
@@ -185,17 +186,6 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     }
     return code`${b}`
   }
-  //todo model combination
-  //todo auth
-  modelPropertyLiteral(property: ModelProperty): EmitterOutput<string> {
-    return code`a property named ${property.name} and a type of ${this.emitter.emitType(
-      property.type
-    )}`;
-  }
-
-  modelLiteral(model: Model) {
-    return code`an object literal`;
-  }
 
   #isStdType(type: Type, ownOnly=false) {
     if (ownOnly) {
@@ -229,7 +219,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       const emittedSf = await this.emitter.emitSourceFile(sf);
 
       // emitSourceFile will assert if somehow we have more than one declaration here
-      if (sf.meta.shouldEmit) {
+      if (sf.meta.shouldEmit && emittedSf.contents.length>1) {
         toEmit.push(emittedSf);
       }
     }
@@ -246,8 +236,9 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     const content = sourceFile.globalScope.declarations.map(d => d.value)
     return {
       contents:
-        // '# type (r[1-9];w;u),class,name,comment,QQ,ZZ,PBSB,ID,field,part (m/s),type / templates,divider / values,unit,comment\n'+
-        content.join('\n')+'\n',
+        `type,circuit,level,name,comment,qq,zz,pbsb,id,`
+        +`*field,part,type,divisor/values,unit,comment\n`
+        +content.join('\n')+'\n',
       path: sourceFile.path,
     };
   }
