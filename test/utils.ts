@@ -49,17 +49,29 @@ export async function emitWithDiagnostics(
 
   await emitter.writeOutput();
   const schemas: Record<string, any> = {};
-  const files = await emitter.getProgram().host.readDir("./tsp-output");
+  const files: string[] = [];
+  const fileType = options?.["file-type"] === "csv" ? 'csv'
+  : options?.["file-type"] === "yaml" ? 'yaml' : 'json';
+  const readDirs = async (parent: string = '') => {
+    for (const file of await emitter.getProgram().host.readDir("./tsp-output"+(parent?`/${parent}`:''))) {
+      if (file.endsWith(fileType)) {
+        files.push((parent?`${parent}/`:'')+file);
+      } else {
+        await readDirs((parent?`${parent}/`:'')+file);
+      }
+    }
+  }
+  await readDirs();
 
   for (const file of files) {
     let name = file;
-    if (testOptions.emitNamespace && name.startsWith('test.')) {
+    if (testOptions.emitNamespace && name.startsWith('test/')) {
       name = name.substring(5);
     }
     const sf = await emitter.getProgram().host.readFile(`./tsp-output/${file}`);
-    if (options?.["file-type"] === "csv") {
+    if (fileType === "csv") {
       schemas[name] = sf.text;
-    } else if (options?.["file-type"] === "yaml") {
+    } else if (fileType === "yaml") {
       schemas[name] = parse(sf.text);
     } else {
       schemas[name] = JSON.parse(sf.text);

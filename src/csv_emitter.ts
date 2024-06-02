@@ -1,5 +1,5 @@
-import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
-import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
+import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
+import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type SourceFile} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
 import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
@@ -7,12 +7,20 @@ import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
+const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
 
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
   #sourceFileByPath = new Map<string, SourceFile<any>>();
   // #typeForSourceFile = new Map<SourceFile<any>, JsonSchemaDeclaration>();
   // #refToDecl = new Map<string, Declaration<Record<string, unknown>>>();
+
+  programContext(program: Program): Context {
+    const sourceFile = this.emitter.createSourceFile('');
+    return {
+      scope: sourceFile.globalScope,
+    };
+  }
 
   modelDeclaration(model: Model, name: string): EmitterOutput<string> {
     // const schema = this.#initializeSchema(model, name, {
@@ -32,7 +40,6 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     // }
     const program = this.emitter.getProgram();
     const decls: string[] = [];
-    //todo auto for read/write depending on zz, throw if invalid
     //todo detect invalid in with broadcast
     if (!program.stateSet(StateKeys.id).has(model)) {
       return this.emitter.result.none();
@@ -41,26 +48,47 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     // if (isDeclaredInNamespace(model, main)) {
     //   return this.emitter.result.none();;
     // }
+    // get "file" namespace
+    const fp = fileParent(model.node as Node);
+    let circuit: string = basename(fp.path, extname(fp.path));
+    let nearestZz: number|undefined;
+    for (let n = fp && model.namespace; n; n=n.namespace) {
+      if (n?.name==='Ebus') {
+        break;
+      }
+      if (fileParent(n.node)!==fp) {
+        break;
+      }
+      const zz = getZz(program, n);
+      if (zz) {
+        // topmost namespace with @zz decides the circuit name.
+        // if absent, then the file name is taken
+        circuit = n.name;
+        if (!nearestZz) {
+          // nearest namespace with @zz decides the fallback ZZ
+          nearestZz = zz;
+        }
+      }
+    }
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
       const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
-      const namespace = model.namespace ?? inheritFrom?.namespace;
-      let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? (namespace&&getZz(program, namespace));
+      let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? nearestZz;
       if (zz === 0xfe || isSourceAddr(zz)) {
         // special: broadcast or source as target
         if (passive===undefined) {
+          // auto for write depending on zz unless @passive was set
           write ??= true;
         }
-      } else if (zz===0xaa) {
+      } else if (zz===0xaa) { // explicit unset in child (see decorator handling)
         zz = undefined;
       }
       const direction = write ? (passive ? 'uw' : 'w') : (passive ? 'u' : 'r');
       const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive);
       const fields = this.modelPropertiesRw(model, write&&!passive);
-      const circuit = namespace ? namespace.name : '';
       const comment = getDoc(program, model) ?? getDoc(program, inheritFrom);
-      const qq = getQq(program, model) ?? getQq(program, inheritFrom);
+      const qq = getQq(program, model) ?? getQq(program, inheritFrom); // todo could do same handling as for zz
       //when inheriting id, only one of them may have pbsb, rest of id is concatenated
       const baseId = getId(program, inheritFrom);//todo could allow <2 bytes for inherited or child id when combining
       const modelId = getId(program, model);
@@ -68,7 +96,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       if (id.length<2) {
         //todo throw
       } else {
-        this.#idDuplicateTracker.track([namespace?getNamespaceFullName(namespace):'',direction, qq, zz, ...id].join(), model);
+        this.#idDuplicateTracker.track([model.namespace?getNamespaceFullName(model.namespace):'',direction, qq, zz, ...id].join(), model);
       }
       const idh = hexs(id);
       // type (r[1-9];w;u),class,name,comment,QQ,ZZ,PBSB,ID
@@ -84,10 +112,10 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     const program = this.emitter.getProgram();
     model.properties.forEach(p => {
       if (p.type.kind!=='Scalar') {
-        return;//todo report
+        return;//todo report or combine
       }
       if (p.optional && activeWrite) {
-        // optional fields are omitted for write
+        // optional fields are omitted for active write
         return;
       }
       let res = {} as {name: string, length?: number, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
@@ -245,67 +273,31 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   //   }
   // }
   
-  modelDeclarationContext(model: Model, name: string): Context {
+  modelDeclarationContext(type: Model, modelName: string): Context {
     // if (this.#isStdType(model) && model.name === "object") {
     //   return {};
     // }
-    return this.#newFileScope(model);
-  }
-
-  #getCurrentSourceFile(name?: string) {
-    let scope: Scope<string> = this.emitter.getContext().scope;
-    while (scope && scope.kind !== "sourceFile" && !(name && name===scope.name)) {
-      scope = scope.parentScope;
+    for (let n = type.namespace; n; n=n.namespace) {
+      if (n?.name==='Ebus') { // omit lib models
+        return {};
+      }
     }
-    return (scope as SourceFileScope<string>).sourceFile;
-  }
-  // programContext(program: Program): Context {
-  //   // const base = this.emitter.getOptions().emitterOutputDir;
-  //   // const file = this.#getCurrentSourceFile().path;
-  //   // const relative = getRelativePathFromDirectory(base, file, false);
-  //   // let scope: Scope<string> = this.programContext().scope;
-  //   // while (scope && scope.kind !== "sourceFile") {
-  //   //   console.log(scope.kind)
-  //   //   scope = scope.parentScope;
-  //   // }
-  //   // program.sourceFiles
-  //   // const relative='file';
-  //   // // program.getSourceFileLocationContext()
-  //   // const sf = program.sourceFiles;
-  //   // const c = this.emitter.getContext()
-  //   // const sourceFile = this.emitter.createSourceFile(
-  //   //   `${relative}.${this.#fileExtension()}`
-  //   // );
-
-  //   // sourceFile.meta.shouldEmit = true;
-  //   // sourceFile.meta.bundledRefs = [];
-
-  //   // this.#typeForSourceFile.set(sourceFile, type);
-  //   // return {
-  //   //   scope: sourceFile.globalScope,
-  //   // };
-  //   const scope = this.emitter.createScope({
-  //     program,
-  //   }, 'program');
-  //   return {scope};
-  // }
-  #newFileScope(type: Model) {
     // const program: Program = this.emitter.getProgram();
-    const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
     const fp = fileParent(type.node as Node);
     // const fl = program.getSourceFileLocationContext(fp);
     const nsf = type.namespace&&getNamespaceFullName(type.namespace);
     const root = nsf && nsf.split('.')[0];
     const name = fp?.path && basename(fp.path, extname(fp.path)) || this.declarationName(type) || '';
-    let sourceFile = this.#sourceFileByPath.get(name);
+    const fullname = `${root&&root!==name?root+'/':''}${name}`;
+    let sourceFile = this.#sourceFileByPath.get(fullname);
     if (!sourceFile) {
       sourceFile = this.emitter.createSourceFile(
-        `${root&&root!==name?root+'.':''}${name}.${this.#fileExtension()}`
+        `${fullname}.${this.#fileExtension()}`
       );
       // ((sourceFile.globalScope as SourceFileScope<string>).sourceFile as any).program = program;
       sourceFile.meta.shouldEmit = true;
       sourceFile.meta.bundledRefs = [];
-      this.#sourceFileByPath.set(name, sourceFile);
+      this.#sourceFileByPath.set(fullname, sourceFile);
     }
 
     // this.#typeForSourceFile.set(sourceFile, type);
