@@ -89,13 +89,22 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
     const b = new StringBuilder()
     let first = true
     const program = this.emitter.getProgram();
-    model.properties.forEach(p => {
-      if (p.type.kind!=='Scalar') {
-        return;//todo report or combine
+    const properties = Array.from(model.properties.values());
+    let recursion = 0;
+    for (let idx = 0; idx<properties.length; idx++) {
+      const p = properties[idx];
+      if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
+        if (p.type.kind==='Model' && p.type.properties && recursion<5) { // todo could emit warning if deeper
+          // insert the referenced models properties inplace and go on with those (this is recursive)
+          const append = Array.from(p.type.properties.values());
+          properties.splice(idx+1, 0, ...append);
+          recursion++;
+        }
+        continue;//todo report
       }
       if (p.optional && activeWrite) {
         // optional fields are omitted for active write
-        return;
+        continue;
       }
       let res = {} as {name: string, length?: number, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
       let s: ModelProperty|Scalar = p;
@@ -137,7 +146,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         res.unit ??= getUnit(program, s);
         res.comment ??= getDoc(program, s);
         if (s.kind==='ModelProperty') {
-          s = p.type as Scalar;
+          s = s.type as Scalar|ModelProperty;
         } else {
           if (!s.baseScalar) {
             break;
@@ -146,7 +155,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         }
       } while (true);
       if (!isOwn) {
-        return; // todo throw?
+        continue; // todo throw?
       }
       // field,part (m/s),type / templates,divider / values,unit,comment
       const divisor = res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor)
@@ -168,7 +177,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         b.push(',');
       }
       b.push(field.join());
-    })
+    }
     return code`${b}`
   }
   //todo model combination

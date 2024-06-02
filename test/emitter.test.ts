@@ -252,4 +252,30 @@ describe("emitting models", () => {
       "r,top,foo,,01,08,0001,,x,m,BCD:4,,,,z,,UCH,,,\n"
     );
   });
+  it("resolves properties referencing a model property", async () => {
+    const files = await emit(`
+      @id(1,2)
+      model scanme {
+        id: Ebus.id.id.id;
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "r,main,scanme,,,,0102,,id,,STR:5,,,device id\n"
+    );
+  });
+  it("flattens properties referencing a whole model", async () => {
+    const files = await emit(`
+      @id(1,2)
+      model scanme {
+        /** entry */
+        id: Ebus.id.id;
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      // comment "entry" is hidden intentionally
+      "r,main,scanme,,,,0102,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"
+    );
+  });
 });
