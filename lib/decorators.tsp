@@ -7,6 +7,13 @@ namespace Ebus;
 
 
 /**
+ * Define condition for the whole message.
+ * @param property the referenced model property, or a model in case of existance check or single property only.
+ * @param values the optional alternative values the property needs to match.
+ */
+extern dec cond(target: Namespace|Model, property: ModelProperty|Model, ...values: valueof string[]);
+
+/**
  * Define write direction.
  */
 extern dec write(target: Model);

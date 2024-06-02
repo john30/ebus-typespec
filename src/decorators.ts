@@ -8,6 +8,29 @@ import {StateKeys, reportDiagnostic} from "./lib.js";
 export const namespace = "Ebus";
 
 /**
+ * Implementation of the `@cond` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $cond(context: DecoratorContext, target: Model|Namespace, property: ModelProperty|Model, ...values: string[]) {
+  const prev = context.program.stateMap(StateKeys.cond).get(target)||[];
+  context.program.stateMap(StateKeys.cond).set(target, [...prev, [property, ...values]]);
+}
+
+/**
+ * Accessor for the `@cond` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getConds(program: Program, target: Model|Namespace): [ModelProperty|Model, ...string[]][] {
+  return program.stateMap(StateKeys.cond).get(target);
+}
+
+/**
  * Implementation of the `@write` decorator.
  *
  * @param context Decorator context.

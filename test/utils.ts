@@ -3,7 +3,6 @@ import {createAssetEmitter} from "@typespec/compiler/emitter-framework";
 import {createTestHost, expectDiagnosticEmpty} from "@typespec/compiler/testing";
 import {parse} from "yaml";
 import {EbusdEmitter} from "../src/csv_emitter.js";
-import {getEbusdTypes} from "../src/index.js";
 import {type EbusdEmitterOptions} from "../src/lib.js";
 import {EbusTestLibrary} from "../src/testing/index.js";
 
