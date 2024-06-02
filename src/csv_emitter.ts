@@ -12,8 +12,6 @@ const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScript
 export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
   #sourceFileByPath = new Map<string, SourceFile<any>>();
-  // #typeForSourceFile = new Map<SourceFile<any>, JsonSchemaDeclaration>();
-  // #refToDecl = new Map<string, Declaration<Record<string, unknown>>>();
 
   programContext(program: Program): Context {
     const sourceFile = this.emitter.createSourceFile('');
@@ -23,31 +21,12 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   }
 
   modelDeclaration(model: Model, name: string): EmitterOutput<string> {
-    // const schema = this.#initializeSchema(model, name, {
-    //   type: "object",
-    //   properties: this.emitter.emitModelProperties(model),
-    //   required: this.#requiredModelProperties(model),
-    // });
-
-    // if (model.baseModel) {
-    //   const allOf = new ArrayBuilder();
-    //   allOf.push(this.emitter.emitTypeReference(model.baseModel));
-    //   schema.set("allOf", allOf);
-    // }
-
-    // if (model.indexer) {
-    //   schema.set("additionalProperties", this.emitter.emitTypeReference(model.indexer.value));
-    // }
     const program = this.emitter.getProgram();
     const decls: string[] = [];
     //todo detect invalid in with broadcast
     if (!program.stateSet(StateKeys.id).has(model)) {
       return this.emitter.result.none();
     }
-    // const main = program.resolveTypeReference("Ebus")[0] as Namespace;
-    // if (isDeclaredInNamespace(model, main)) {
-    //   return this.emitter.result.none();;
-    // }
     // get "file" namespace
     const fp = fileParent(model.node as Node);
     let circuit: string = basename(fp.path, extname(fp.path));
@@ -89,7 +68,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       const fields = this.modelPropertiesRw(model, write&&!passive);
       const comment = getDoc(program, model) ?? getDoc(program, inheritFrom);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom); // todo could do same handling as for zz
-      //when inheriting id, only one of them may have pbsb, rest of id is concatenated
+      // when inheriting id, only one of them may have pbsb, rest of id is concatenated
       const baseId = getId(program, inheritFrom);//todo could allow <2 bytes for inherited or child id when combining
       const modelId = getId(program, model);
       const id = [...(baseId||[]), ...(modelId||[])];
@@ -273,34 +252,30 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
   //   }
   // }
   
-  modelDeclarationContext(type: Model, modelName: string): Context {
+  modelDeclarationContext(model: Model, modelName: string): Context {
     // if (this.#isStdType(model) && model.name === "object") {
     //   return {};
     // }
-    for (let n = type.namespace; n; n=n.namespace) {
+    for (let n = model.namespace; n; n=n.namespace) {
       if (n?.name==='Ebus') { // omit lib models
         return {};
       }
     }
-    // const program: Program = this.emitter.getProgram();
-    const fp = fileParent(type.node as Node);
-    // const fl = program.getSourceFileLocationContext(fp);
-    const nsf = type.namespace&&getNamespaceFullName(type.namespace);
+    const fp = fileParent(model.node as Node);
+    const nsf = model.namespace&&getNamespaceFullName(model.namespace);
     const root = nsf && nsf.split('.')[0];
-    const name = fp?.path && basename(fp.path, extname(fp.path)) || this.declarationName(type) || '';
+    const name = fp?.path && basename(fp.path, extname(fp.path)) || this.declarationName(model) || '';
     const fullname = `${root&&root!==name?root+'/':''}${name}`;
     let sourceFile = this.#sourceFileByPath.get(fullname);
     if (!sourceFile) {
       sourceFile = this.emitter.createSourceFile(
         `${fullname}.${this.#fileExtension()}`
       );
-      // ((sourceFile.globalScope as SourceFileScope<string>).sourceFile as any).program = program;
       sourceFile.meta.shouldEmit = true;
       sourceFile.meta.bundledRefs = [];
       this.#sourceFileByPath.set(fullname, sourceFile);
     }
 
-    // this.#typeForSourceFile.set(sourceFile, type);
     return {
       scope: sourceFile.globalScope,
     };
