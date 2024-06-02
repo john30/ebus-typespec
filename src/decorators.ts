@@ -15,7 +15,10 @@ export const namespace = "Ebus";
  * @param value the value to set.
  */
 export function $cond(context: DecoratorContext, target: Model|Namespace, property: ModelProperty|Model, ...values: string[]) {
-  const prev = context.program.stateMap(StateKeys.cond).get(target)||[];
+  const prev = (context.program.stateMap(StateKeys.cond).get(target)||[]) as [ModelProperty|Model, ...string[]][];
+  if (target.kind==='Namespace' && prev.some(([p]) => p.name===property.name)) {
+    return;
+  }
   context.program.stateMap(StateKeys.cond).set(target, [...prev, [property, ...values]]);
 }
 

@@ -278,4 +278,15 @@ describe("emitting models", () => {
       "r,main,scanme,,,,0102,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"
     );
   });
+  it("works with conditions", async () => {
+    const files = await emit(`
+      @id(0,1)
+      @cond(Ebus.id.id, "1", "2")
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file,
+      "[id=1;2]r,main,foo,,,,0001,,\n"
+    );
+  });
 });

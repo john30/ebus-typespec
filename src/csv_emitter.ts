@@ -2,7 +2,7 @@ import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamesp
 import {StringBuilder, TypeEmitter, code, type Context, type EmittedSourceFile, type EmitterOutput, type SourceFile} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
-import {getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {getAuth, getConds, getDivisor, getId, getInherit, getMaxBits, getPassive, getOut, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
@@ -49,6 +49,11 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
         }
       }
     }
+    const conds = (getConds(program, model)||model.namespace&&getConds(program, model.namespace)||[]).map(c => {
+      const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
+      return `[${c[0].name+values}]`;
+    }).join('');
+    // todo auth
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
@@ -79,7 +84,7 @@ export class EbusdEmitter extends TypeEmitter<string, EbusdEmitterOptions> {
       }
       const idh = hexs(id);
       // type (r[1-9];w;u),class,name,comment,QQ,ZZ,PBSB,ID
-      const message = [direction, circuit.toLowerCase(), name.toLowerCase(), comment, hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
+      const message = [conds+direction, circuit.toLowerCase(), name.toLowerCase(), comment, hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
       decls.push([...message, ...(baseFields?[baseFields]:[]), fields].join());
     }
     return this.emitter.result.declaration(name, decls.join('\n'));
