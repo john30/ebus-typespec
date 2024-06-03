@@ -281,15 +281,45 @@ describe("emitting models", () => {
       "r,main,,scanme,,,,0102,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"
     );
   });
-  it("works with conditions", async () => {
+  it("works with scan condition", async () => {
     const files = await emit(`
       @id(0,1)
-      @cond(Ebus.id.id, "1", "2")
+      @cond(Ebus.id.id.sw, ">1")
       model Foo {}
     `);
     const file = files["main.csv"];
     assert.strictEqual(file, headerLine+
-      "[id=1;2]r,main,,foo,,,,0001,,\n"
+      "*[sw],scan,,,SW\n"+
+      "[sw>1]r,main,,foo,,,,0001,,\n"
+    );
+  });
+  it("works with scan conditions", async () => {
+    const files = await emit(`
+      @id(0,1)
+      @cond(Ebus.id.id.sw, ">1")
+      @cond(Ebus.id.id.hw, "0700", "0800")
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file, headerLine+
+      "*[hw],scan,,,HW\n"+
+      "*[sw],scan,,,SW\n"+
+      "[hw=0700;0800][sw>1]r,main,,foo,,,,0001,,\n"
+    );
+  });
+  it("works with own condition", async () => {
+    const files = await emit(`
+      @id(0,2)
+      model Bar {disc: num.UCH}
+      @id(0,1)
+      @cond(Bar.disc, "1")
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file, headerLine+
+      "*[disc],bar,,,disc\n"+
+      "r,main,,bar,,,,0002,,disc,,UCH,,,\n"+
+      "[disc=1]r,main,,foo,,,,0001,,\n"
     );
   });
   it("works with auth level", async () => {

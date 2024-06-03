@@ -1,5 +1,5 @@
 import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
-import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type SourceFile} from "@typespec/compiler/emitter-framework";
+import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
 import {getAuth, getConds, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
@@ -49,9 +49,22 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }
       }
     }
+    const sf = this.#getCurrentSourceFile();
+    const [idModel] = program.resolveTypeReference('Ebus.id.id');
     const conds = (getConds(program, model)||model.namespace&&getConds(program, model.namespace)||[]).map(c => {
       const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
-      return `[${c[0].name+values}]`;
+      const ref = c[0];
+      let propName = ref.kind==='ModelProperty' ? ref.name : '';
+      const model = propName ? (ref as ModelProperty).model : ref as Model;
+      let modelName = model?.name;
+      if (idModel && model===idModel) {
+        modelName = 'scan';
+        propName = propName.toUpperCase(); // todo support lowercase in ebusd as well
+      } else {
+        modelName = (modelName||'').toLowerCase();
+      }
+      sf.imports.set(ref.name, [`[${ref.name}]`,modelName!,'','',propName]);
+      return `[${ref.name+values}]`;
     }).join('');
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
@@ -234,15 +247,26 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
 
   sourceFile(sourceFile: SourceFile<string>): EmittedSourceFile {
     const content = sourceFile.globalScope.declarations.map(d => d.value)
+    const b = new StringBuilder();
+    sourceFile.imports.forEach(i => b.push(`*${i.join()}\n`));
     return {
       contents:
         `type,circuit,level,name,comment,qq,zz,pbsb,id,`
         +`*field,part,type,divisor/values,unit,comment\n`
+        +b.reduce()
         +content.join('\n')+'\n',
       path: sourceFile.path,
     };
   }
 
+
+  #getCurrentSourceFile() {
+    let scope: Scope<object> = this.emitter.getContext().scope;
+    while (scope && scope.kind !== "sourceFile") {
+      scope = scope.parentScope;
+    }
+    return scope.sourceFile;
+  }
 
   // #serializeSourceFileContent(content: string[]): string {
   //   if (this.emitter.getOptions()["file-type"] === "csv") {
