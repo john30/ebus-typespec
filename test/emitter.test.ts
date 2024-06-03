@@ -5,6 +5,7 @@ import {emit, emitWithDiagnostics} from "./utils.js";
 
 const headerLine = `type,circuit,level,name,comment,qq,zz,pbsb,id,`
 +`*name,part,type,divisor/values,unit,comment\n`;
+const stripHeader = (s?: string) => s && s.startsWith(headerLine) ? s.substring(headerLine.length) : s;
 
 describe("emitting models", () => {
   it("works", async () => {
@@ -24,7 +25,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,a foo,01,08,0001,02,x,m,BCD:4,10,y,an x,z,,UCH,,,\n"
     );
   });
@@ -42,7 +43,7 @@ describe("emitting models", () => {
       }
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo', 'test.Bar']});
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0001,,x,,UCH,,,\n"+
       "r,main,,bar,,,,0002,01,y,,UCH,,,,z,,UCH,,,\n"
     );
@@ -59,7 +60,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0001,,x,,UCH,,°C,temperature\n"
     );
   });
@@ -82,7 +83,7 @@ describe("emitting models", () => {
       }
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x\n"
     );
   });
@@ -104,7 +105,7 @@ describe("emitting models", () => {
       }
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0001,,x,,UCH,,,,y,,UCH,,,\n"+
       "w,main,,foo,,,,0001,,x,,UCH,,,\n"
     );
@@ -124,7 +125,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0001,,m,,UCH,1=One;2=Two,,\n"
     );
   });
@@ -145,7 +146,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0001,,b0,,BI0,,,,b1,,BI1,,,,b2,,BI2,,,,b3,,BI3,,,,b4,,BI4,,,,b5,,BI5,,,,b6,,BI6,,,,b7,,BI7,,,,n,,BI0:7,,,\n"
     );
   });
@@ -162,7 +163,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:10,,,\n"
     );
   });
@@ -196,7 +197,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0102,,\n"+ //todo could be limited to those having a condition only
       "r,main,,foo,,,,0102,,\n"
     );
@@ -216,7 +217,7 @@ describe("emitting models", () => {
       model id is Ebus.id.id;
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,id,identification,,,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
       "u,main,,id,identification,,fe,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
       "w,main,,id,identification,,fe,0704,,\n"
@@ -240,7 +241,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,foo,,,,0102,,onoff,,UCH,0=off;1=on,,\n"
     );
   });
@@ -271,7 +272,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,top,,z,,,15,0002,03,t,,UCH,,,\n"+
       "r,top,,y,,,15,0002,,\n"+
       "r,top,,foo,,01,08,0001,,x,m,BCD:4,,,,z,,UCH,,,\n"
@@ -285,7 +286,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,scanme,,,,0102,,id,,STR:5,,,device id\n"
     );
   });
@@ -298,7 +299,7 @@ describe("emitting models", () => {
       }
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,,scanme,,,,0102,,mf,,manufacturer,,,entry,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"
     );
   });
@@ -309,7 +310,7 @@ describe("emitting models", () => {
       model Foo {}
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "*[sw],scan,,,SW\n"+
       "[sw>1]r,main,,foo,,,,0001,,\n"
     );
@@ -322,7 +323,7 @@ describe("emitting models", () => {
       model Foo {}
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "*[hw],scan,,,HW\n"+
       "*[sw],scan,,,SW\n"+
       "[hw=0700;0800][sw>1]r,main,,foo,,,,0001,,\n"
@@ -337,7 +338,7 @@ describe("emitting models", () => {
       model Foo {}
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "*[disc],bar,,,disc\n"+
       "r,main,,bar,,,,0002,,disc,,UCH,,,\n"+
       "[disc=1]r,main,,foo,,,,0001,,\n"
@@ -350,8 +351,38 @@ describe("emitting models", () => {
       model Foo {}
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+
+    assert.strictEqual(stripHeader(file),
       "r,main,high,foo,,,,0001,,\n"
+    );
+  });
+  it("combines divisor/factor", async () => {
+    const files = await emit(`
+      @divisor(10)
+      scalar div10 extends num.D2C;
+      @factor(10)
+      scalar mul10 extends num.D2C;
+      @id(0,1)
+      model Foo {
+        p: num.D2C,
+        q: div10,
+        r: mul10,
+      }
+      @id(0,2)
+      model Bar {
+        @divisor(5)
+        s: mul10,
+      }
+      @id(0,3)
+      model Bar2 {
+        @divisor(20)
+        t: mul10,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,main,,foo,,,,0001,,p,,D2C,,,,q,,D2C,10,,,r,,D2C,-10,,\n"+
+      "r,main,,bar,,,,0002,,s,,D2C,-2,,\n"+
+      "r,main,,bar2,,,,0003,,t,,D2C,2,,\n"
     );
   });
 });
