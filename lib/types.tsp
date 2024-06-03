@@ -112,10 +112,13 @@ namespace str {
   @maxLength(31)
   scalar STR extends string
   @encode("nullterm") // todo
-  scalar NTS extends STR
-  scalar IGN extends STR // todo bytes would be more logical, but have not length limit
+  @maxLength(31)
+  scalar NTS extends string
+  @maxLength(31)
+  scalar IGN extends string // todo bytes would be more logical, but have not length limit
   @internal.hex
-  scalar HEX extends STR
+  @maxLength(31)
+  scalar HEX extends string
 }
 
 /** The known date/time base types. */
