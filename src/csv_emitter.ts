@@ -52,20 +52,23 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     }
     const sf = this.#getCurrentSourceFile();
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
-    const conds = (getConds(program, model)||model.namespace&&getConds(program, model.namespace)||[]).map(c => {
+    const conds = (getConds(program, model)||(model.namespace&&getConds(program, model.namespace))||[]).map(c => {
       const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
       const ref = c[0];
       let propName = ref.kind==='ModelProperty' ? ref.name : '';
       const model = propName ? (ref as ModelProperty).model : ref as Model;
       let modelName = model?.name;
+      let condName = (modelName+(propName==='value'?'':'_'+propName)).toLowerCase();
+      let circuitName = '';
       if (idModel && model===idModel) {
-        modelName = 'scan';
+        modelName = '';
+        circuitName = 'scan';
         propName = propName.toUpperCase(); // todo support lowercase in ebusd as well
       } else {
         modelName = (modelName||'').toLowerCase();
       }
-      sf.imports.set(ref.name, [`[${ref.name}]`,modelName!,'','',propName]);
-      return `[${ref.name+values}]`;
+      sf.imports.set(condName, [`[${condName}]`,circuitName,'',modelName!,'',propName]);
+      return `[${condName+values}]`;
     }).join('');
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined

@@ -311,8 +311,8 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[sw],scan,,,SW\n"+
-      "[sw>1]r,main,,foo,,,,0001,,\n"
+      "*[id_sw],scan,,,,SW\n"+
+      "[id_sw>1]r,main,,foo,,,,0001,,\n"
     );
   });
   it("works with scan conditions", async () => {
@@ -324,9 +324,9 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[hw],scan,,,HW\n"+
-      "*[sw],scan,,,SW\n"+
-      "[hw=0700;0800][sw>1]r,main,,foo,,,,0001,,\n"
+      "*[id_hw],scan,,,,HW\n"+
+      "*[id_sw],scan,,,,SW\n"+
+      "[id_hw=0700;0800][id_sw>1]r,main,,foo,,,,0001,,\n"
     );
   });
   it("works with own condition", async () => {
@@ -339,9 +339,9 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[disc],bar,,,disc\n"+
+      "*[bar_disc],,,bar,,disc\n"+
       "r,main,,bar,,,,0002,,disc,,UCH,,,\n"+
-      "[disc=1]r,main,,foo,,,,0001,,\n"
+      "[bar_disc=1]r,main,,foo,,,,0001,,\n"
     );
   });
   it("works with auth level", async () => {
