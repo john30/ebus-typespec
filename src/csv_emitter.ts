@@ -8,6 +8,7 @@ import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
 const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
+const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s}"` : s;
 
 export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
@@ -98,7 +99,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const level = getAuth(program, model);
       // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields
       // field: name,part,type,divisor/values,unit,comment
-      const message = [conds+direction, circuit.toLowerCase(), level, name.toLowerCase(), comment, hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
+      const message = [conds+direction, circuit.toLowerCase(), level, name.toLowerCase(), escape(comment), hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
       decls.push([...message, ...(baseFields?[baseFields]:[]), fields].join());
     }
     return this.emitter.result.declaration(name, decls.join('\n'));
@@ -110,6 +111,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const program = this.emitter.getProgram();
     const properties = Array.from(model.properties.values());
     let recursion = 0;
+    let commentProp: ModelProperty|undefined;
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
@@ -118,19 +120,28 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           const append = Array.from(p.type.properties.values());
           properties.splice(idx+1, 0, ...append);
           recursion++;
+          // extract the comment only from reference:
+          commentProp = p;
+        } else {
+          commentProp = undefined;
         }
         continue;//todo report
       }
       if (p.optional && activeWrite) {
         // optional fields are omitted for active write
+        commentProp = undefined;
         continue;
       }
-      let res = {} as {name: string, length?: number, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
+      let res = {} as {pname: string, name: string, length?: number, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
       let s: ModelProperty|Scalar = p;
       let isOwn = false;
       do {
         res = {...res, name: s.name};
-        if (s.kind!=='ModelProperty' && this.#isStdType(s, true)) {
+        if (s.kind==='ModelProperty') {
+          if (!res.pname) {
+            res.pname = s.name;
+          }
+        } else if (this.#isStdType(s, true)) {
           isOwn = true;
           // set length depending on difference to max in base type
           if (res.length!==undefined) {
@@ -163,6 +174,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           }
         }
         res.unit ??= getUnit(program, s);
+        if (commentProp) {
+          res.comment ??= getDoc(program, commentProp);
+          commentProp = undefined;
+        }
         res.comment ??= getDoc(program, s);
         if (s.kind==='ModelProperty') {
           s = s.type as Scalar|ModelProperty;
@@ -173,6 +188,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           s = s.baseScalar;
         }
       } while (true);
+      commentProp = undefined;
       if (!isOwn) {
         continue; // todo throw?
       }
@@ -189,7 +205,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       } else if (res.length) {
         typ += ':'+res.length;
       }
-      const field = [p.name,res.dir,typ,divisor,res.unit,res.comment];
+      const field = [res.pname,res.dir,typ,divisor,res.unit,escape(res.comment)];
       if (first) {
         first = false;
       } else {
@@ -247,12 +263,16 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
 
   sourceFile(sourceFile: SourceFile<string>): EmittedSourceFile {
     const content = sourceFile.globalScope.declarations.map(d => d.value)
+    if (!content.length) {
+      sourceFile.meta.shouldEmit = false;
+      return {contents: '', path: sourceFile.path};
+    }
     const b = new StringBuilder();
     sourceFile.imports.forEach(i => b.push(`*${i.join()}\n`));
     return {
       contents:
         `type,circuit,level,name,comment,qq,zz,pbsb,id,`
-        +`*field,part,type,divisor/values,unit,comment\n`
+        +`*name,part,type,divisor/values,unit,comment\n`
         +b.reduce()
         +content.join('\n')+'\n',
       path: sourceFile.path,

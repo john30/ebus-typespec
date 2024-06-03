@@ -4,7 +4,7 @@ import {describe, it} from "node:test";
 import {emit, emitWithDiagnostics} from "./utils.js";
 
 const headerLine = `type,circuit,level,name,comment,qq,zz,pbsb,id,`
-+`*field,part,type,divisor/values,unit,comment\n`;
++`*name,part,type,divisor/values,unit,comment\n`;
 
 describe("emitting models", () => {
   it("works", async () => {
@@ -209,7 +209,7 @@ describe("emitting models", () => {
       model w {}
     `);
     const file = files["main.csv"];
-    assert.strictEqual(file, headerLine+ '\n');
+    assert.strictEqual(file, undefined); // not emitted as empty
   });
   it("does not shorten type names", async () => {
     const files = await emit(`
@@ -220,6 +220,28 @@ describe("emitting models", () => {
       "r,main,,id,identification,,,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
       "u,main,,id,identification,,fe,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
       "w,main,,id,identification,,fe,0704,,\n"
+    );
+  });
+  it("keeps property name", async () => {
+    const files = await emit(`
+      namespace manuf {
+        @values(values_onoff)
+        scalar onoff extends num.UCH;
+        enum values_onoff {
+          off: 0,
+          on: 1,
+        }
+        namespace manufcircuit {
+          @id(1,2)
+          model Foo {
+            onoff: onoff,
+          }
+        }
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(file, headerLine+
+      "r,main,,foo,,,,0102,,onoff,,UCH,0=off;1=on,,\n"
     );
   });
   it("inherits namespace with zz for circuit name and nearest zz", async () => {
@@ -272,13 +294,12 @@ describe("emitting models", () => {
       @id(1,2)
       model scanme {
         /** entry */
-        id: Ebus.id.id;
+        ref: Ebus.id.id;
       }
     `);
     const file = files["main.csv"];
     assert.strictEqual(file, headerLine+
-      // comment "entry" is hidden intentionally
-      "r,main,,scanme,,,,0102,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"
+      "r,main,,scanme,,,,0102,,mf,,manufacturer,,,entry,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"
     );
   });
   it("works with scan condition", async () => {
