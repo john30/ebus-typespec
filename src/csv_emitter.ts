@@ -96,7 +96,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         this.#idDuplicateTracker.track([model.namespace?getNamespaceFullName(model.namespace):'',direction, qq, zz, ...id].join(), model);
       }
       const idh = hexs(id);
-      const level = getAuth(program, model);
+      const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
       // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields
       // field: name,part,type,divisor/values,unit,comment
       const message = [conds+direction, circuit.toLowerCase(), level, name.toLowerCase(), escape(comment), hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
