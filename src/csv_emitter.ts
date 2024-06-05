@@ -9,6 +9,12 @@ const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).subs
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
 const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
 const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s}"` : s;
+const camelCase = (s?: string) => s ? s.substring(0,1).toLowerCase()+s.substring(1) : s;
+const normName: Record<'circuit'|'message'|'field', (s?: string) => string|undefined> = {
+  circuit: (s) => s ? s.toLowerCase() : s,
+  message: (s) => s, // or camelCase
+  field: (s) => s ? s.toLowerCase() : s,
+}
 
 export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
@@ -102,7 +108,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
       // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields
       // field: name,part,type,divisor/values,unit,comment
-      const message = [conds+direction, circuit.toLowerCase(), level, name.toLowerCase(), escape(comment), hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
+      const message = [conds+direction, normName.circuit(circuit), level, normName.message(name), escape(comment), hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
       decls.push([...message, ...(baseFields?[baseFields]:[]), fields].join());
     }
     return this.emitter.result.declaration(name, decls.join('\n'));
@@ -208,7 +214,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       } else if (res.length) {
         typ += ':'+res.length;
       }
-      const field = [res.pname,res.dir,typ,divisor,res.unit,escape(res.comment)];
+      const field = [normName.field(res.pname),res.dir,typ,divisor,res.unit,escape(res.comment)];
       if (first) {
         first = false;
       } else {
