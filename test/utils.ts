@@ -6,11 +6,12 @@ import {EbusdEmitter} from "../src/csv_emitter.js";
 import {type EbusdEmitterOptions} from "../src/lib.js";
 import {EbusTestLibrary} from "../src/testing/index.js";
 
-export async function getHostForTspFile(contents: string) {
+export async function getHostForTspFile(contents: string, extraSpecFiles?: [string, string][]) {
   const host = await createTestHost({
     libraries: [EbusTestLibrary],
   });
   host.addTypeSpecFile("main.tsp", contents);
+  extraSpecFiles?.forEach(([name, content]) => host.addTypeSpecFile(name, content));
   await host.compile("main.tsp", {
     noEmit: false,
     outputDir: "tsp-output",
@@ -18,19 +19,26 @@ export async function getHostForTspFile(contents: string) {
   return host;
 }
 
+export type TestOptions = {
+  emitNamespace?: boolean,
+  emitTypes?: string[],
+  extraSpecFiles?: [string, string][],
+};
+
 export async function emitWithDiagnostics(
   code: string,
   options: EbusdEmitterOptions = {},
-  testOptions: { emitNamespace?: boolean; emitTypes?: string[] } = { emitNamespace: true }
+  testOptions: TestOptions = { emitNamespace: true }
 ): Promise<[Record<string, any>, readonly Diagnostic[]]> {
   if (!options["file-type"]) {
     options["file-type"] = "csv";
   }
 
-  code = testOptions.emitNamespace
+  code = (testOptions.extraSpecFiles||[]).map(([name]) => `import "./${name}"; `).join('')
+  + (testOptions.emitNamespace
     ? `import "ebus"; using Ebus; namespace test; ${code}`
-    : `import "ebus"; using Ebus; ${code}`;
-  const host = await getHostForTspFile(code);
+    : `import "ebus"; using Ebus; ${code}`);
+  const host = await getHostForTspFile(code, testOptions.extraSpecFiles);
   const emitter = createAssetEmitter(
     host.program,
     EbusdEmitter,
@@ -54,7 +62,7 @@ export async function emitWithDiagnostics(
   : options?.["file-type"] === "yaml" ? 'yaml' : 'json';
   const readDirs = async (parent: string = '') => {
     for (const file of await emitter.getProgram().host.readDir("./tsp-output"+(parent?`/${parent}`:''))) {
-      if (file.endsWith(fileType)) {
+      if (file.endsWith(fileType) || file.endsWith('.inc')) {
         files.push((parent?`${parent}/`:'')+file);
       } else {
         await readDirs((parent?`${parent}/`:'')+file);
@@ -84,7 +92,7 @@ export async function emitWithDiagnostics(
 export async function emit(
   code: string,
   options: EbusdEmitterOptions = {},
-  testOptions: { emitNamespace?: boolean; emitTypes?: string[] } = { emitNamespace: true }
+  testOptions: TestOptions = { emitNamespace: true }
 ) {
   const [schemas, diagnostics] = await emitWithDiagnostics(code, options, testOptions);
   expectDiagnosticEmpty(diagnostics);

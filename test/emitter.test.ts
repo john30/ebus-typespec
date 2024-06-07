@@ -385,4 +385,37 @@ describe("emitting models", () => {
       "r,main,,Bar2,,,,0003,,t,,D2C,2,,\n"
     );
   });
+  it("includes imported namespace models", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      namespace importfile_inc;
+      @id(0,1)
+      model Foo {
+        uch: num.UCH,
+      }
+    `;
+    const files = await emit(`
+      @id(0,2)
+      model Bar {
+      }
+      /** included stuff */
+      union _includes {
+        /** included file */
+        importfile_inc,
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [['importfile_inc.tsp', importTsp]],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,main,,Bar,,,,0002,,\n"+
+      "# included stuff\n"+
+      "!include,importfile.inc,,,included file\n"
+      //todo add option to not emit .inc files
+      // "r,main,,Foo,,,,0001,,uch,,UCH,,,\n"
+      // 'r,importfile,,Foo,,,,0001,,uch,,UCH,,,\n
+    );
+    assert.strictEqual(stripHeader(files["importfile.inc"]),
+      "r,,,Foo,,,,0001,,uch,,UCH,,,\n"
+    );
+  });
 });

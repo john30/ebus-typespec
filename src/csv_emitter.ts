@@ -1,4 +1,4 @@
-import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode} from "@typespec/compiler";
+import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
 import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
@@ -56,7 +56,11 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }
       }
     }
-    const sf = this.#getCurrentSourceFile();
+    const file = this.#getCurrentSourceFile().path;
+    if (extname(file)==='.inc' && circuit===basename(file, '.inc')+'_inc') {
+      circuit = ''; // leave circuit blank in include files unless the circuit name was set explicitly
+    }
+    const sf = this.#getCurrentSourceFile();//todo this needs to be combined into the main output csv file
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
     const conds = (getConds(program, model)||(model.namespace&&getConds(program, model.namespace))||[]).map(c => {
       const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
@@ -225,6 +229,34 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return code`${b}`
   }
 
+  unionDeclaration(union: Union, name: string): EmitterOutput<string> {
+    if (name!=='_includes') {
+      return this.emitter.result.none();
+    }
+    const program = this.emitter.getProgram();
+    const decls: string[] = [];
+    let comment = getDoc(program, union);
+    if (comment) {
+      decls.push(`# ${comment}`);
+    }
+    union.variants.forEach(uv => {
+      if (uv.type.kind!=='Namespace') {
+        return;
+      }
+      const fp = fileParent(uv.type.node as Node);
+      let name = basename(fp.path, extname(fp.path))
+      if (name.endsWith('_inc')) {
+        name = name.substring(0, name.length-4)+'.inc';
+      } else {
+        name += '.csv';
+      }
+      comment = getDoc(program, uv);
+      const incl = ['!include', name, '', '', escape(comment)];
+      decls.push(incl.join());
+    });
+    return this.emitter.result.declaration(name, decls.join('\n'));
+  }
+
   #isStdType(type: Type, ownOnly=false) {
     if (ownOnly) {
       const g = this.emitter.getProgram().getGlobalNamespaceType();
@@ -309,25 +341,41 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   //     });
   //   }
   // }
-  
+
+  unionDeclarationContext(union: Union): Context {
+    return this.#mkContext(union.node, union.namespace);
+  }
   modelDeclarationContext(model: Model, modelName: string): Context {
+    return this.#mkContext(model.node as Node, model.namespace, model);
+  }
+
+  #mkContext(node: Node, namespace?: Namespace, typ?: Model): Context {
     // if (this.#isStdType(model) && model.name === "object") {
     //   return {};
     // }
-    for (let n = model.namespace; n; n=n.namespace) {
+    for (let n = namespace; n; n=n.namespace) {
       if (n?.name==='Ebus') { // omit lib models
         return {};
       }
     }
-    const fp = fileParent(model.node as Node);
-    const nsf = model.namespace&&getNamespaceFullName(model.namespace);
-    const root = nsf && nsf.split('.')[0];
-    const name = fp?.path && basename(fp.path, extname(fp.path)) || this.declarationName(model) || '';
+    const nsf = namespace&&getNamespaceFullName(namespace);
+    let root = nsf && nsf.split('.')[0];
+    let ext = this.#fileExtension();
+    const fp = fileParent(node);
+    let fpName = fp?.path && basename(fp.path, extname(fp.path));
+    if (fpName?.endsWith('_inc')) {
+      if (root===fpName) {
+        root = '';
+      }
+      ext = 'inc';
+      fpName = fpName.substring(0, fpName.length-4);
+    }
+    const name = fpName || (typ&&this.declarationName(typ)) || '';
     const fullname = `${root&&root!==name?root+'/':''}${name}`;
     let sourceFile = this.#sourceFileByPath.get(fullname);
     if (!sourceFile) {
       sourceFile = this.emitter.createSourceFile(
-        `${fullname}.${this.#fileExtension()}`
+        `${fullname}.${ext}`
       );
       sourceFile.meta.shouldEmit = true;
       sourceFile.meta.bundledRefs = [];
