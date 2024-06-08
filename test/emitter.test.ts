@@ -548,4 +548,98 @@ describe("emitting models", () => {
       "r,,,Foo,,,,0001,,uch,,UCH,,,"
     );
   });
+  it("emit diagnostic on invalid type", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      @id(1,0)
+      model m0 {
+        m: uint8
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-type",
+        message: `Invalid type numeric with name "m".`,
+      },
+    ]);
+  });
+  it("emit diagnostic on too deep model", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      model m0 {
+        m: num.UCH
+      }
+      model m1 {
+        m: m0
+      }
+      model m2 {
+        m: m1
+      }
+      model m3 {
+        m: m2
+      }
+      model m4 {
+        m: m3
+      }
+      model m5 {
+        m: m4
+      }
+      @id(1,0)
+      model m6 {
+        m: m5
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-inheritance",
+        message: `The inheritance is too deep.`,
+      },
+    ]);
+  });
+  it("emit diagnostic on property recursion", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      @id(1,0)
+      model m0 {
+        m: m1
+      }
+      model m1 {
+        m: m0
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-inheritance",
+        message: `The inheritance is too deep.`,
+      },
+    ]);
+  });
+  it("emit diagnostic on invalid @in with broadcast", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      @id(1,0)
+      @zz(0xfe)
+      model m {
+        @in
+        m: num.UCH
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-in",
+        message: `Invalid @in with broadcast target.`,
+      },
+    ]);
+  });
+  it("emit diagnostic on invalid length", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      @id(1,0)
+      model m {
+        @maxLength(33)
+        m: str.STR
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-length",
+        message: `Invalid @maxLength exceeding 31.`,
+      },
+    ]);
+  });
 });

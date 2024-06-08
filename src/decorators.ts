@@ -317,6 +317,13 @@ export function getHex(program: Program, target: Scalar): boolean {
  * @param value the value to set.
  */
 export function $maxBits(context: DecoratorContext, target: Scalar, value: number) {
+  if (value<=0 || value>7) {
+    reportDiagnostic(context.program, {
+      code: "banned-length",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'maxBits', value: '7' },
+    });
+  }
   context.program.stateMap(StateKeys.maxBits).set(target, value);
 }
 

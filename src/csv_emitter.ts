@@ -49,7 +49,6 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   modelDeclaration(model: Model, name: string): EmitterOutput<string> {
     const program = this.emitter.getProgram();
     const decls: string[] = [];
-    //todo detect invalid in with broadcast
     const context = this.emitter.getContext();
     if (!program.stateSet(StateKeys.id).has(model) || context.exclude) {
       return this.emitter.result.none();
@@ -60,7 +59,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     for (const frame of [model, context.referencedBy as Union]) {
       if (!frame) continue;
       // get "file" namespace
-      const fp = fileParent(frame.node as Node); // todo also includes
+      const fp = fileParent(frame.node as Node);
       for (let n = fp && frame.namespace; n; n=n.namespace) {
         if (n?.name==='Ebus') {
           break;
@@ -100,15 +99,18 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
     const conds = (context.conds||'')+mapConds(idModel, sf, getConditions(program, model)||(model.namespace&&getConditions(program, model.namespace))||[]);
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
-      //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
       const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
       let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? nearestZz;
+      let broadcastTarget = false;
       if (zz === 0xfe || isSourceAddr(zz)) {
         // special: broadcast or source as target
         if (passive===undefined) {
           // auto for write depending on zz unless @passive was set
           write ??= true;
+        }
+        if (zz === 0xfe) {
+          broadcastTarget = true;
         }
       } else if (zz===0xaa) { // explicit unset in child (see decorator handling)
         zz = undefined;
@@ -118,16 +120,20 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       if (!sf.imports.has(direction)) {
         sf.imports.set(direction, [direction]);
       }
-      const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive);
-      const fields = this.modelPropertiesRw(model, write&&!passive);
+      const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive, broadcastTarget);
+      const fields = this.modelPropertiesRw(model, write&&!passive, broadcastTarget);
       const comment = getDoc(program, model) ?? getDoc(program, inheritFrom);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom); // todo could do same handling as for zz
       // when inheriting id, only one of them may have pbsb, rest of id is concatenated
-      const baseId = getId(program, inheritFrom);//todo could allow <2 bytes for inherited or child id when combining
+      const baseId = getId(program, inheritFrom);
       const modelId = getId(program, model);
       const id = [...(baseId||[]), ...(modelId||[])];
       if (id.length<2) {
-        //todo throw
+        reportDiagnostic(program, {
+          code: "short-id",
+          format: { id: id.join() },
+          target: model,
+        }); // impossible by decorators anyway
       } else {
         this.#idDuplicateTracker.track([sf?.path||'', conds, direction, qq, zz, ...id].join(), model);
       }
@@ -141,7 +147,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return this.emitter.result.declaration(name, decls.join('\n'));
   }
 
-  modelPropertiesRw(model: Model, activeWrite?: boolean): EmitterOutput<string> {
+  modelPropertiesRw(model: Model, activeWrite?: boolean, broadcastTarget?: boolean): EmitterOutput<string> {
     const b = new StringBuilder()
     let first = true
     const program = this.emitter.getProgram();
@@ -151,7 +157,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
-        if (p.type.kind==='Model' && p.type.properties && recursion<5) { // todo could emit warning if deeper
+        if (p.type.kind==='Model' && p.type.properties && recursion<5) {
           // insert the referenced models properties inplace and go on with those (this is recursive)
           const append = Array.from(p.type.properties.values());
           properties.splice(idx+1, 0, ...append);
@@ -159,9 +165,14 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           // extract the comment only from reference:
           commentProp = p;
         } else {
+          reportDiagnostic(program, {
+            code: "banned-inheritance",
+            format: {},
+            target: p,
+          });
           commentProp = undefined;
         }
-        continue;//todo report
+        continue;
       }
       if (p.optional && activeWrite) {
         // optional fields are omitted for active write
@@ -183,7 +194,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           if (res.length!==undefined) {
             const length = isNumericType(program, s) ? getMaxBits(program, s) : getMaxLength(program, s);
             if (!length || res.length > length) {
-              res.length = undefined; // todo rather throw?
+              res.length = undefined;
+              reportDiagnostic(program, {
+                code: "banned-length",
+                format: { which: isNumericType(program, s) ? 'maxBits' : 'maxLength', value: `${length}` },
+                target: model,
+              });
             } else if (length === res.length) {
               res.length = undefined;
             }
@@ -194,6 +210,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (!res.dir && s.kind==='ModelProperty') {
           const out = getOut(program, s as ModelProperty);
           if (out!==undefined) {
+            if (broadcastTarget && out===false) {
+              reportDiagnostic(program, {
+                code: "banned-in",
+                format: { },
+                target: s,
+              });
+            }
             res.dir = out ? 'm' : 's';
           }
         }
@@ -226,7 +249,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       } while (true);
       commentProp = undefined;
       if (!isOwn) {
-        continue; // todo throw?
+        reportDiagnostic(program, {
+          code: "banned-type",
+          format: { type: res.name, name: res.pname },
+          target: model,
+        });
+        continue;
       }
       // field,part (m/s),type / templates,divider / values,unit,comment
       const divisor = res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor)
@@ -288,7 +316,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     }
     const current = this.emitter.getContext();
     if (current.referencedBy) {
-      return this.emitter.result.none(); // only single reference level supported, todo rather throw
+      reportDiagnostic(program, {
+        code: "banned-inheritance",
+        format: {},
+        target: union,
+      });
+      return this.emitter.result.none(); // only single reference level supported
     }
     union.variants.forEach(uv => {
       if (uv.type.kind!=='Namespace') {

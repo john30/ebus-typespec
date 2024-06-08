@@ -75,10 +75,34 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Invalid type ${"type"} with name "${"name"}".`,
       },
     },
+    "banned-length": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid @${"which"} exceeding ${"value"}.`,
+      },
+    },
+    "banned-in": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid @in with broadcast target.`,
+      },
+    },
     "duplicate-id": {
       severity: "error",
       messages: {
         default: paramMessage`There are multiple models with the same id "${"id"}".`,
+      },
+    },
+    "short-id": {
+      severity: "error",
+      messages: {
+        default: paramMessage`The id "${"id"}" is too short.`,
+      },
+    },
+    "banned-inheritance": {
+      severity: "error",
+      messages: {
+        default: paramMessage`The inheritance is too deep.`,
       },
     },
     "duplicate-name": {
