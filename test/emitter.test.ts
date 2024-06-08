@@ -177,29 +177,33 @@ describe("emitting models", () => {
     expectDiagnostics(diagnostics, [
       {
         code: "ebus/duplicate-id",
-        message: `There are multiple models with the same id "test,r,,,1,2".`,
+        message: `There are multiple models with the same id "tsp-output/test/main.csv,,r,,,1,2".`,
       },
       {
         code: "ebus/duplicate-id",
-        message: `There are multiple models with the same id "test,r,,,1,2".`,
+        message: `There are multiple models with the same id "tsp-output/test/main.csv,,r,,,1,2".`,
       },
     ]);
   });
-  it("does not emit diagnostic on duplicate IDs/names in different namespaces", async () => {
-    const files = await emit(`
-      namespace Test1 {
-        @id(1,2)
-        model Foo {}
-      }
-      namespace Test2 {
-        @id(1,2)
-        model Foo {}
-      }
-    `);
+  it("does not emit diagnostic on duplicate IDs/names in different file namespaces", async () => {
+    const files = await emit(``, {}, {emitNamespace: true, extraSpecFiles: [{name: 'inc1.tsp',  code: `
+      import "ebus"; using Ebus;
+      namespace inc1;
+      @id(1,2)
+      model Foo {}
+    `}, {name: 'inc2.tsp', code: `
+      import "ebus"; using Ebus;
+      namespace inc2;
+      @id(1,2)
+      model Foo {}
+    `}]});
     const file = files["main.csv"];
-    assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0102,,\n"+ //todo could be limited to those having a condition only
-      "r,main,,Foo,,,,0102,,\n"
+    assert.strictEqual(stripHeader(file), undefined); // not emitted as empty
+    assert.strictEqual(stripHeader(files['inc1.csv']),
+      "r,inc1,,Foo,,,,0102,,\n"
+    );
+    assert.strictEqual(stripHeader(files['inc2.csv']),
+      "r,inc2,,Foo,,,,0102,,\n"
     );
   });
   it("does not emit diagnostic on duplicate IDs in defaults", async () => {
@@ -411,7 +415,7 @@ describe("emitting models", () => {
         }
       }
     `, {}, {emitNamespace: true,
-      extraSpecFiles: [['importfile_inc.tsp', importTsp]],
+      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
       "r,circ,,Bar,,,15,0002,,\n"+
@@ -448,7 +452,7 @@ describe("emitting models", () => {
         }
       }
     `, {}, {emitNamespace: true,
-      extraSpecFiles: [['importfile_inc.tsp', importTsp]],
+      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
       "*[id_sw],scan,,,,SW\n"+
@@ -458,6 +462,45 @@ describe("emitting models", () => {
       "\n" // due to the union
     );
     assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+  it("includes loaded namespace models with conditions", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      namespace importfile_inc {
+        @base(0,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Foo {
+          uch: num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _includes {
+          /** loaded file */
+          @condition(Ebus.id.id.sw, ">1")
+          importfile_inc: importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "*[id_sw],scan,,,,SW\n"+
+      "r,circ,,Bar,,,15,0002,,\n"+
+      // "# included stuff\n"+
+      "[id_sw>1]!load,importfile.inc,,,loaded file\n"
+    );
+    assert.strictEqual(stripHeader(files["importfile.inc"]),
+      "r,,,Foo,,,,0001,,uch,,UCH,,,\n"
+    );
   });
   it("references imported namespace models", async () => {
     const importTsp = `
@@ -478,7 +521,7 @@ describe("emitting models", () => {
         importfile_inc,
       }
     `, {includes: true}, {emitNamespace: true,
-      extraSpecFiles: [['importfile_inc.tsp', importTsp]],
+      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
       "r,main,,Bar,,,,0002,,\n"+

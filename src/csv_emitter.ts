@@ -118,7 +118,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       if (id.length<2) {
         //todo throw
       } else {
-        this.#idDuplicateTracker.track([model.namespace?getNamespaceFullName(model.namespace):'',direction, qq, zz, ...id].join(), model);
+        this.#idDuplicateTracker.track([sf?.path||'', conds, direction, qq, zz, ...id].join(), model);
       }
       const idh = hexs(id);
       const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
@@ -245,10 +245,23 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     if (name!=='_includes') {
       return this.emitter.result.none();
     }
+    const decls: string[] = [];
+    const addInclude = (ns: Namespace, comment?: string, conds?: string, isLoad = false) => {
+      const fp = fileParent(ns.node as Node);
+      let name = basename(fp.path, extname(fp.path))
+      if (name.endsWith('_inc')) {
+        name = name.substring(0, name.length-4)+'.inc';
+      } else {
+        name += '.csv';
+      }
+      const incl = [conds+'!'+(isLoad?'load':'include'), name, '', '', escape(comment)];
+      decls.push(incl.join());
+    };
+    const program = this.emitter.getProgram();
+    const sf = this.#getCurrentSourceFile();
+    const [idModel] = program.resolveTypeReference('Ebus.id.id');
     if (this.emitter.getOptions()["includes"]) {
-      const program = this.emitter.getProgram();
-      const decls: string[] = [];
-      let comment = getDoc(program, union);
+      const comment = getDoc(program, union);
       if (comment) {
         decls.push(`# ${comment}`);
       }
@@ -256,35 +269,39 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (uv.type.kind!=='Namespace') {
           return;
         }
-        const fp = fileParent(uv.type.node as Node);
-        let name = basename(fp.path, extname(fp.path))
-        if (name.endsWith('_inc')) {
-          name = name.substring(0, name.length-4)+'.inc';
-        } else {
-          name += '.csv';
-        }
-        comment = getDoc(program, uv);
-        const incl = ['!include', name, '', '', escape(comment)];
-        decls.push(incl.join());
+        const isLoad = typeof uv.name === 'string' && !!uv.name;
+        const conds = mapConds(idModel, sf, getConditions(program, uv)||[]);
+        addInclude(uv.type, getDoc(program, uv), conds, isLoad);
       });
       return this.emitter.result.declaration(name, decls.join('\n'));
     }
     const current = this.emitter.getContext();
-    const program = this.emitter.getProgram();
-    const [idModel] = program.resolveTypeReference('Ebus.id.id');
-    const sf = this.#getCurrentSourceFile();
-    current.referencedBy = union;
+    if (current.referencedBy) {
+      return this.emitter.result.none(); // only single reference level supported, todo rather throw
+    }
     union.variants.forEach(uv => {
       if (uv.type.kind!=='Namespace') {
         return;
       }
       const namespace = uv.type as Namespace;
-      current.conds = mapConds(idModel, sf, getConditions(program, uv)||[]);
-      this.emitter.emitTypeReference(namespace, {referenceContext: current})
+      const conds = mapConds(idModel, sf, getConditions(program, uv)||[]);
+      const isLoad = typeof uv.name === 'string' && uv.name;
+      if (isLoad) {
+        const referenceContext = this.#mkContext(namespace.node, namespace, undefined, true);
+        if (Object.keys(referenceContext).length && !referenceContext.exclude
+        && this.#sourceFileByPath.get(referenceContext.fullname)?.meta.refCount===1) {
+          this.emitter.emitTypeReference(namespace, {referenceContext}) // force emit the included file itself, once only
+        }
+        addInclude(namespace, getDoc(program, uv), conds, true);
+      } else {
+        current.referencedBy = union;
+        current.conds = conds;
+        this.emitter.emitTypeReference(namespace, {referenceContext: current})
+        delete current.conds;
+        delete current.referencedBy;
+      }
     });
-    delete current.referencedBy;
-    delete current.conds;
-    return this.emitter.result.declaration(name, ''); // needed to combine emitted declarations from above
+    return this.emitter.result.declaration(name, decls.join('\n')); // at least empty string needed to combine emitted declarations from above
   }
 
   #isStdType(type: Type, ownOnly=false) {
@@ -380,12 +397,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return this.#mkContext(model.node as Node, model.namespace, model);
   }
 
-  #mkContext(node: Node, namespace?: Namespace, typ?: Model): Context {
+  #mkContext(node: Node, namespace?: Namespace, typ?: Model, forLoad = false): Context {
     // if (this.#isStdType(model) && model.name === "object") {
     //   return {};
     // }
     const currentCtx = this.emitter.getContext();
-    if (currentCtx.referencedBy) {
+    if (currentCtx.referencedBy && !currentCtx.isLoad) {
       return currentCtx;
     }
     for (let n = namespace; n; n=n.namespace) {
@@ -399,7 +416,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const fp = fileParent(node);
     let fpName = fp?.path && basename(fp.path, extname(fp.path));
     if (fpName?.endsWith('_inc')) {
-      if (!this.emitter.getOptions()["includes"]) {
+      if (!this.emitter.getOptions()["includes"] && !(forLoad || currentCtx.isLoad)) {
         return {exclude: true};
       }
       if (root===fpName) {
@@ -417,11 +434,16 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       );
       sourceFile.meta.shouldEmit = true;
       sourceFile.meta.bundledRefs = [];
+      sourceFile.meta.refCount = 1;
       this.#sourceFileByPath.set(fullname, sourceFile);
+    } else {
+      sourceFile.meta.refCount++;
     }
 
     return {
       scope: sourceFile.globalScope,
+      isLoad: forLoad,
+      fullname,
     };
   }
 

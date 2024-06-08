@@ -6,12 +6,12 @@ import {EbusdEmitter} from "../src/csv_emitter.js";
 import {type EbusdEmitterOptions} from "../src/lib.js";
 import {EbusTestLibrary} from "../src/testing/index.js";
 
-export async function getHostForTspFile(contents: string, extraSpecFiles?: [string, string][]) {
+export async function getHostForTspFile(contents: string, extraSpecFiles?: {name: string, code: string}[]) {
   const host = await createTestHost({
     libraries: [EbusTestLibrary],
   });
   host.addTypeSpecFile("main.tsp", contents);
-  extraSpecFiles?.forEach(([name, content]) => host.addTypeSpecFile(name, content));
+  extraSpecFiles?.forEach(({name, code}) => host.addTypeSpecFile(name, code));
   await host.compile("main.tsp", {
     noEmit: false,
     outputDir: "tsp-output",
@@ -22,7 +22,7 @@ export async function getHostForTspFile(contents: string, extraSpecFiles?: [stri
 export type TestOptions = {
   emitNamespace?: boolean,
   emitTypes?: string[],
-  extraSpecFiles?: [string, string][],
+  extraSpecFiles?: {name: string, code: string, main?: true}[],
 };
 
 export async function emitWithDiagnostics(
@@ -34,7 +34,7 @@ export async function emitWithDiagnostics(
     options["file-type"] = "csv";
   }
 
-  code = (testOptions.extraSpecFiles||[]).map(([name]) => `import "./${name}"; `).join('')
+  code = (testOptions.extraSpecFiles||[]).filter(f=>!f.main).map(({name}) => `import "./${name}"; `).join('')
   + (testOptions.emitNamespace
     ? `import "ebus"; using Ebus; namespace test; ${code}`
     : `import "ebus"; using Ebus; ${code}`);
