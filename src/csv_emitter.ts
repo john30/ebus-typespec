@@ -90,6 +90,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         nearestCircuit = fileCircuit;
       }
     }
+    if (nearestCircuit) {
+      nearestCircuit = nearestCircuit.split('.')[0]; // strip off further other suffixes
+      const parts = basename(sf.path, extname(sf.path)).split('.');
+      if (parts.length > 1 && (extname(sf.path)==='.inc' ? parts[0] === nearestCircuit : parts[0].length === 2 && parts[1] === nearestCircuit)) {
+          nearestCircuit = '';
+      }
+    }
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
     const conds = (context.conds||'')+mapConds(idModel, sf, getConditions(program, model)||(model.namespace&&getConditions(program, model.namespace))||[]);
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
@@ -368,7 +375,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         `type,circuit,level,name,comment,qq,zz,pbsb,id,`
         +`*name,part,type,divisor/values,unit,comment\n`
         +b.reduce()
-        +content.join('\n')+'\n',
+        +content.filter(l=>l).join('\n')+'\n',
       path: sourceFile.path,
     };
   }
