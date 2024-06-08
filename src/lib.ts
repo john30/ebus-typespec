@@ -92,7 +92,7 @@ export const $lib = createTypeSpecLibrary({
     options: EmitterOptionsSchema as JSONSchemaType<EbusdEmitterOptions>,
   },
   state: {
-    cond: { description: "message conditions" },
+    condition: { description: "message condition(s)" },
     write: { description: "write direction" },
     passive: { description: "passive only" },
     auth: { description: "authentication level" },

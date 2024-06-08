@@ -2,7 +2,7 @@ import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamesp
 import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
-import {getAuth, getConds, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {getAuth, getConditions, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
@@ -91,7 +91,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
     }
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
-    const conds = (context.conds||'')+mapConds(idModel, sf, getConds(program, model)||(model.namespace&&getConds(program, model.namespace))||[]);
+    const conds = (context.conds||'')+mapConds(idModel, sf, getConditions(program, model)||(model.namespace&&getConditions(program, model.namespace))||[]);
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
@@ -279,7 +279,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         return;
       }
       const namespace = uv.type as Namespace;
-      current.conds = mapConds(idModel, sf, getConds(program, uv)||[]);
+      current.conds = mapConds(idModel, sf, getConditions(program, uv)||[]);
       this.emitter.emitTypeReference(namespace, {referenceContext: current})
     });
     delete current.referencedBy;

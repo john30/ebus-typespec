@@ -306,7 +306,7 @@ describe("emitting models", () => {
   it("works with scan condition", async () => {
     const files = await emit(`
       @id(0,1)
-      @cond(Ebus.id.id.sw, ">1")
+      @condition(Ebus.id.id.sw, ">1")
       model Foo {}
     `);
     const file = files["main.csv"];
@@ -318,8 +318,8 @@ describe("emitting models", () => {
   it("works with scan conditions", async () => {
     const files = await emit(`
       @id(0,1)
-      @cond(Ebus.id.id.sw, ">1")
-      @cond(Ebus.id.id.hw, "0700", "0800")
+      @condition(Ebus.id.id.sw, ">1")
+      @condition(Ebus.id.id.hw, "0700", "0800")
       model Foo {}
     `);
     const file = files["main.csv"];
@@ -334,7 +334,7 @@ describe("emitting models", () => {
       @id(0,2)
       model Bar {disc: num.UCH}
       @id(0,1)
-      @cond(Bar.disc, "1")
+      @condition(Bar.disc, "1")
       model Foo {}
     `);
     const file = files["main.csv"];
@@ -443,7 +443,7 @@ describe("emitting models", () => {
         /** included stuff */
         union _includes {
           /** included file */
-          @cond(Ebus.id.id.sw, ">1")
+          @condition(Ebus.id.id.sw, ">1")
           importfile_inc,
         }
       }

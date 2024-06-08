@@ -7,11 +7,11 @@ namespace Ebus;
 
 
 /**
- * Define condition for the whole message.
+ * Define the condition(s) for the whole message (if given multiple times, all conditions must be met).
  * @param property the referenced model property, or a model in case of existance check or single property only.
- * @param values the optional alternative values the property needs to match.
+ * @param values the optional alternative values the property needs to match (one of the values must match for the condition to be met).
  */
-extern dec cond(target: Namespace|Model|UnionVariant, property: ModelProperty|Model, ...values: valueof string[]);
+extern dec condition(target: Namespace|Model|UnionVariant, property: ModelProperty|Model, ...values: valueof string[]);
 
 /**
  * Define write direction.
@@ -24,7 +24,7 @@ extern dec write(target: Model);
 extern dec passive(target: Model);
 
 /**
- * Define authentication.
+ * Define authentication level.
  */
 extern dec auth(target: Model, auth: valueof string);
 

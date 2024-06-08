@@ -9,29 +9,29 @@ import {StateKeys, reportDiagnostic} from "./lib.js";
 export const namespace = "Ebus";
 
 /**
- * Implementation of the `@cond` decorator.
+ * Implementation of the `@condition` decorator.
  *
  * @param context Decorator context.
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $cond(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, ...values: string[]) {
-  const prev = (context.program.stateMap(StateKeys.cond).get(target)||[]) as [ModelProperty|Model, ...string[]][];
+export function $condition(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, ...values: string[]) {
+  const prev = (context.program.stateMap(StateKeys.condition).get(target)||[]) as [ModelProperty|Model, ...string[]][];
   if (target.kind==='Namespace' && prev.some(([p]) => p.name===property.name)) {
     return;
   }
-  context.program.stateMap(StateKeys.cond).set(target, [...prev, [property, ...values]]);
+  context.program.stateMap(StateKeys.condition).set(target, [...prev, [property, ...values]]);
 }
 
 /**
- * Accessor for the `@cond` decorator.
+ * Accessor for the `@condition` decorator.
  *
  * @param program TypeSpec program.
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getConds(program: Program, target: Model|Namespace|UnionVariant): [ModelProperty|Model, ...string[]][] {
-  return program.stateMap(StateKeys.cond).get(target);
+export function getConditions(program: Program, target: Model|Namespace|UnionVariant): [ModelProperty|Model, ...string[]][] {
+  return program.stateMap(StateKeys.condition).get(target);
 }
 
 /**
