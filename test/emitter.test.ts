@@ -185,6 +185,24 @@ describe("emitting models", () => {
       "r,main,,Foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:10,,,"
     );
   });
+  it("works with remainder length str", async () => {
+    const files = await emit(`
+      using Ebus.str;
+      @id(0,1)
+      model Foo {
+        s: STR,
+        @maxLength(1)
+        s1: STR,
+        @minLength(0)
+        @maxLength(10)
+        s5: STR,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,main,,Foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:*,,,"
+    );
+  });
   it("emit diagnostic on duplicate IDs", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
       @id(1,2)

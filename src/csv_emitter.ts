@@ -1,4 +1,4 @@
-import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
+import {emitFile, getDoc, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
 import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
@@ -179,7 +179,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         commentProp = undefined;
         continue;
       }
-      let res = {} as {pname: string, name: string, length?: number, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
+      let res = {} as {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
       let s: ModelProperty|Scalar = p;
       let isOwn = false;
       do {
@@ -201,12 +201,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
                 target: model,
               });
             } else if (length === res.length) {
-              res.length = undefined;
+              res.length = res.remainLength ? 1 : undefined;
             }
           }
           break; // ebus base type reached
         }
         res.length ??= isNumericType(program, s) ? getMaxBits(program, s) : getMaxLength(program, s);
+        res.remainLength ??= !isNumericType(program, s) && getMinLength(program, s)===0;
         if (!res.dir && s.kind==='ModelProperty') {
           const out = getOut(program, s as ModelProperty);
           if (out!==undefined) {
@@ -267,7 +268,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         // expect to end with digits e.g. BCD4
         typ = typ.substring(0, 3)+':'+typ.substring(3);
       } else if (res.length) {
-        typ += ':'+res.length;
+        typ += ':'+(res.remainLength?'*':res.length);
       }
       const field = [normName.field(res.pname),res.dir,typ,divisor,res.unit,escape(res.comment)];
       if (first) {
