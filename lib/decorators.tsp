@@ -11,7 +11,7 @@ namespace Ebus;
  * @param property the referenced model property, or a model in case of existance check or single property only.
  * @param values the optional alternative values the property needs to match.
  */
-extern dec cond(target: Namespace|Model, property: ModelProperty|Model, ...values: valueof string[]);
+extern dec cond(target: Namespace|Model|UnionVariant, property: ModelProperty|Model, ...values: valueof string[]);
 
 /**
  * Define write direction.

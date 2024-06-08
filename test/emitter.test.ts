@@ -421,6 +421,44 @@ describe("emitting models", () => {
     );
     assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
   });
+  it("includes imported namespace models with conditions", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      namespace importfile_inc {
+        @base(0,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Foo {
+          uch: num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _includes {
+          /** included file */
+          @cond(Ebus.id.id.sw, ">1")
+          importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [['importfile_inc.tsp', importTsp]],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "*[id_sw],scan,,,,SW\n"+
+      "r,circ,,Bar,,,15,0002,,\n"+
+      // "# included stuff\n"+
+      "[id_sw>1]r,circ,,Foo,,,15,0001,,uch,,UCH,,,\n"+
+      "\n" // due to the union
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
   it("references imported namespace models", async () => {
     const importTsp = `
       import "ebus"; using Ebus;

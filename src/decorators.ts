@@ -1,7 +1,8 @@
 import {
   getPropertyType, isIntrinsicType, isNumericType,
   setTypeSpecNamespace, type DecoratorContext, type Enum,
-  type Model, type ModelProperty, type Namespace, type Program, type Scalar
+  type Model, type ModelProperty, type Namespace, type Program, type Scalar,
+  type UnionVariant
 } from "@typespec/compiler";
 import {StateKeys, reportDiagnostic} from "./lib.js";
 
@@ -14,7 +15,7 @@ export const namespace = "Ebus";
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $cond(context: DecoratorContext, target: Model|Namespace, property: ModelProperty|Model, ...values: string[]) {
+export function $cond(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, ...values: string[]) {
   const prev = (context.program.stateMap(StateKeys.cond).get(target)||[]) as [ModelProperty|Model, ...string[]][];
   if (target.kind==='Namespace' && prev.some(([p]) => p.name===property.name)) {
     return;
@@ -29,7 +30,7 @@ export function $cond(context: DecoratorContext, target: Model|Namespace, proper
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getConds(program: Program, target: Model|Namespace): [ModelProperty|Model, ...string[]][] {
+export function getConds(program: Program, target: Model|Namespace|UnionVariant): [ModelProperty|Model, ...string[]][] {
   return program.stateMap(StateKeys.cond).get(target);
 }
 

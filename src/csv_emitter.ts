@@ -16,6 +16,24 @@ const normName: Record<'circuit'|'message'|'field', (s?: string) => string|undef
   message: (s) => s, // or camelCase
   field: (s) => s ? s.toLowerCase() : s,
 }
+const mapConds = (idModel: Type|undefined, sf: SourceFile<object>, conds?: [ModelProperty|Model, ...string[]][]) => conds?.map(c => {
+  const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
+  const ref = c[0];
+  let propName = ref.kind==='ModelProperty' ? ref.name : '';
+  const model = propName ? (ref as ModelProperty).model : ref as Model;
+  let modelName = model?.name;
+  let condName = (modelName+(propName==='value'?'':'_'+propName)).toLowerCase();
+  let circuitName = '';
+  if (idModel && model===idModel) {
+    modelName = '';
+    circuitName = 'scan';
+    propName = propName.toUpperCase(); // todo support lowercase in ebusd as well
+  } else {
+    modelName = (modelName||'').toLowerCase();
+  }
+  sf.imports.set(condName, [`[${condName}]`,circuitName,'',modelName!,'',propName]);
+  return `[${condName+values}]`;
+}).join('');
 
 export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
@@ -73,24 +91,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
     }
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
-    const conds = (getConds(program, model)||(model.namespace&&getConds(program, model.namespace))||[]).map(c => {
-      const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
-      const ref = c[0];
-      let propName = ref.kind==='ModelProperty' ? ref.name : '';
-      const model = propName ? (ref as ModelProperty).model : ref as Model;
-      let modelName = model?.name;
-      let condName = (modelName+(propName==='value'?'':'_'+propName)).toLowerCase();
-      let circuitName = '';
-      if (idModel && model===idModel) {
-        modelName = '';
-        circuitName = 'scan';
-        propName = propName.toUpperCase(); // todo support lowercase in ebusd as well
-      } else {
-        modelName = (modelName||'').toLowerCase();
-      }
-      sf.imports.set(condName, [`[${condName}]`,circuitName,'',modelName!,'',propName]);
-      return `[${condName+values}]`;
-    }).join('');
+    const conds = (context.conds||'')+mapConds(idModel, sf, getConds(program, model)||(model.namespace&&getConds(program, model.namespace))||[]);
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       //todo could decline when either one is undefined
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
@@ -269,15 +270,20 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       return this.emitter.result.declaration(name, decls.join('\n'));
     }
     const current = this.emitter.getContext();
+    const program = this.emitter.getProgram();
+    const [idModel] = program.resolveTypeReference('Ebus.id.id');
+    const sf = this.#getCurrentSourceFile();
     current.referencedBy = union;
     union.variants.forEach(uv => {
       if (uv.type.kind!=='Namespace') {
         return;
       }
       const namespace = uv.type as Namespace;
+      current.conds = mapConds(idModel, sf, getConds(program, uv)||[]);
       this.emitter.emitTypeReference(namespace, {referenceContext: current})
     });
     delete current.referencedBy;
+    delete current.conds;
     return this.emitter.result.declaration(name, ''); // needed to combine emitted declarations from above
   }
 
