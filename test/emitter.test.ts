@@ -388,6 +388,42 @@ describe("emitting models", () => {
   it("includes imported namespace models", async () => {
     const importTsp = `
       import "ebus"; using Ebus;
+      namespace importfile_inc {
+        @base(0,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Foo {
+          uch: num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _includes {
+          /** included file */
+          importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [['importfile_inc.tsp', importTsp]],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,circ,,Bar,,,15,0002,,\n"+
+      // "# included stuff\n"+
+      "r,circ,,Foo,,,15,0001,,uch,,UCH,,,\n"+
+      "\n" // due to the union
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+  it("references imported namespace models", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
       namespace importfile_inc;
       @id(0,1)
       model Foo {
@@ -403,16 +439,13 @@ describe("emitting models", () => {
         /** included file */
         importfile_inc,
       }
-    `, {}, {emitNamespace: true,
+    `, {includes: true}, {emitNamespace: true,
       extraSpecFiles: [['importfile_inc.tsp', importTsp]],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
       "r,main,,Bar,,,,0002,,\n"+
       "# included stuff\n"+
       "!include,importfile.inc,,,included file\n"
-      //todo add option to not emit .inc files
-      // "r,main,,Foo,,,,0001,,uch,,UCH,,,\n"
-      // 'r,importfile,,Foo,,,,0001,,uch,,UCH,,,\n
     );
     assert.strictEqual(stripHeader(files["importfile.inc"]),
       "r,,,Foo,,,,0001,,uch,,UCH,,,\n"

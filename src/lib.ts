@@ -8,6 +8,8 @@ export interface EbusdEmitterOptions {
    * @default csv
    */
   "file-type"?: FileType;
+  /** Emit includes files as includes instead of inline (incomplete!). */
+  includes?: boolean;
 }
 
 export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
@@ -20,6 +22,11 @@ export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
       nullable: true,
       description: "Serialize the schema as csv", //either csv, yaml, or json.",
     },
+    includes: {
+      type: "boolean",
+      nullable: true,
+      description: "Emit includes files as includes instead of inline (incomplete!)",
+    }
   },
 }
 

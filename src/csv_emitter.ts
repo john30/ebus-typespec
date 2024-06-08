@@ -1,5 +1,5 @@
 import {emitFile, getDoc, getMaxLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
-import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile} from "@typespec/compiler/emitter-framework";
+import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
 import {getAuth, getConds, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
@@ -8,6 +8,7 @@ import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
 const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
+const isSourceFileWithPath = (scope: Scope<object>): scope is SourceFileScope<object> => scope.kind === "sourceFile" && !!scope.sourceFile.path;
 const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s}"` : s;
 const camelCase = (s?: string) => s ? s.substring(0,1).toLowerCase()+s.substring(1) : s;
 const normName: Record<'circuit'|'message'|'field', (s?: string) => string|undefined> = {
@@ -31,36 +32,46 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const program = this.emitter.getProgram();
     const decls: string[] = [];
     //todo detect invalid in with broadcast
-    if (!program.stateSet(StateKeys.id).has(model)) {
+    const context = this.emitter.getContext();
+    if (!program.stateSet(StateKeys.id).has(model) || context.exclude) {
       return this.emitter.result.none();
     }
-    // get "file" namespace
-    const fp = fileParent(model.node as Node);
-    let circuit: string = basename(fp.path, extname(fp.path));
+    const sf = this.#getCurrentSourceFile();
+    let nearestCircuit: string|undefined;
     let nearestZz: number|undefined;
-    for (let n = fp && model.namespace; n; n=n.namespace) {
-      if (n?.name==='Ebus') {
-        break;
-      }
-      if (fileParent(n.node)!==fp) {
-        break;
-      }
-      const zz = getZz(program, n);
-      if (zz) {
-        // topmost namespace with @zz decides the circuit name.
-        // if absent, then the file name is taken
-        circuit = n.name;
-        if (!nearestZz) {
-          // nearest namespace with @zz decides the fallback ZZ
-          nearestZz = zz;
+    for (const frame of [model, context.referencedBy as Union]) {
+      if (!frame) continue;
+      // get "file" namespace
+      const fp = fileParent(frame.node as Node); // todo also includes
+      for (let n = fp && frame.namespace; n; n=n.namespace) {
+        if (n?.name==='Ebus') {
+          break;
+        }
+        if (frame!==context.referencedBy && fileParent(n.node)!==fp) {
+          break;
+        }
+        const zz = getZz(program, n);
+        if (zz) {
+          // topmost namespace with @zz decides the circuit name.
+          // if absent, then the file name is taken
+          if (!nearestCircuit) {
+            nearestCircuit = n.name;
+          }
+          if (!nearestZz) {
+            // nearest namespace with @zz decides the fallback ZZ
+            nearestZz = zz;
+          }
         }
       }
+      if (!nearestCircuit) {
+        let fileCircuit = basename(fp.path, extname(fp.path));
+        if (context.referencedBy && fileCircuit.endsWith('_inc')
+        || extname(sf?.path)==='.inc' && fileCircuit===basename(sf.path, '.inc')+'_inc') {
+          fileCircuit = ''; // leave circuit blank in include files unless the circuit name was set explicitly
+        }
+        nearestCircuit = fileCircuit;
+      }
     }
-    const file = this.#getCurrentSourceFile().path;
-    if (extname(file)==='.inc' && circuit===basename(file, '.inc')+'_inc') {
-      circuit = ''; // leave circuit blank in include files unless the circuit name was set explicitly
-    }
-    const sf = this.#getCurrentSourceFile();//todo this needs to be combined into the main output csv file
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
     const conds = (getConds(program, model)||(model.namespace&&getConds(program, model.namespace))||[]).map(c => {
       const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
@@ -112,7 +123,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
       // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields
       // field: name,part,type,divisor/values,unit,comment
-      const message = [conds+direction, normName.circuit(circuit), level, normName.message(name), escape(comment), hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
+      const message = [conds+direction, normName.circuit(nearestCircuit), level, normName.message(name), escape(comment), hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
       decls.push([...message, ...(baseFields?[baseFields]:[]), fields].join());
     }
     return this.emitter.result.declaration(name, decls.join('\n'));
@@ -233,28 +244,41 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     if (name!=='_includes') {
       return this.emitter.result.none();
     }
-    const program = this.emitter.getProgram();
-    const decls: string[] = [];
-    let comment = getDoc(program, union);
-    if (comment) {
-      decls.push(`# ${comment}`);
+    if (this.emitter.getOptions()["includes"]) {
+      const program = this.emitter.getProgram();
+      const decls: string[] = [];
+      let comment = getDoc(program, union);
+      if (comment) {
+        decls.push(`# ${comment}`);
+      }
+      union.variants.forEach(uv => {
+        if (uv.type.kind!=='Namespace') {
+          return;
+        }
+        const fp = fileParent(uv.type.node as Node);
+        let name = basename(fp.path, extname(fp.path))
+        if (name.endsWith('_inc')) {
+          name = name.substring(0, name.length-4)+'.inc';
+        } else {
+          name += '.csv';
+        }
+        comment = getDoc(program, uv);
+        const incl = ['!include', name, '', '', escape(comment)];
+        decls.push(incl.join());
+      });
+      return this.emitter.result.declaration(name, decls.join('\n'));
     }
+    const current = this.emitter.getContext();
+    current.referencedBy = union;
     union.variants.forEach(uv => {
       if (uv.type.kind!=='Namespace') {
         return;
       }
-      const fp = fileParent(uv.type.node as Node);
-      let name = basename(fp.path, extname(fp.path))
-      if (name.endsWith('_inc')) {
-        name = name.substring(0, name.length-4)+'.inc';
-      } else {
-        name += '.csv';
-      }
-      comment = getDoc(program, uv);
-      const incl = ['!include', name, '', '', escape(comment)];
-      decls.push(incl.join());
+      const namespace = uv.type as Namespace;
+      this.emitter.emitTypeReference(namespace, {referenceContext: current})
     });
-    return this.emitter.result.declaration(name, decls.join('\n'));
+    delete current.referencedBy;
+    return this.emitter.result.declaration(name, ''); // needed to combine emitted declarations from above
   }
 
   #isStdType(type: Type, ownOnly=false) {
@@ -323,10 +347,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
 
   #getCurrentSourceFile() {
     let scope: Scope<object> = this.emitter.getContext().scope;
-    while (scope && scope.kind !== "sourceFile") {
+    while (scope && !isSourceFileWithPath(scope)) {
       scope = scope.parentScope;
     }
-    return scope.sourceFile;
+    return scope?.sourceFile;
   }
 
   // #serializeSourceFileContent(content: string[]): string {
@@ -342,9 +366,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   //   }
   // }
 
-  unionDeclarationContext(union: Union): Context {
-    return this.#mkContext(union.node, union.namespace);
+  namespaceContext(namespace: Namespace): Context {
+    return this.#mkContext(namespace.node, namespace); 
   }
+
   modelDeclarationContext(model: Model, modelName: string): Context {
     return this.#mkContext(model.node as Node, model.namespace, model);
   }
@@ -353,6 +378,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     // if (this.#isStdType(model) && model.name === "object") {
     //   return {};
     // }
+    const currentCtx = this.emitter.getContext();
+    if (currentCtx.referencedBy) {
+      return currentCtx;
+    }
     for (let n = namespace; n; n=n.namespace) {
       if (n?.name==='Ebus') { // omit lib models
         return {};
@@ -364,6 +393,9 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const fp = fileParent(node);
     let fpName = fp?.path && basename(fp.path, extname(fp.path));
     if (fpName?.endsWith('_inc')) {
+      if (!this.emitter.getOptions()["includes"]) {
+        return {exclude: true};
+      }
       if (root===fpName) {
         root = '';
       }
