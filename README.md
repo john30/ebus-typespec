@@ -1,6 +1,6 @@
 # eBUS TypeSpec library
 
-This is a [TypeSpec](https://typespec.io/) library for defininf eBUS messages on a high level.
+This is a [TypeSpec](https://typespec.io/) library for defining eBUS messages on a high level.
 
 It comes with [decorators](#decorators) for the eBUS specific aspects of circuits, messages, fields and data transfer, as well as eBUS specific [data types](#data-types).
 
@@ -57,3 +57,6 @@ This fits to an eBUS byte sequence like this
 ff08010200 / 0105
 ```
 that transfers the `message` from source `0xff` where the target `0x08` replied with a value of 5 for `field1`.
+
+## Documentation
+See [here for the documentation](docs.md) generated from the source.

@@ -1,6 +1,22 @@
 {
-  "name": "ebus",
+  "name": "@ebusd/ebus-typespec",
   "version": "0.1.0",
+  "author": "John Baier",
+  "description": "TypeSpec library for defining eBUS messages and emitting to ebusd CSV.",
+  "homepage": "https://github.com/john30/ebus-typespec",
+  "readme": "https://github.com/john30/ebus-typespec/blob/main/README.md",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/john30/ebus-typespec.git"
+  },
+  "bugs": {
+    "url": "https://github.com/john30/ebus-typespec/issues"
+  },
+  "keywords": [
+    "TypeSpec",
+    "eBUS"
+  ],
   "type": "module",
   "main": "dist/src/index.js",
   "tspMain": "lib/main.tsp",
@@ -14,27 +30,32 @@
       "default": "./dist/src/testing/index.js"
     }
   },
-  "dependencies": {
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "lib/*.tsp",
+    "dist/**",
+    "!dist/test/**",
+    "*.md"
+  ],
+  "peerDependencies": {
     "@typespec/compiler": "latest"
   },
   "devDependencies": {
+    "@typespec/compiler": "latest",
     "@types/node": "latest",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
     "@typespec/library-linter": "latest",
-    "eslint": "^8.45.0",
-    "prettier": "^3.0.3",
-    "typescript": "^5.3.3"
+    "@typespec/tspd": "latest",
+    "typedoc": "^0.25.13",
+    "typedoc-plugin-markdown": "^4.0.3",
+    "typescript": "^5.4.5"
   },
   "scripts": {
     "build": "tsc && npm run build:tsp",
     "watch": "tsc --watch",
     "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit",
     "test": "node --test ./dist/test/",
-    "lint": "eslint src/ test/ --report-unused-disable-directives --max-warnings=0",
-    "lint:fix": "eslint . --report-unused-disable-directives --fix",
-    "format": "prettier .  --write",
-    "format:check": "prettier --check ."
-  },
-  "private": true
+    "docs": "npx tspd doc . --enable-experimental"
+  }
 }
