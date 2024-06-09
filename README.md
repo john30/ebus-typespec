@@ -6,6 +6,8 @@ It comes with [decorators](#decorators) for the eBUS specific aspects of circuit
 
 Once a message is declared in a typespec file, it can be converted to [ebusd CSV format](https://github.com/john30/ebusd/wiki/4.-Configuration) using an [emitter](#emitter).
 
+This library is also used for [generating ebusd message configuration](https://github.com/john30/ebusd-configuration) files.
+
 ## Decorators
 This is a short overview of the [decorators](lib/decorators.tsp) offered by the library:
 * source address `QQ`: `@qq(QQ)`
@@ -36,13 +38,13 @@ The identification message is available in the [`Ebus` model namespace](lib/mode
 ## Emitter
 The CSV emitter is available as with the following parameters:
 
-It can be used via `tsp compile --emit ebus --option @typespec/json-schema.emitAllRefs=true <tsp files>`.
+It can be used via `tsp compile --emit @ebusd/ebus-typespec <tsp files>`.
 
 ## Example
 Here is a small example of a message carrying just a single byte:
 
 ```typespec
-import "Ebus";
+import "@ebusd/ebus-typespec";
 using Ebus.num;
 
 @zz(0x08)
