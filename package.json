@@ -30,6 +30,9 @@
       "default": "./dist/src/testing/index.js"
     }
   },
+  "bin": {
+    "tsp2ebusd": "dist/src/tsp2ebusd.js"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
