@@ -5,7 +5,7 @@ import {createWriteStream, type WriteStream} from "fs";
 import {readFile} from "node:fs/promises";
 import {createConnection} from "node:net";
 import {createInterface} from "node:readline";
-import {extname} from "path";
+import {extname, isAbsolute, resolve} from "path";
 
 let outFile: WriteStream|undefined = undefined;
 
@@ -45,15 +45,28 @@ async function run(): Promise<void> {
   }
   const log = outFile ? (...args: any[]) => outFile!.write(args.join(' ')+'\n') : console.log;
   const inputFiles: Record<string, SourceFile> = {};
-  const entryFile = './main.tsp';
+  let entryFile = '';
   if (inFiles.length) {
     for (const inFile of inFiles) {
       let name = extname(inFile)==='.tsp' ? inFile : `${inFile}.tsp`;
+      const relative = !isAbsolute(name);
+      if (relative) {
+        name = './'+name;
+      }
+      if (!entryFile) {
+        if (!relative) {
+          // bit of a hack for aquiring the context of the cwd for typespec compiler
+          name = './main.tsp';
+        }
+        entryFile = name;
+      }
       inputFiles[name] = createSourceFile(await readFile(inFile, 'utf-8'), name);
+      if (relative) {
+        inputFiles[resolve(name)] = inputFiles[name];
+      }
     }
-    const input = Object.keys(inputFiles).map(file => `import "${file}";`);
-    inputFiles[entryFile] = createSourceFile(input.join('\n'), entryFile);
   } else {
+    entryFile = './main.tsp';
     const input = ['using Ebus;\n'];
     for await (const chunk of process.stdin) {
       input.push(chunk);
