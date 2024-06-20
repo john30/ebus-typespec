@@ -23,6 +23,18 @@ async function run(): Promise<void> {
       inFiles = args.slice(idx);
       break;
     }
+    if (arg==='-h' || arg==='--help') {
+      const helpTxt = [
+        'usage: tsp2ebusd [-e host[:port]] [-o outfile] [infile*]',
+        'converts eBUS TypeSpec file(s) or stdin to an ebusd CSV file or stdout.',
+        'with:',
+        '  -e, --ebusd host[:port]  the ebusd host and optional port of ebusd REPL to send the CSV output to (needs to have the "--define" feature enabled)',
+        '  -o, --output file        the output file to write to instead of stdout',
+        '  infile                   the input file(s) to use instead of stdin',
+      ];
+      console.log(helpTxt.join('\n'));
+      return;
+    }
     if (arg==='-o' || arg==='--output') {
       outFileName = args[++idx];
     } else if (arg==='-e' || arg==='--ebusd') {

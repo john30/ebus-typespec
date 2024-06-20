@@ -60,5 +60,10 @@ ff08010200 / 0105
 ```
 that transfers the `message` from source `0xff` where the target `0x08` replied with a value of 5 for `field1`.
 
+## Scripts
+This library also provides the following scripts via npm:
+
+* `tsp2ebusd`: converts TypSpec file(s) or stdin to an ebusd CSV file or stdout and can also send the output directly to an ebusd instance having the "--define" feature enabled.
+
 ## Documentation
 See [here for the documentation](docs.md) generated from the source.
