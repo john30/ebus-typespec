@@ -1,12 +1,12 @@
+import type {
+  DecoratorContext, Enum, Model, ModelProperty, Namespace,
+  Numeric, Program, Scalar, UnionVariant,
+} from "@typespec/compiler";
 import {
-  getPropertyType, isIntrinsicType, isNumericType,
-  setTypeSpecNamespace, type DecoratorContext, type Enum,
-  type Model, type ModelProperty, type Namespace, type Program, type Scalar,
-  type UnionVariant
+  getPropertyType, isIntrinsicType, isNumeric, isNumericType, setTypeSpecNamespace
 } from "@typespec/compiler";
 import {StateKeys, reportDiagnostic} from "./lib.js";
 
-export const namespace = "Ebus";
 
 /**
  * Implementation of the `@condition` decorator.
@@ -116,6 +116,11 @@ const validSource: Uint8Array = new Uint8Array([
 const invalidTarget: Uint8Array = new Uint8Array([0xa9,0xaa]);
 export const isSourceAddr = (qq?: number) => qq!==undefined && validSource.includes(qq);
 
+const getNum = (value: Numeric|number): number|undefined =>
+  typeof value === 'number' ? value
+  : isNumeric(value) ? (value.asNumber()===null ? undefined : value.asNumber() as number)
+  : undefined;
+
 /**
  * Implementation of the `@qq` decorator.
  *
@@ -123,8 +128,8 @@ export const isSourceAddr = (qq?: number) => qq!==undefined && validSource.inclu
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $qq(context: DecoratorContext, target: Model, value?: number) {
-  if (value !== undefined && !validSource.includes(value)) {
+export function $qq(context: DecoratorContext, target: Model, value?: Numeric) {
+  if (value !== undefined && !validSource.includes(getNum(value)!)) {
     reportDiagnostic(context.program, {
       code: "banned-source-address",
       target: context.getArgumentTarget(0)!,
@@ -143,7 +148,7 @@ export function $qq(context: DecoratorContext, target: Model, value?: number) {
  * @returns value if provided on the given target or undefined.
  */
 export function getQq(program: Program, target: Model): number | undefined {
-  return program.stateMap(StateKeys.qq).get(target);
+  return getNum(program.stateMap(StateKeys.qq).get(target));
 }
 
 /**
@@ -153,8 +158,8 @@ export function getQq(program: Program, target: Model): number | undefined {
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $zz(context: DecoratorContext, target: Model|Namespace, value?: number) {
-  if (value !== undefined && invalidTarget.includes(value)) {
+export function $zz(context: DecoratorContext, target: Model|Namespace, value?: Numeric) {
+  if (value !== undefined && invalidTarget.includes(getNum(value)!)) {
     reportDiagnostic(context.program, {
       code: "banned-target-address",
       target: context.getArgumentTarget(0)!,
@@ -173,7 +178,7 @@ export function $zz(context: DecoratorContext, target: Model|Namespace, value?: 
  * @returns value if provided on the given target or undefined.
  */
 export function getZz(program: Program, target: Model|Namespace): number | undefined {
-  return program.stateMap(StateKeys.zz).get(target);
+  return getNum(program.stateMap(StateKeys.zz).get(target));
 }
 
 /**
@@ -183,7 +188,7 @@ export function getZz(program: Program, target: Model|Namespace): number | undef
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $id(context: DecoratorContext, target: Model, pb: number, sb: number, ...dd: number[]) {
+export function $id(context: DecoratorContext, target: Model, pb: Numeric, sb: Numeric, ...dd: Numeric[]) {
   context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
   context.program.stateSet(StateKeys.id).add(target);
 }
@@ -195,7 +200,7 @@ export function $id(context: DecoratorContext, target: Model, pb: number, sb: nu
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $base(context: DecoratorContext, target: Model, pb: number, sb: number, ...dd: number[]) {
+export function $base(context: DecoratorContext, target: Model, pb: Numeric, sb: Numeric, ...dd: Numeric[]) {
   context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
 }
 
@@ -206,20 +211,20 @@ export function $base(context: DecoratorContext, target: Model, pb: number, sb: 
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $ext(context: DecoratorContext, target: Model, ...dd: number[]) {
+export function $ext(context: DecoratorContext, target: Model, ...dd: Numeric[]) {
   context.program.stateMap(StateKeys.id).set(target, dd);
   context.program.stateSet(StateKeys.id).add(target);
 }
 
 /**
- * Accessor for the `@id` decorator.
+ * Accessor for the `@id`/`@base`/`@ext` decorators.
  *
  * @param program TypeSpec program.
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
 export function getId(program: Program, target: Model): number[] | undefined {
-  return program.stateMap(StateKeys.id).get(target);
+  return program.stateMap(StateKeys.id).get(target)?.map(getNum);
 }
 
 
@@ -316,15 +321,16 @@ export function getHex(program: Program, target: Scalar): boolean {
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $maxBits(context: DecoratorContext, target: Scalar, value: number) {
-  if (value<=0 || value>7) {
+export function $maxBits(context: DecoratorContext, target: Scalar, value: Numeric) {
+  const val = getNum(value);
+  if (val===undefined || val<=0 || val>7) {
     reportDiagnostic(context.program, {
       code: "banned-length",
       target: context.getArgumentTarget(0)!,
-      format: { which: 'maxBits', value: '7' },
+      format: { which: 'maxBits', value: val!==undefined && val>7 ? '7' : '<0' },
     });
   }
-  context.program.stateMap(StateKeys.maxBits).set(target, value);
+  context.program.stateMap(StateKeys.maxBits).set(target, val);
 }
 
 /**
@@ -335,7 +341,7 @@ export function $maxBits(context: DecoratorContext, target: Scalar, value: numbe
  * @returns value if provided on the given target or undefined.
  */
 export function getMaxBits(program: Program, target: Scalar): number | undefined {
-  return program.stateMap(StateKeys.maxBits).get(target);
+  return getNum(program.stateMap(StateKeys.maxBits).get(target));
 }
 
 setTypeSpecNamespace("internal", $reverse, $bcd, $hex, $maxBits);
@@ -401,11 +407,12 @@ export function getUnit(program: Program, target: Scalar|ModelProperty): string 
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty, value: number) {
+export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty, value: Numeric) {
+  const val = getNum(value);
   // this works only for direct Scalars, not for indirect ones via ModelProperty:
   const isPlainTime = target.kind==='Scalar' && isIntrinsicType(context.program, target, 'plainTime'); // for internal time types
   if (!(isNumericType(context.program, getPropertyType(target)) || isPlainTime)
-  || (typeof value !== 'number') || (value<=0)
+  || val===undefined || val<=0
   || context.program.stateMap(StateKeys.values).has(target)) {
     reportDiagnostic(context.program, {
       code: "banned-divisor",
@@ -414,7 +421,7 @@ export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty
     });
     return;
   }
-  context.program.stateMap(StateKeys.divisor).set(target, value);
+  context.program.stateMap(StateKeys.divisor).set(target, val);
 }
 
 /**
@@ -424,10 +431,11 @@ export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty
  * @param target Decorator target.
  * @param value the value to set.
  */
-export function $factor(context: DecoratorContext, target: Scalar|ModelProperty, value: number) {
+export function $factor(context: DecoratorContext, target: Scalar|ModelProperty, value: Numeric) {
+  const val = getNum(value);
   const isPlainTime = target.kind==='Scalar' && isIntrinsicType(context.program, target, 'plainTime'); // for internal time types
   if (!(isNumericType(context.program, getPropertyType(target)) || isPlainTime)
-  || (typeof value !== 'number') || (value<=0)
+  || val===undefined || val<=0
   || context.program.stateMap(StateKeys.values).has(target)) {
     reportDiagnostic(context.program, {
       code: "banned-factor",
@@ -436,7 +444,7 @@ export function $factor(context: DecoratorContext, target: Scalar|ModelProperty,
     });
     return;
   }
-  context.program.stateMap(StateKeys.divisor).set(target, 1.0/value);
+  context.program.stateMap(StateKeys.divisor).set(target, 1.0/val);
 }
 
 /**
@@ -447,7 +455,7 @@ export function $factor(context: DecoratorContext, target: Scalar|ModelProperty,
  * @returns value if provided on the given target or undefined.
  */
 export function getDivisor(program: Program, target: Scalar|ModelProperty): number | undefined {
-  return program.stateMap(StateKeys.divisor).get(target);
+  return getNum(program.stateMap(StateKeys.divisor).get(target));
 }
 
 /**

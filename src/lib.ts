@@ -135,4 +135,6 @@ export const $lib = createTypeSpecLibrary({
   },
 });
 
+export const $flags = {decoratorArgMarshalling: "new"};
+
 export const { reportDiagnostic, createDiagnostic, stateKeys: StateKeys } = $lib;

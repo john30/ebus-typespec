@@ -1,4 +1,4 @@
-import "../dist/src/decorators.js";
+import "../dist/src/index.js";
 import "./types.tsp";
 
 using TypeSpec.Reflection;
@@ -66,7 +66,7 @@ extern dec ext(target: Model, ...id: valueof Symbol[]);
  * Define the inherited model(s).
  * @param models inherited models.
  */
-extern dec inherit(target: Model, ...models: valueof Model[]);
+extern dec inherit(target: Model, ...models: Model[]);
 
 /**
  * Define message part outbound to target.
@@ -123,5 +123,5 @@ namespace internal {
    * Define the max bits.
    * @param value the max bits.
    */
-  extern dec maxBits(target: numeric, value: valueof numeric);
+  extern dec maxBits(target: numeric, value: valueof uint8);
 }

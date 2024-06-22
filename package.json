@@ -43,11 +43,11 @@
     "*.md"
   ],
   "peerDependencies": {
-    "@typespec/compiler": "~0.56.0"
+    "@typespec/compiler": "~0.57.0"
   },
   "devDependencies": {
-    "@typespec/compiler": "~0.56.0",
-    "@typespec/library-linter": "~0.56.0",
+    "@typespec/compiler": "~0.57.0",
+    "@typespec/library-linter": "~0.57.0",
     "@typespec/tspd": "latest",
     "@types/node": "latest",
     "typedoc": "^0.25.13",
@@ -58,7 +58,7 @@
     "build": "tsc && npm run build:tsp",
     "watch": "tsc --watch",
     "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit",
-    "test": "node --test ./dist/test/",
+    "test": "node --test --test-force-exit ./dist/test/",
     "docs": "npx tspd doc . --enable-experimental"
   }
 }
