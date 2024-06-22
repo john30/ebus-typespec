@@ -25,14 +25,15 @@ extern dec passive(target: Model);
 
 /**
  * Define authentication level.
+ * @param value the authentication level (e.g. 'install').
  */
-extern dec auth(target: Model, auth: valueof string);
+extern dec auth(target: Model, value: valueof string);
 
 /**
  * Define the source address.
  * @param value the source address QQ.
  */
-extern dec qq(source: Model, value?: valueof Source);
+extern dec qq(target: Model, value?: valueof Source);
 
 /**
  * Define the target address.
@@ -44,17 +45,17 @@ extern dec zz(target: Model|Namespace, value?: valueof Target);
  * Define the whole message ID.
  * @param pb the primary message ID.
  * @param sb the secondary message ID.
- * @param id further message ID parts.
+ * @param dd further message ID parts.
  */
-extern dec id(target: Model, pb: valueof Pb, sb: valueof Sb, ...id: valueof Symbol[]);
+extern dec id(target: Model, pb: valueof Pb, sb: valueof Sb, ...dd: valueof Symbol[]);
 
 /**
  * Define the base message ID to be combined with an extension ID.
  * @param pb the primary message ID.
  * @param sb the secondary message ID.
- * @param id further message ID parts.
+ * @param dd further message ID parts.
  */
-extern dec base(target: Model, pb: valueof Pb, sb: valueof Sb, ...id: valueof Symbol[]);
+extern dec base(target: Model, pb: valueof Pb, sb: valueof Sb, ...dd: valueof Symbol[]);
 
 /**
  * Define the extension message ID to be combined with a base ID.

@@ -1,11 +1,11 @@
-# ebus
+# @ebusd/ebus-typespec
 
 TypeSpec library for defining eBUS messages and emitting to ebusd CSV.
 
 ## Install
 
 ```bash
-npm install https://github.com/john30/ebus-typespec
+npm install @ebusd/ebus-typespec
 ```
 
 ## Emitter
@@ -15,14 +15,14 @@ npm install https://github.com/john30/ebus-typespec
 1. Via the command line
 
 ```bash
-tsp compile . --emit=ebus
+tsp compile . --emit=@ebusd/ebus-typespec
 ```
 
 2. Via the config
 
 ```yaml
 emit:
-  - "ebus"
+  - "@ebusd/ebus-typespec"
 ```
 
 ### Emitter options
@@ -99,7 +99,7 @@ Available ruleSets:
 Define authentication level.
 
 ```typespec
-@Ebus.auth(auth: valueof string)
+@Ebus.auth(value: valueof string)
 ```
 
 ##### Target
@@ -108,16 +108,16 @@ Define authentication level.
 
 ##### Parameters
 
-| Name | Type                    | Description |
-| ---- | ----------------------- | ----------- |
-| auth | `valueof scalar string` |             |
+| Name  | Type                    | Description                                |
+| ----- | ----------------------- | ------------------------------------------ |
+| value | `valueof scalar string` | the authentication level (e.g. 'install'). |
 
 #### `@base`
 
 Define the base message ID to be combined with an extension ID.
 
 ```typespec
-@Ebus.base(pb: valueof Ebus.Pb, sb: valueof Ebus.Sb, ...id: valueof Ebus.Symbol[])
+@Ebus.base(pb: valueof Ebus.Pb, sb: valueof Ebus.Sb, ...dd: valueof Ebus.Symbol[])
 ```
 
 ##### Target
@@ -130,7 +130,7 @@ Define the base message ID to be combined with an extension ID.
 | ---- | ----------------------------- | ------------------------- |
 | pb   | `valueof scalar Ebus.Pb`      | the primary message ID.   |
 | sb   | `valueof scalar Ebus.Sb`      | the secondary message ID. |
-| id   | `valueof model Ebus.Symbol[]` | further message ID parts. |
+| dd   | `valueof model Ebus.Symbol[]` | further message ID parts. |
 
 #### `@condition`
 
@@ -210,7 +210,7 @@ Define the factor.
 Define the whole message ID.
 
 ```typespec
-@Ebus.id(pb: valueof Ebus.Pb, sb: valueof Ebus.Sb, ...id: valueof Ebus.Symbol[])
+@Ebus.id(pb: valueof Ebus.Pb, sb: valueof Ebus.Sb, ...dd: valueof Ebus.Symbol[])
 ```
 
 ##### Target
@@ -223,7 +223,7 @@ Define the whole message ID.
 | ---- | ----------------------------- | ------------------------- |
 | pb   | `valueof scalar Ebus.Pb`      | the primary message ID.   |
 | sb   | `valueof scalar Ebus.Sb`      | the secondary message ID. |
-| id   | `valueof model Ebus.Symbol[]` | further message ID parts. |
+| dd   | `valueof model Ebus.Symbol[]` | further message ID parts. |
 
 #### `@in`
 
@@ -246,7 +246,7 @@ None
 Define the inherited model(s).
 
 ```typespec
-@Ebus.inherit(...models: valueof Model[])
+@Ebus.inherit(...models: Model[])
 ```
 
 ##### Target
@@ -255,9 +255,9 @@ Define the inherited model(s).
 
 ##### Parameters
 
-| Name   | Type                    | Description       |
-| ------ | ----------------------- | ----------------- |
-| models | `valueof model Model[]` | inherited models. |
+| Name   | Type            | Description       |
+| ------ | --------------- | ----------------- |
+| models | `model Model[]` | inherited models. |
 
 #### `@out`
 
@@ -423,7 +423,7 @@ None
 Define the max bits.
 
 ```typespec
-@Ebus.internal.maxBits(value: valueof numeric)
+@Ebus.internal.maxBits(value: valueof uint8)
 ```
 
 ##### Target
@@ -432,9 +432,9 @@ Define the max bits.
 
 ##### Parameters
 
-| Name  | Type                     | Description   |
-| ----- | ------------------------ | ------------- |
-| value | `valueof scalar numeric` | the max bits. |
+| Name  | Type                   | Description   |
+| ----- | ---------------------- | ------------- |
+| value | `valueof scalar uint8` | the max bits. |
 
 #### `@reverse`
 

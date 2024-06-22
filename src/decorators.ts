@@ -13,7 +13,7 @@ import {StateKeys, reportDiagnostic} from "./lib.js";
  *
  * @param context Decorator context.
  * @param target Decorator target.
- * @param value the value to set.
+ * @param values the value to set.
  */
 export function $condition(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, ...values: string[]) {
   const prev = (context.program.stateMap(StateKeys.condition).get(target)||[]) as [ModelProperty|Model, ...string[]][];
@@ -186,7 +186,9 @@ export function getZz(program: Program, target: Model|Namespace): number | undef
  *
  * @param context Decorator context.
  * @param target Decorator target.
- * @param value the value to set.
+ * @param pb the primary message ID.
+ * @param sb the secondary message ID.
+ * @param dd further message ID parts.
  */
 export function $id(context: DecoratorContext, target: Model, pb: Numeric, sb: Numeric, ...dd: Numeric[]) {
   context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
@@ -198,7 +200,9 @@ export function $id(context: DecoratorContext, target: Model, pb: Numeric, sb: N
  *
  * @param context Decorator context.
  * @param target Decorator target.
- * @param value the value to set.
+ * @param pb the primary message ID.
+ * @param sb the secondary message ID.
+ * @param dd further message ID parts.
  */
 export function $base(context: DecoratorContext, target: Model, pb: Numeric, sb: Numeric, ...dd: Numeric[]) {
   context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
@@ -209,7 +213,7 @@ export function $base(context: DecoratorContext, target: Model, pb: Numeric, sb:
  *
  * @param context Decorator context.
  * @param target Decorator target.
- * @param value the value to set.
+ * @param dd further message ID parts.
  */
 export function $ext(context: DecoratorContext, target: Model, ...dd: Numeric[]) {
   context.program.stateMap(StateKeys.id).set(target, dd);
@@ -233,7 +237,8 @@ export function getId(program: Program, target: Model): number[] | undefined {
  *
  * @param context Decorator context.
  * @param target Decorator target.
- * @param value the inherited models.
+ * @param first the primary inherited model.
+ * @param other further inherited models.
  */
 export function $inherit(context: DecoratorContext, target: Model, first: Model, ...other: Model[]) {
   context.program.stateMap(StateKeys.inherit).set(target, [first, ...other]);

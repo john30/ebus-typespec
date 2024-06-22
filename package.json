@@ -59,6 +59,6 @@
     "watch": "tsc --watch",
     "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit",
     "test": "node --test --test-force-exit ./dist/test/",
-    "docs": "npx tspd doc . --enable-experimental"
+    "docs": "npx tspd doc --enable-experimental . && mv README.md docs.md && rm -rf docs && git checkout README.md"
   }
 }
