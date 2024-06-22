@@ -1,8 +1,8 @@
 import {type Model} from "@typespec/compiler";
 import {expectDiagnostics, type BasicTestRunner} from "@typespec/compiler/testing";
-import {strictEqual} from "node:assert";
+import {deepEqual, strictEqual} from "node:assert";
 import {beforeEach, describe, it} from "node:test";
-import {getQq, getZz} from "../src/decorators.js";
+import {getId, getQq, getZz} from "../src/decorators.js";
 import {createEbusTestRunner} from "./test-host.js";
 
 describe("decorators", () => {
@@ -48,6 +48,26 @@ describe("decorators", () => {
         severity: "error",
         code: "ebus/banned-target-address",
         message: "Invalid target address \"170\"."
+      })
+    });
+  });
+
+  describe("@id", () => {
+    it("set id on model", async () => {
+      const { Test } = (await runner.compile(
+        `@zz(0xfe) @id(1,2,0x00,0) @test model Test {}`
+      )) as { Test: Model };
+      deepEqual(getId(runner.program, Test), [1,2,0,0]);
+    });
+
+    it("emit diagnostic with invalid value", async () => {
+      const diagnostics = await runner.diagnose(
+        `@id(1,2,0x100) @test model Test {}`
+      );
+      expectDiagnostics(diagnostics, {
+        severity: "error",
+        code: "invalid-argument",
+        message: "Argument of type '0x100' is not assignable to parameter of type 'valueof Ebus.Symbol'"
       })
     });
   });

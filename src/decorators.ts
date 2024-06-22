@@ -116,10 +116,23 @@ const validSource: Uint8Array = new Uint8Array([
 const invalidTarget: Uint8Array = new Uint8Array([0xa9,0xaa]);
 export const isSourceAddr = (qq?: number) => qq!==undefined && validSource.includes(qq);
 
-const getNum = (value: Numeric|number): number|undefined =>
-  typeof value === 'number' ? value
-  : isNumeric(value) ? (value.asNumber()===null ? undefined : value.asNumber() as number)
-  : undefined;
+const getNum = (value: Numeric|number): number|undefined => {
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (!isNumeric(value)) {
+    return undefined;
+  }
+  const v = value.asNumber();
+  if (v===null) {
+    const b = value.asBigInt(); // weird way of having 0x00 "loosing precision"
+    if (b===null) {
+      return undefined;
+    }
+    return Number(b.valueOf());
+  }
+  return v;
+}
 
 /**
  * Implementation of the `@qq` decorator.
@@ -228,9 +241,9 @@ export function $ext(context: DecoratorContext, target: Model, ...dd: Numeric[])
  * @returns value if provided on the given target or undefined.
  */
 export function getId(program: Program, target: Model): number[] | undefined {
-  return program.stateMap(StateKeys.id).get(target)?.map(getNum);
+  const ids = program.stateMap(StateKeys.id).get(target) as Numeric[];
+  return ids?.map(v => getNum(v) as number).filter(v => v!==undefined);
 }
-
 
 /**
  * Implementation of the `@inherit` decorator.

@@ -31,7 +31,7 @@ describe("emitting models", () => {
       using Ebus.num;
       @qq(0x01)
       @zz(0x08)
-      @id(0,1,2)
+      @id(0xb5, 0x09, 0x0e, 0x00, 0x01)
       /** a foo */
       model Foo {
         /** an x */
@@ -44,7 +44,7 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,a foo,01,08,0001,02,x,m,BCD:4,10,y,an x,z,,UCH,,,"
+      "r,main,,Foo,a foo,01,08,b509,0e0001,x,m,BCD:4,10,y,an x,z,,UCH,,,"
     );
   });
   it("works with multiple", async () => {
