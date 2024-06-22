@@ -1,6 +1,6 @@
 {
   "name": "@ebusd/ebus-typespec",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": "John Baier",
   "description": "TypeSpec library for defining eBUS messages and emitting to ebusd CSV.",
   "homepage": "https://github.com/john30/ebus-typespec",
@@ -57,7 +57,7 @@
   "scripts": {
     "build": "tsc && npm run build:tsp",
     "watch": "tsc --watch",
-    "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit",
+    "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit && chmod a+x dist/src/tsp2ebusd.js",
     "test": "node --test --test-force-exit ./dist/test/",
     "docs": "npx tspd doc --enable-experimental . && mv README.md docs.md && rm -rf docs && git checkout README.md"
   }
