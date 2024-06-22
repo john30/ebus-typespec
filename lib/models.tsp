@@ -36,7 +36,7 @@ namespace id {
   }
 
   @values(manufacturers)
-  scalar manufacturer extends UCH
+  scalar manufacturer extends UCH;
 
   model id_read {}
   @zz(BROADCAST)
