@@ -1,4 +1,4 @@
-import {emitFile, getDoc, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
+import {emitFile, getDoc, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
 import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
@@ -499,4 +499,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     //  : this.emitter.getOptions()["file-type"] === "yaml" ? "yaml" :
     return "csv";
   }
+}
+
+
+export async function $onEmit(context: EmitContext<EbusdEmitterOptions>) {
+  const emitter =
+  // context.options["file-type"]==='csv'?
+  context.getAssetEmitter(EbusdEmitter)
+  emitter.emitProgram();
+  await emitter.writeOutput();
 }
