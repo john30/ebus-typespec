@@ -79,6 +79,7 @@ Available ruleSets:
 
 - [`@auth`](#@auth)
 - [`@base`](#@base)
+- [`@chain`](#@chain)
 - [`@condition`](#@condition)
 - [`@divisor`](#@divisor)
 - [`@ext`](#@ext)
@@ -132,6 +133,26 @@ Define the base message ID to be combined with an extension ID.
 | sb   | `valueof scalar Ebus.Sb`      | the secondary message ID. |
 | dd   | `valueof model Ebus.Symbol[]` | further message ID parts. |
 
+#### `@chain`
+
+Define chained message IDs.
+
+```typespec
+@Ebus.chain(length: valueof uint8, dd: valueof Ebus.Symbol[], ...dds: valueof Ebus.Symbol[][])
+```
+
+##### Target
+
+`Model`
+
+##### Parameters
+
+| Name   | Type                            | Description                                                                                |
+| ------ | ------------------------------- | ------------------------------------------------------------------------------------------ |
+| length | `valueof scalar uint8`          | the (maximum) length of a single message part of this chain, or 0 for default (=24).       |
+| dd     | `valueof model Ebus.Symbol[]`   | second message ID part the chain is built from (first one taken from id or ext decorator). |
+| dds    | `valueof model Ebus.Symbol[][]` | list of further message ID parts the chain is built from.                                  |
+
 #### `@condition`
 
 Define the condition(s) for the whole message (if given multiple times, all conditions must be met).
@@ -174,7 +195,7 @@ Define the divisor.
 Define the extension message ID to be combined with a base ID.
 
 ```typespec
-@Ebus.ext(...id: valueof Ebus.Symbol[])
+@Ebus.ext(...dd: valueof Ebus.Symbol[])
 ```
 
 ##### Target
@@ -185,7 +206,7 @@ Define the extension message ID to be combined with a base ID.
 
 | Name | Type                          | Description                  |
 | ---- | ----------------------------- | ---------------------------- |
-| id   | `valueof model Ebus.Symbol[]` | message ID extensions parts. |
+| dd   | `valueof model Ebus.Symbol[]` | message ID extensions parts. |
 
 #### `@factor`
 
@@ -439,6 +460,11 @@ Define the max bits.
 #### `@reverse`
 
 Define reverse representation.
+For numeric types this means most significant byte first (big-endian)
+instead of least significant byte first (little-endian).
+For date/time types coded as sequence of individual parts this means reverse sequence
+(i.e. year,month,day instead of day,month,year for dates
+and seconds,minutes,hours instead of hours,minutes,seconds for times).
 
 ```typespec
 @Ebus.internal.reverse

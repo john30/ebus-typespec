@@ -17,6 +17,7 @@ This is a short overview of the [decorators](lib/decorators.tsp) offered by the 
   * base ID: `@base(PB, SB, ID*)`
   * ID extension: `@ext(ID*)`
   * inheritance: ``@inherit(...)`
+* message chaining: `@chain(...)`
 * message direction: `@write`, `@passive`
 * message condition(s): `@condition(model, values)`
 * message authorization: `@auth(level)`
@@ -45,6 +46,7 @@ Here is a small example of a message carrying just a single byte:
 
 ```typespec
 import "@ebusd/ebus-typespec";
+using Ebus;
 using Ebus.num;
 
 @zz(0x08)

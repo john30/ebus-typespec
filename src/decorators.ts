@@ -317,7 +317,7 @@ export function getIdType(program: Program, target: Model): {isExt?: boolean, id
  * @param target Decorator target.
  * @param length the (maximum) length of a single message part of this chain, or 0 for default (=24).
  * @param dd second message ID part the chain is built from (first one taken from id or ext decorator).
- * @param dds list of message ID parts the chain is built from.
+ * @param dds list of further message ID parts the chain is built from.
  */
 export function $chain(context: DecoratorContext, target: Model, length: Numeric, dd: Numeric[], ...dds: Numeric[][]) {
   const val = getNum(length);
