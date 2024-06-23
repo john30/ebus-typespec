@@ -30,6 +30,30 @@ export const $onValidate = (program: Program): void => {
         }
       }
     }
+    // check for model recursion
+    const seen = new Set<Model>();
+    const checkRecursion = (model: Model): Model|undefined => {
+      if (seen.has(model)) {
+        return model;
+      }
+      seen.add(model);
+      for (const prop of model.properties.values()) {
+        if (prop.type.kind==='Model') {
+          const ret = checkRecursion(prop.type);
+          if (ret) {
+            return ret;
+          }
+        }
+      }
+    }
+    const model = checkRecursion(target);
+    if (model) {
+      reportDiagnostic(program, {
+        code: "banned-inheritance",
+        target,
+        format: {ref: model.name},
+      });
+    }
   }
   // walk through all models having a @chain assigned
   for (const target of program.stateMap(StateKeys.chain).keys() as IterableIterator<Model>) {

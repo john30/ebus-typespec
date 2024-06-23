@@ -102,7 +102,7 @@ export const $lib = createTypeSpecLibrary({
     "banned-inheritance": {
       severity: "error",
       messages: {
-        default: paramMessage`The inheritance is too deep.`,
+        default: paramMessage`The inheritance is too deep in ${"ref"}.`,
       },
     },
     "duplicate-name": {

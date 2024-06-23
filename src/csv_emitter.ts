@@ -195,8 +195,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         } else {
           reportDiagnostic(program, {
             code: "banned-inheritance",
-            format: {},
-            target: p,
+            target: model,
+            format: {ref: p.name},
           });
           commentProp = undefined;
         }
