@@ -23,7 +23,7 @@ union targets {
   Target,
 }
 /** the special broadcast target address. */
-alias BROADCAST = 0xfe; // todo should be possible as targets.Broadcast someday
+alias BROADCAST = targets.Broadcast;
 
 /** the primary command symbol 'PB'. */
 scalar Pb extends Symbol;
