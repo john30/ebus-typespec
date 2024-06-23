@@ -258,9 +258,17 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,id,identification,,,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
-      "u,main,,id,identification,,fe,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version\n"+
-      "w,main,,id,identification,,fe,0704,,"
+      "r,main,,id,identification,,,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
+    );
+  });
+  it("emits concrete id message", async () => {
+    const files = await emit(`
+      @zz(8)
+      model id is Ebus.id.id;
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,main,,id,identification,,08,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
     );
   });
   it("keeps property name", async () => {

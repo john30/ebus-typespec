@@ -38,15 +38,8 @@ namespace id {
   @values(manufacturers)
   scalar manufacturer extends UCH;
 
-  model id_read {}
-  @zz(BROADCAST)
-  @passive
-  model id_bcast {}
-  @zz(BROADCAST)
-  model id_write {}
-
   /** identification */
-  @inherit(id_read, id_bcast, id_write) @id(0x07, 0x04)
+  @id(0x07, 0x04)
   model id {
     /** device manufacturer */
     mf?: manufacturer,
@@ -58,4 +51,11 @@ namespace id {
     /** hardware version */
     hw?: num.PIN,
   }
+
+  @zz(BROADCAST)
+  @passive
+  model id_bcast is id;
+
+  @zz(BROADCAST)
+  model id_write is id;
 }
