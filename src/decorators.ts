@@ -92,6 +92,13 @@ export function $auth(context: DecoratorContext, target: Model, value: string) {
     });
     return;
   }
+  if (context.program.stateMap(StateKeys.auth).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'auth'},
+    });
+  }
   context.program.stateMap(StateKeys.auth).set(target, value);
 }
 
@@ -150,6 +157,13 @@ export function $qq(context: DecoratorContext, target: Model, value?: Numeric) {
     });
     return;
   }
+  if (context.program.stateMap(StateKeys.qq).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'qq'},
+    });
+  }
   context.program.stateMap(StateKeys.qq).set(target, value);
 }
 
@@ -180,6 +194,13 @@ export function $zz(context: DecoratorContext, target: Model|Namespace, value?: 
     });
     return;
   }
+  if (context.program.stateMap(StateKeys.zz).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'zz'},
+    });
+  }
   context.program.stateMap(StateKeys.zz).set(target, value===undefined?0xaa:value);
 }
 
@@ -204,6 +225,14 @@ export function getZz(program: Program, target: Model|Namespace): number | undef
  * @param dd further message ID parts.
  */
 export function $id(context: DecoratorContext, target: Model, pb: Numeric, sb: Numeric, ...dd: Numeric[]) {
+  // single @id and @ext can only combine with single @base from inherited model
+  if (context.program.stateMap(StateKeys.id).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'id/@base/@ext'},
+    });
+  }
   context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
   context.program.stateSet(StateKeys.id).add(target);
 }
@@ -218,6 +247,14 @@ export function $id(context: DecoratorContext, target: Model, pb: Numeric, sb: N
  * @param dd further message ID parts.
  */
 export function $base(context: DecoratorContext, target: Model, pb: Numeric, sb: Numeric, ...dd: Numeric[]) {
+  // single @id and @ext can only combine with single @base from inherited model
+  if (context.program.stateMap(StateKeys.id).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'base/@id/@ext'},
+    });
+  }
   context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
 }
 
@@ -229,6 +266,14 @@ export function $base(context: DecoratorContext, target: Model, pb: Numeric, sb:
  * @param dd further message ID parts.
  */
 export function $ext(context: DecoratorContext, target: Model, ...dd: Numeric[]) {
+  // single @id and @ext can only combine with single @base from inherited model
+  if (context.program.stateMap(StateKeys.id).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'ext/@id/@base'},
+    });
+  }
   context.program.stateMap(StateKeys.id).set(target, dd);
   context.program.stateSet(StateKeys.id).add(target);
 }
@@ -254,6 +299,13 @@ export function getId(program: Program, target: Model): number[] | undefined {
  * @param other further inherited models.
  */
 export function $inherit(context: DecoratorContext, target: Model, first: Model, ...other: Model[]) {
+  if (context.program.stateMap(StateKeys.inherit).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'inherit'},
+    });
+  }
   context.program.stateMap(StateKeys.inherit).set(target, [first, ...other]);
 }
 
@@ -348,6 +400,13 @@ export function $maxBits(context: DecoratorContext, target: Scalar, value: Numer
       format: { which: 'maxBits', value: val!==undefined && val>7 ? '7' : '<0' },
     });
   }
+  if (context.program.stateMap(StateKeys.maxBits).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'maxBits'},
+    });
+  }
   context.program.stateMap(StateKeys.maxBits).set(target, val);
 }
 
@@ -439,6 +498,13 @@ export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty
     });
     return;
   }
+  if (context.program.stateMap(StateKeys.divisor).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'divisor/@factor'},
+    });
+  }
   context.program.stateMap(StateKeys.divisor).set(target, val);
 }
 
@@ -461,6 +527,13 @@ export function $factor(context: DecoratorContext, target: Scalar|ModelProperty,
       format: { value: value.toString() },
     });
     return;
+  }
+  if (context.program.stateMap(StateKeys.divisor).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'factor/@divisor'},
+    });
   }
   context.program.stateMap(StateKeys.divisor).set(target, 1.0/val);
 }
@@ -494,6 +567,13 @@ export function $values(context: DecoratorContext, target: Scalar|ModelProperty,
   //   });
   //   return;
   // }
+  if (context.program.stateMap(StateKeys.values).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'values'},
+    });
+  }
   context.program.stateMap(StateKeys.values).set(target, value);
 }
 

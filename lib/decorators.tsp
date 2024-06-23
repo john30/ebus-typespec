@@ -59,9 +59,9 @@ extern dec base(target: Model, pb: valueof Pb, sb: valueof Sb, ...dd: valueof Sy
 
 /**
  * Define the extension message ID to be combined with a base ID.
- * @param id message ID extensions parts.
+ * @param dd message ID extensions parts.
  */
-extern dec ext(target: Model, ...id: valueof Symbol[]);
+extern dec ext(target: Model, ...dd: valueof Symbol[]);
 
 /**
  * Define the inherited model(s).

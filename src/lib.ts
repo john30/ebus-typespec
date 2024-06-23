@@ -111,6 +111,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`There are multiple models types with the same id "${"id"}".`,
       },
     },
+    "multiple-decorator": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Only single decorator "@${"which"}" allowed.`,
+      },
+    },
   },
   emitter: {
     options: EmitterOptionsSchema as JSONSchemaType<EbusdEmitterOptions>,
