@@ -117,6 +117,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Only single decorator "@${"which"}" allowed.`,
       },
     },
+    "missing-decorator": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Missing decorator "@${"which"}".`,
+      },
+    }
   },
   emitter: {
     options: EmitterOptionsSchema as JSONSchemaType<EbusdEmitterOptions>,
@@ -129,6 +135,7 @@ export const $lib = createTypeSpecLibrary({
     qq: { description: "source address QQ" },
     zz: { description: "target address ZZ" },
     id: { description: "message ID" },
+    chain: { description: "message chain" },
     inherit: { description: "inherited model(s)" },
     bcd: { description: 'BCD encoding' },
     hex: { description: 'HEX encoding' },

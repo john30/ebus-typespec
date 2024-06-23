@@ -2,7 +2,7 @@ import {type Model} from "@typespec/compiler";
 import {expectDiagnostics, type BasicTestRunner} from "@typespec/compiler/testing";
 import {deepEqual, strictEqual} from "node:assert";
 import {beforeEach, describe, it} from "node:test";
-import {getId, getQq, getZz} from "../src/decorators.js";
+import {getChain, getId, getQq, getZz} from "../src/decorators.js";
 import {createEbusTestRunner} from "./test-host.js";
 
 describe("decorators", () => {
@@ -94,6 +94,15 @@ describe("decorators", () => {
         code: "invalid-argument",
         message: "Argument of type '0x100' is not assignable to parameter of type 'valueof Ebus.Symbol'"
       })
+    });
+  });
+
+  describe("@chain", () => {
+    it("set chain on model", async () => {
+      const { Test } = (await runner.compile(
+        `@id(1,2) @chain(1, #[0]) @test model Test {}`
+      )) as { Test: Model };
+      deepEqual(getChain(runner.program, Test), {length: 1, dds: [[0]]});
     });
   });
 });

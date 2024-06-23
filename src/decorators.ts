@@ -291,6 +291,61 @@ export function getId(program: Program, target: Model): number[] | undefined {
 }
 
 /**
+ * Implementation of the `@chain` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param length the (maximum) length of a single message part of this chain, or 0 for default (=24).
+ * @param dd second message ID part the chain is built from (first one taken from id or ext decorator).
+ * @param dds list of message ID parts the chain is built from.
+ */
+export function $chain(context: DecoratorContext, target: Model, length: Numeric, dd: Numeric[], ...dds: Numeric[][]) {
+  const val = getNum(length);
+  if (val===undefined || val<0 || val>30) { // 0 is allowed as replacement for default=24, 31 is ebusd MAX_LEN
+    reportDiagnostic(context.program, {
+      code: "banned-length",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'chain', value: val!==undefined && val>30 ? '30' : '<0' },
+    });
+  }
+  // if (!context.program.stateSet(StateKeys.id).has(target)) { // order is different than in source, so can't check here
+  //   // only valid in combination with @id/@ext
+  //   reportDiagnostic(context.program, {
+  //     code: "missing-decorator",
+  //     target: context.getArgumentTarget(0)!,
+  //     format: { which: 'id/@ext'},
+  //   });
+  // }
+  if (context.program.stateMap(StateKeys.chain).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'chain'},
+    });
+  }  
+  context.program.stateMap(StateKeys.chain).set(target, {length, dds: [dd, ...dds]});
+}
+
+/**
+ * Accessor for the `@chain` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getChain(program: Program, target: Model): {length: number, dds: number[][]} | undefined {
+  const {length, dds} = (program.stateMap(StateKeys.chain).get(target)??{}) as {length: Numeric, dds: Numeric[][]};
+  if (!dds || length===undefined) {
+    return;
+  }
+  // silently discards empty parts
+  return {
+    length: getNum(length)!,
+    dds: dds.map(dd => dd?.map(v => getNum(v) as number).filter(v => v!==undefined)).filter(dd => dd!==undefined && dd.length),
+  }
+}
+
+/**
  * Implementation of the `@inherit` decorator.
  *
  * @param context Decorator context.

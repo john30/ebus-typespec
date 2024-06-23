@@ -2,7 +2,7 @@ import {emitFile, getDoc, getMaxLength, getMinLength, getNamespaceFullName, isDe
 import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import {basename, extname} from "path";
-import {getAuth, getConditions, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {getAuth, getChain, getConditions, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
@@ -138,10 +138,38 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         this.#idDuplicateTracker.track([sf?.path||'', conds, direction, qq, zz, ...id].join(), model);
       }
       const idh = hexs(id);
+      const pbsb = idh.substring(0, 4);
+      let ids = idh.substring(4);
+      const chain = getChain(program, model) || getChain(program, inheritFrom);
+      if (chain) {
+        let badLength = ids.length ? '' : 'missing DD';
+        let idsuffix = '';
+        if (!badLength) {
+          const lengthSuffix = chain.length ? `:${chain.length}` : '';
+          idsuffix += lengthSuffix;
+          for (const dd of chain.dds) {
+            const h = hexs(dd);
+            if (h.length !== idh.length-4) {
+              badLength = h || 'missing suffix';
+            } else {
+              idsuffix += `;${h}${lengthSuffix}`;
+            }
+          }
+        }
+        if (badLength) {
+          reportDiagnostic(program, {
+            code: "short-id",
+            format: { id: badLength },
+            target: model,
+          }); 
+        } else {
+          ids += idsuffix;
+        }
+      }
       const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
       // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields
       // field: name,part,type,divisor/values,unit,comment
-      const message = [conds+direction, normName.circuit(nearestCircuit), level, normName.message(name), escape(comment), hex(qq), hex(zz), idh.substring(0, 4), idh.substring(4)]
+      const message = [conds+direction, normName.circuit(nearestCircuit), level, normName.message(name), escape(comment), hex(qq), hex(zz), pbsb, ids]
       decls.push([...message, ...(baseFields?[baseFields]:[]), fields].join());
     }
     return this.emitter.result.declaration(name, decls.join('\n'));

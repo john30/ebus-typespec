@@ -64,6 +64,14 @@ extern dec base(target: Model, pb: valueof Pb, sb: valueof Sb, ...dd: valueof Sy
 extern dec ext(target: Model, ...dd: valueof Symbol[]);
 
 /**
+ * Define chained message IDs.
+ * @param length the (maximum) length of a single message part of this chain, or 0 for default (=24).
+ * @param dd second message ID part the chain is built from (first one taken from id or ext decorator).
+ * @param dds list of message ID parts the chain is built from.
+ */
+extern dec chain(target: Model, length: valueof uint8, dd: valueof Symbol[], ...dds: valueof Symbol[][]);
+
+/**
  * Define the inherited model(s).
  * @param models inherited models.
  */
