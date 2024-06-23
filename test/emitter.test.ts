@@ -662,15 +662,29 @@ describe("emitting models", () => {
       "r,main,,Foo,,,,0001,02;03;04,"
     );
   });
-  it("works with @chain and length", async () => {
+  it("works with @chain and @ext", async () => {
     const files = await emit(`
-      @id(0,1,2)
-      @chain(8, #[3],#[4])
+      @base(0,1)
+      model r {}
+      @inherit(r)
+      @ext(2)
+      @chain(0, #[3],#[4])
       model Foo {}
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,02:8;03:8;04:8,"
+      "r,main,,Foo,,,,0001,02;03;04,"
+    );
+  });
+  it("works with @chain and length", async () => {
+    const files = await emit(`
+      @id(7,6,5,2)
+      @chain(8, #[5,3],#[5,4])
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,main,,Foo,,,,0706,0502:8;0503:8;0504:8,"
     );
   });
 });

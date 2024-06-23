@@ -335,8 +335,17 @@ export function $chain(context: DecoratorContext, target: Model, length: Numeric
       target: context.getArgumentTarget(0)!,
       format: { which: 'chain'},
     });
-  }  
-  context.program.stateMap(StateKeys.chain).set(target, {length, dds: [dd, ...dds]});
+  }
+  dds = [dd, ...dds];
+  const sorted = dds.sort((a, b) => a===b ? 0 : (!a) ? -1 : (!b) ? 1 : (a.length-b.length));
+  if (sorted.length>1 && sorted[0]?.length !== sorted[sorted.length-1]?.length) {
+    reportDiagnostic(context.program, {
+      code: "banned-length",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'chain', value: `${sorted[0]?.length||0}!=${sorted[sorted.length-1]?.length||0}` },
+    });
+  }
+  context.program.stateMap(StateKeys.chain).set(target, {length, dds});
 }
 
 /**

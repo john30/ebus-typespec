@@ -147,12 +147,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (!badLength) {
           const lengthSuffix = chain.length ? `:${chain.length}` : '';
           idsuffix += lengthSuffix;
+          const commonPrefix = idh.substring(4, idh.length-chain.dds[0].length*2);
           for (const dd of chain.dds) {
             const h = hexs(dd);
-            if (h.length !== idh.length-4) {
+            if (h.length < idh.length-4-commonPrefix.length) {
               badLength = h || 'missing suffix';
             } else {
-              idsuffix += `;${h}${lengthSuffix}`;
+              idsuffix += `;${commonPrefix}${h}${lengthSuffix}`;
             }
           }
         }
