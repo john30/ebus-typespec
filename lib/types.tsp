@@ -31,139 +31,297 @@ scalar Pb extends Symbol;
 /** the secondary command symbol 'SB'. */
 scalar Sb extends Symbol;
 
-/** The known numeric base types. */
+/** The known numeric base data types. */
 namespace num {
+  // 1 byte length
+
+  /** bit 0. */
   @encode("uint8")
   scalar BI0 extends boolean;
+  /** bit 1. */
   @encode("uint8")
   scalar BI1 extends boolean;
+  /** bit 2. */
   @encode("uint8")
   scalar BI2 extends boolean;
+  /** bit 3. */
   @encode("uint8")
   scalar BI3 extends boolean;
+  /** bit 4. */
   @encode("uint8")
   scalar BI4 extends boolean;
+  /** bit 5. */
   @encode("uint8")
   scalar BI5 extends boolean;
+  /** bit 6. */
   @encode("uint8")
   scalar BI6 extends boolean;
+  /** bit 7. */
   @encode("uint8")
   scalar BI7 extends boolean;
+  /** 6 bits starting from bit 0. */
+  @internal.maxBits(6)
+  scalar BI0_6 extends uint8;
+  /** 7 bits starting from bit 0. */
   @internal.maxBits(7)
   scalar BI0_7 extends uint8;
 
+  /** 1 byte unsigned integer, 0 - 254, replacement 0xff. */
   scalar UCH extends uint8;
+  /** 1 byte signed integer, -127 - +127, replacement 0x7f. */
   scalar SCH extends int8;
+  /** same as SCH. */
   alias D1B = SCH;
+  /** 1 byte unsigned decimal in BCD, 0 - 99, replacement 0xff. */
   @internal.bcd
   scalar BCD extends uint8;
+  /**
+   * 1 byte unsigned decimal digits in hex, 0 - 99
+   * (0x00 - 0x63).
+   */
   @internal.hex
   scalar HCD extends uint8;
+  /**
+   * 1 byte unsigned number (fraction 1/2), 0 - 100
+   * (0x00 - 0xc8, replacement 0xff).
+   */
   @divisor(2)
   scalar D1C extends uint8;
 
+  // 2 byte length
+
+  /** 2 byte unsigned decimal in BCD, shown as 4 digits, 0000 - 9999 (fixed length). */
   @internal.reverse
   @internal.bcd
   scalar PIN extends uint16;
+  /** 2 byte unsigned integer, 0 - 65534, replacement 0xffff. */
   scalar UIN extends uint16;
+  /** 2 byte unsigned integer, 0 - 65534, replacement 0xffff, big endian. */
   @internal.reverse
   scalar UIR extends UIN;
+  /** 2 byte signed integer, -32767 - +32767, replacement 0x7fff. */
   scalar SIN extends int16;
+  /** 2 byte signed integer, -32767 - +32767, replacement 0x7fff, big endian. */
   @internal.reverse
   scalar SIR extends SIN;
+  /** 2 byte unsigned decimal in BCD, 0 - 9999, replacement 0xffff. */
+  @internal.bcd
+  scalar BCD2 extends uint16;
+  /**
+   * 2 byte unsigned decimal digits in hex, 0 - 9999
+   * (0x00,0x00 - 0x63,0x63).
+   */
   @internal.hex
   scalar HCD2 extends uint16;
-
+  /**
+   * 2 byte signed number (fraction 1/256), -127.99 - +127.99 .
+   */
   @divisor(256)
   scalar D2B extends int16;
-
+  /**
+   * 2 byte signed number (fraction 1/16), -2047.9 - +2047.9 .
+   */
   @divisor(16)
   scalar D2C extends int16;
-
+  /**
+   * 2 byte signed number (fraction 1/1000), -32.767 - +32.767 .
+   */
   @divisor(1000)
   scalar FLT extends int16;
+  /**
+   * 2 byte signed number (fraction 1/1000), -32.767 - +32.767, big endian.
+   */
   @internal.reverse
   scalar FLR extends FLT;
 
+  // 3 byte length
+
   //todo 3 byte int
+  /** 3 byte unsigned decimal in BCD, 0 - 999999, replacement 0xffffff. */
   @internal.bcd
   scalar BCD3 extends uint32; // todo 3 bytes
+  /**
+   * 3 byte unsigned decimal digits in hex, 0 - 999999
+   * (0x00,0x00,0x00 - 0x63,0x63,0x63).
+   */
   @internal.hex
   scalar HCD3 extends uint32; // todo 3 bytes
 
+  // 4 byte length
+
+  /** 4 byte unsigned integer, 0 - 4294967294, replacement 0xffffffff. */
   scalar ULG extends uint32;
+  /** 4 byte unsigned integer, 0 - 4294967294, replacement 0xffffffff, big endian. */
   @internal.reverse
   scalar ULR extends ULG;
+  /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x7fffffff. */
   scalar SLG extends int32;
+  /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x7fffffff, big endian. */
   @internal.reverse
   scalar SLR extends SLG;
+  /** 4 byte unsigned decimal in BCD, 0 - 99999999, replacement 0xffffffff. */
   @internal.bcd
   scalar BCD4 extends uint32;
+  /**
+   * 4 byte unsigned decimal digits in hex, 0 - 99999999
+   * (0x00,0x00,0x00,0x00 - 0x63,0x63,0x63,0x63).
+   */
   @internal.hex
   scalar HCD4 extends uint32;
-
+  /**
+   * 4 byte signed number in IEEE 754
+   * (IEEE 754 binary32: 1 bit sign, 8 bits exponent, 23 bits significand).
+   */
   scalar EXP extends float32;
+  /**
+   * 4 byte signed number in IEEE 754, big endian
+   * (IEEE 754 binary32: 1 bit sign, 8 bits exponent, 23 bits significand).
+   */
   @internal.reverse
   scalar EXR extends EXP;
 }
 
-/** The known string base types. */
+/** The known string base data types. */
 namespace str {
+  /** >= 1 byte character string filled up with space. */
   @maxLength(31)
   scalar STR extends string;
+  /** >= 1 byte character string filled up with 0x00 (null terminated string). */
   @encode("nullterm") // todo
   @maxLength(31)
   scalar NTS extends string;
+  /** >= 1 byte ignored data. */
   @maxLength(31)
   scalar IGN extends string; // todo bytes would be more logical, but have not length limit
+  /** >= 1 byte hex digit string, usually separated by space, e.g. 0a 1b 2c 3d. */
   @internal.hex
   @maxLength(31)
   scalar HEX extends string;
 }
 
-/** The known date/time base types. */
+/** The known date/time base data types. */
 namespace dtm {
+  /**
+   * 1 byte weekday, "Mon" - "Sun"
+   * (0x00 - 0x06).
+   */
   scalar BDY extends uint8; // todo weekday
+  /**
+   * 1 byte weekday, "Mon" - "Sun" [Vaillant type]
+   * (0x01 - 0x07).
+   */
   scalar HDY extends uint8; // todo weekday
+  /**
+   * 4 byte date with weekday in BCD, 01.01.2000 - 31.12.2099
+   * (0x01,0x01,WW,0x00 - 0x31,0x12,WW,0x99, WW is weekday Mon=0x01 - Sun=0x07, replacement 0xff).
+   */
   @internal.bcd
   @encode("", uint32)
   scalar BDA extends plainDate;
+  /** same as BDA. */
   alias BDA4 = BDA;
+  /**
+   * 3 byte date in BCD, 01.01.2000 - 31.12.2099
+   * (0x01,0x01,0x00 - 0x31,0x12,0x99, replacement 0xff).
+   */
   scalar BDA3 extends BDA; // todo 3 bytes
+  /**
+   * 3 byte date with zero-based weekday in BCD, 01.01.2000 - 31.12.2099
+   * (0x01,0x01,WZ,0x00 - 0x31,0x12,WZ,0x99, WZ is zero-based weekday Mon=0x00 - Sun=0x06, replacement 0xff).
+   */
   scalar BDZ extends BDA;
+  /**
+   * 4 byte date with weekday, 01.01.2000 - 31.12.2099
+   * (0x01,0x01,WW,0x00 - 0x1f,0x0c,WW,0x63, WW is weekday Mon=0x01 - Sun=0x07, replacement 0xff).
+   */
   @internal.hex
   @encode("", uint32)
   scalar HDA extends plainDate;
+  /** same as HDA. */
   alias HDA4 = HDA;
-  scalar HDA3 extends HDA;
+  /**
+   * 3 byte date, 01.01.2000 - 31.12.2099
+   * (0x01,0x01,0x00 - 0x1f,0x0c,0x63, replacement 0xff).
+   */
+  scalar HDA3 extends HDA; // todo 3 bytes
+  /**
+   * 2 byte date, days since 01.01.1900, 01.01.1900 - 06.06.2079
+   * (0x00,0x00 - 0xff,0xff).
+   */
   @encode("", uint16)
   scalar DAY extends plainDate;
+  /**
+   * 4 byte date+time in minutes since 01.01.2009, 01.01.2009 - 31.12.2099
+   * (0x00,0x00,0x00,0x00 - 0x02,0xda,0x4e,0x1f).
+   */
   @encode("", uint32)
   scalar DTM extends offsetDateTime;
 
+  /**
+   * 3 byte time in BCD, 00:00:00 - 23:59:59, seconds first
+   * (0x00,0x00,0x00 - 0x59,0x59,0x23).
+   */
   @internal.bcd
+  @internal.reverse
   scalar BTI extends plainTime; // todo 3 bytes
+  /**
+   * 3 byte time, 00:00:00 - 23:59:59
+   * (0x00,0x00,0x00 - 0x17,0x3b,0x3b).
+   */
   @internal.hex
   scalar HTI extends plainTime; // todo 3 bytes
+  /**
+   * 3 byte time, 00:00:00 - 23:59:59, seconds first [Vaillant type]
+   * (0x00,0x00,0x00 - 0x3b,0x3b,0x17, replacement 0x63).
+   */
   @internal.reverse
   scalar VTI extends HTI;
+  /**
+   * 2 byte time as hh:mm in BCD, 00:00 - 23:59, minutes first
+   * (0x00,0x00 - 0x59,0x23, replacement 0xff).
+   */
   @internal.bcd
+  @internal.reverse
   @encode("", uint16)
   scalar BTM extends plainTime;
-  @internal.reverse
-  scalar VTM extends BTM;
+  /**
+   * 2 byte time as hh:mm, 00:00 - 23:59
+   * (0x00,0x00 - 0x17,0x3b).
+   */
   @internal.hex
   @encode("", uint16)
   scalar HTM extends plainTime;
+  /**
+   * 2 byte time as hh:mm, 00:00 - 23:59, minutes first [Vaillant type]
+   * (0x00,0x00 - 0x3b,0x17, replacement 0xff)
+   */
+  @internal.reverse
+  scalar VTM extends BTM;
+  /**
+   * 2 byte time, minutes since last midnight, 00:00 - 24:00
+   * (minutes + hour * 60 as integer).
+   */
   @encode("", uint16)
   scalar MIN extends plainTime; // todo check if rather duration
+  /**
+   * 1 byte truncated time (only multiple of 10 minutes), 00:00 - 24:00
+   * (minutes div 10 + hour * 6 as integer).
+   */
   @divisor(10)
   @encode("", uint8)
   scalar TTM extends plainTime;
+  /**
+   * 6 bit truncated time (only multiple of 30 minutes), 00:00 - 24:00
+   * (minutes div 30 + hour * 2 as integer).
+   */
   @divisor(30)
-  @encode("", uint8)
+  @encode("", num.BI0_6)
   scalar TTH extends plainTime;
+  /**
+   * 7 bit truncated time (only multiple of 15 minutes), 00:00 - 24:00
+   * (minutes div 15 + hour * 4 as integer).
+   */
   @divisor(15)
-  @encode("", uint8) // todo actually 7 bits
+  @encode("", num.BI0_7)
   scalar TTQ extends plainTime;
 }

@@ -107,6 +107,11 @@ extern dec values(target: numeric|boolean|ModelProperty, values: Enum);
 namespace internal {
   /**
    * Define reverse representation.
+   * For numeric types this means most significant byte first (big-endian)
+   * instead of least significant byte first (little-endian).
+   * For date/time types coded as sequence of individual parts this means reverse sequence
+   * (i.e. year,month,day instead of day,month,year for dates
+   * and seconds,minutes,hours instead of hours,minutes,seconds for times).
    */
   extern dec reverse(target: Scalar);
 
