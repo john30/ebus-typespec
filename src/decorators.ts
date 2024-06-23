@@ -215,6 +215,8 @@ export function getZz(program: Program, target: Model|Namespace): number | undef
   return getNum(program.stateMap(StateKeys.zz).get(target));
 }
 
+type IdType = {isExt?: boolean, id: Numeric[]};
+
 /**
  * Implementation of the `@id` decorator.
  *
@@ -233,7 +235,8 @@ export function $id(context: DecoratorContext, target: Model, pb: Numeric, sb: N
       format: { which: 'id/@base/@ext'},
     });
   }
-  context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
+  const id: IdType = {id: [pb, sb, ...dd], isExt: false};
+  context.program.stateMap(StateKeys.id).set(target, id);
   context.program.stateSet(StateKeys.id).add(target);
 }
 
@@ -255,7 +258,8 @@ export function $base(context: DecoratorContext, target: Model, pb: Numeric, sb:
       format: { which: 'base/@id/@ext'},
     });
   }
-  context.program.stateMap(StateKeys.id).set(target, [pb, sb, ...dd]);
+  const id: IdType = {id: [pb, sb, ...dd]};
+  context.program.stateMap(StateKeys.id).set(target, id);
 }
 
 /**
@@ -274,7 +278,8 @@ export function $ext(context: DecoratorContext, target: Model, ...dd: Numeric[])
       format: { which: 'ext/@id/@base'},
     });
   }
-  context.program.stateMap(StateKeys.id).set(target, dd);
+  const id: IdType = {id: dd, isExt: true};
+  context.program.stateMap(StateKeys.id).set(target, id);
   context.program.stateSet(StateKeys.id).add(target);
 }
 
@@ -286,8 +291,23 @@ export function $ext(context: DecoratorContext, target: Model, ...dd: Numeric[])
  * @returns value if provided on the given target or undefined.
  */
 export function getId(program: Program, target: Model): number[] | undefined {
-  const ids = program.stateMap(StateKeys.id).get(target) as Numeric[];
-  return ids?.map(v => getNum(v) as number).filter(v => v!==undefined);
+  const ids = program.stateMap(StateKeys.id).get(target) as IdType;
+  return ids?.id.map(v => getNum(v) as number).filter(v => v!==undefined);
+}
+
+/**
+ * Accessor for the `@id`/`@base`/`@ext` decorators with metadata
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getIdType(program: Program, target: Model): {isExt?: boolean, id: number[]} | undefined {
+  const ids = program.stateMap(StateKeys.id).get(target) as IdType;
+  if (!ids) {
+    return;
+  }
+  return {...ids, id: ids.id.map(v => getNum(v) as number).filter(v => v!==undefined)};
 }
 
 /**
@@ -308,14 +328,7 @@ export function $chain(context: DecoratorContext, target: Model, length: Numeric
       format: { which: 'chain', value: val!==undefined && val>30 ? '30' : '<0' },
     });
   }
-  // if (!context.program.stateSet(StateKeys.id).has(target)) { // order is different than in source, so can't check here
-  //   // only valid in combination with @id/@ext
-  //   reportDiagnostic(context.program, {
-  //     code: "missing-decorator",
-  //     target: context.getArgumentTarget(0)!,
-  //     format: { which: 'id/@ext'},
-  //   });
-  // }
+  // required combination with @id checked by $onValidate
   if (context.program.stateMap(StateKeys.chain).has(target)) {
     reportDiagnostic(context.program, {
       code: "multiple-decorator",
@@ -541,6 +554,7 @@ export function getUnit(program: Program, target: Scalar|ModelProperty): string 
  */
 export function $divisor(context: DecoratorContext, target: Scalar|ModelProperty, value: Numeric) {
   const val = getNum(value);
+  // todo report on boolean and bit types
   // this works only for direct Scalars, not for indirect ones via ModelProperty:
   const isPlainTime = target.kind==='Scalar' && isIntrinsicType(context.program, target, 'plainTime'); // for internal time types
   if (!(isNumericType(context.program, getPropertyType(target)) || isPlainTime)
@@ -612,16 +626,6 @@ export function getDivisor(program: Program, target: Scalar|ModelProperty): numb
  * @param value the value to set.
  */
 export function $values(context: DecoratorContext, target: Scalar|ModelProperty, value: Enum) {
-  //todo tolerated for now as check for boolean is missing
-  // if (!isNumericType(context.program, getPropertyType(target))
-  // || context.program.stateMap(StateKeys.divisor).has(target)) {
-  //   reportDiagnostic(context.program, {
-  //     code: "banned-values",
-  //     target: context.getArgumentTarget(0)!,
-  //     format: { detail },
-  //   });
-  //   return;
-  // }
   if (context.program.stateMap(StateKeys.values).has(target)) {
     reportDiagnostic(context.program, {
       code: "multiple-decorator",

@@ -117,6 +117,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Only single decorator "@${"which"}" allowed.`,
       },
     },
+    "invalid-length": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid @${"which"} length ${"value"}.`,
+      },
+    },
     "missing-decorator": {
       severity: "error",
       messages: {

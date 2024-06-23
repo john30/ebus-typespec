@@ -158,8 +158,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }
         if (badLength) {
           reportDiagnostic(program, {
-            code: "short-id",
-            format: { id: badLength },
+            code: "invalid-length",
+            format: { which: 'chain', value: badLength },
             target: model,
           }); 
         } else {

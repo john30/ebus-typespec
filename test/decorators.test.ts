@@ -100,9 +100,23 @@ describe("decorators", () => {
   describe("@chain", () => {
     it("set chain on model", async () => {
       const { Test } = (await runner.compile(
-        `@id(1,2) @chain(1, #[0]) @test model Test {}`
+        `@id(1,2,3) @chain(1, #[0]) @test model Test {}`
       )) as { Test: Model };
       deepEqual(getChain(runner.program, Test), {length: 1, dds: [[0]]});
+    });
+    it("emit diagnostic on invalid @chain", async () => {
+      const diagnostics = await runner.diagnose(`
+        @id(0,1,2,3)
+        @chain(0, #[4])
+        @test
+        model Foo {}
+      `);
+      expectDiagnostics(diagnostics, [
+        {
+          code: "ebus/invalid-length",
+          message: `Invalid @chain length 1.`,
+        },
+      ]);
     });
   });
 });

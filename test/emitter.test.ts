@@ -690,17 +690,4 @@ describe("emitting models", () => {
       "r,main,,Foo,,,,0001,02:8;03:8;04:8,"
     );
   });
-  it("emit diagnostic on invalid @chain", async () => {
-    const [_, diagnostics] = await emitWithDiagnostics(`
-      @id(0,1,2,3)
-      @chain(0, #[4])
-      model Foo {}
-    `);
-    expectDiagnostics(diagnostics, [
-      {
-        code: "ebus/short-id",
-        message: `The id "04" is too short.`,
-      },
-    ]);
-  });
 });
