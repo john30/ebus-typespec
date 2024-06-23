@@ -84,7 +84,7 @@ export function getPassive(program: Program, target: Model): boolean {
  * @param value the value to set.
  */
 export function $auth(context: DecoratorContext, target: Model, value: string) {
-  if (value && !/^[a-z]*$/.test(value)) {
+  if (value && !/^[a-z0-9_-]*$/i.test(value)) {
     reportDiagnostic(context.program, {
       code: "banned-auth",
       target: context.getArgumentTarget(0)!,
