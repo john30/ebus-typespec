@@ -33,13 +33,13 @@ extern dec auth(target: Model, value: valueof string);
  * Define the source address.
  * @param value the source address QQ.
  */
-extern dec qq(target: Model, value?: valueof Source);
+extern dec qq(target: Model, value?: valueof source);
 
 /**
  * Define the target address.
  * @param value the target address ZZ.
  */
-extern dec zz(target: Model|Namespace, value?: valueof Target);
+extern dec zz(target: Model|Namespace, value?: valueof target);
 
 /**
  * Define the whole message ID.
@@ -47,7 +47,7 @@ extern dec zz(target: Model|Namespace, value?: valueof Target);
  * @param sb the secondary message ID.
  * @param dd further message ID parts.
  */
-extern dec id(target: Model, pb: valueof Pb, sb: valueof Sb, ...dd: valueof Symbol[]);
+extern dec id(target: Model, pb: valueof pb, sb: valueof sb, ...dd: valueof symbol[]);
 
 /**
  * Define the base message ID to be combined with an extension ID.
@@ -55,13 +55,13 @@ extern dec id(target: Model, pb: valueof Pb, sb: valueof Sb, ...dd: valueof Symb
  * @param sb the secondary message ID.
  * @param dd further message ID parts.
  */
-extern dec base(target: Model, pb: valueof Pb, sb: valueof Sb, ...dd: valueof Symbol[]);
+extern dec base(target: Model, pb: valueof pb, sb: valueof sb, ...dd: valueof symbol[]);
 
 /**
  * Define the extension message ID to be combined with a base ID.
  * @param dd message ID extensions parts.
  */
-extern dec ext(target: Model, ...dd: valueof Symbol[]);
+extern dec ext(target: Model, ...dd: valueof symbol[]);
 
 /**
  * Define chained message IDs.
@@ -69,7 +69,7 @@ extern dec ext(target: Model, ...dd: valueof Symbol[]);
  * @param dd second message ID part the chain is built from (first one taken from id or ext decorator).
  * @param dds list of further message ID parts the chain is built from.
  */
-extern dec chain(target: Model, length: valueof uint8, dd: valueof Symbol[], ...dds: valueof Symbol[][]);
+extern dec chain(target: Model, length: valueof uint8, dd: valueof symbol[], ...dds: valueof symbol[][]);
 
 /**
  * Define the inherited model(s).
@@ -112,7 +112,7 @@ extern dec factor(target: numeric|plainTime|ModelProperty, value: valueof numeri
 extern dec values(target: numeric|boolean|ModelProperty, values: Enum);
 
 
-namespace internal {
+namespace Internal {
   /**
    * Define reverse representation.
    * For numeric types this means most significant byte first (big-endian)

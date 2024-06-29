@@ -28,7 +28,7 @@ const stripHeader = (s: string) => {
 describe("emitting models", () => {
   it("works", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       @qq(0x01)
       @zz(0x08)
       @id(0xb5, 0x09, 0x0e, 0x00, 0x01)
@@ -44,12 +44,12 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,a foo,01,08,b509,0e0001,x,m,BCD:4,10,y,an x,z,,UCH,,,"
+      "r,Main,,Foo,a foo,01,08,b509,0e0001,x,m,BCD:4,10,y,an x,z,,UCH,,,"
     );
   });
   it("works with multiple", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       @id(0,1)
       model Foo {
         x: UCH,
@@ -62,13 +62,13 @@ describe("emitting models", () => {
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo', 'test.Bar']});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,x,,UCH,,,\n"+
-      "r,main,,Bar,,,,0002,01,y,,UCH,,,,z,,UCH,,,"
+      "r,Main,,Foo,,,,0001,,x,,UCH,,,\n"+
+      "r,Main,,Bar,,,,0002,01,y,,UCH,,,,z,,UCH,,,"
     );
   });
   it("works with derived types", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       @unit("°C")
       /** temperature */
       scalar temp extends UCH;
@@ -79,12 +79,12 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,x,,UCH,,°C,temperature"
+      "r,Main,,Foo,,,,0001,,x,,UCH,,°C,temperature"
     );
   });
   it("works with inherit", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       @zz(8)
       @base(0,1,2)
       /** a base */
@@ -102,12 +102,12 @@ describe("emitting models", () => {
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x"
+      "r,Main,,Foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x"
     );
   });
   it("works with multi inherit", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       @base(0,1)
       model r {
       }
@@ -124,18 +124,18 @@ describe("emitting models", () => {
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,x,,UCH,,,,y,,UCH,,,\n"+
-      "w,main,,Foo,,,,0001,,x,,UCH,,,"
+      "r,Main,,Foo,,,,0001,,x,,UCH,,,,y,,UCH,,,\n"+
+      "w,Main,,Foo,,,,0001,,x,,UCH,,,"
     );
   });
   it("works with values", async () => {
     const files = await emit(`
-      using Ebus.num;
-      @values(men)
+      using Ebus.Num;
+      @values(Values_men)
       scalar man extends UCH;
-      enum men {
-        One: 1,
-        Two: 2,
+      enum Values_men {
+        one: 1,
+        two: 2,
       }
       @id(0,1)
       model Foo {
@@ -144,12 +144,12 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,m,,UCH,1=One;2=Two,,"
+      "r,Main,,Foo,,,,0001,,m,,UCH,1=one;2=two,,"
     );
   });
   it("works with bits", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       @id(0,1)
       model Foo {
         b0: BI0,
@@ -165,12 +165,12 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,b0,,BI0,,,,b1,,BI1,,,,b2,,BI2,,,,b3,,BI3,,,,b4,,BI4,,,,b5,,BI5,,,,b6,,BI6,,,,b7,,BI7,,,,n,,BI0:7,,,"
+      "r,Main,,Foo,,,,0001,,b0,,BI0,,,,b1,,BI1,,,,b2,,BI2,,,,b3,,BI3,,,,b4,,BI4,,,,b5,,BI5,,,,b6,,BI6,,,,b7,,BI7,,,,n,,BI0:7,,,"
     );
   });
   it("works with var length str", async () => {
     const files = await emit(`
-      using Ebus.str;
+      using Ebus.Str;
       @id(0,1)
       model Foo {
         s: STR,
@@ -182,12 +182,12 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:10,,,"
+      "r,Main,,Foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:10,,,"
     );
   });
   it("works with remainder length str", async () => {
     const files = await emit(`
-      using Ebus.str;
+      using Ebus.Str;
       @id(0,1)
       model Foo {
         s: STR,
@@ -200,7 +200,7 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:*,,,"
+      "r,Main,,Foo,,,,0001,,s,,STR,,,,s1,,STR:1,,,,s5,,STR:*,,,"
     );
   });
   it("emit diagnostic on duplicate IDs", async () => {
@@ -224,22 +224,22 @@ describe("emitting models", () => {
   it("does not emit diagnostic on duplicate IDs/names in different file namespaces", async () => {
     const files = await emit(``, {}, {emitNamespace: true, extraSpecFiles: [{name: 'inc1.tsp',  code: `
       import "ebus"; using Ebus;
-      namespace inc1;
+      namespace Inc1;
       @id(1,2)
       model Foo {}
     `}, {name: 'inc2.tsp', code: `
       import "ebus"; using Ebus;
-      namespace inc2;
+      namespace Inc2;
       @id(1,2)
       model Foo {}
     `}]});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file), undefined); // not emitted as empty
     assert.strictEqual(stripHeader(files['inc1.csv']),
-      "r,inc1,,Foo,,,,0102,,"
+      "r,Inc1,,Foo,,,,0102,,"
     );
     assert.strictEqual(stripHeader(files['inc2.csv']),
-      "r,inc2,,Foo,,,,0102,,"
+      "r,Inc2,,Foo,,,,0102,,"
     );
   });
   it("does not emit diagnostic on duplicate IDs in defaults", async () => {
@@ -254,33 +254,33 @@ describe("emitting models", () => {
   });
   it("does not shorten type names", async () => {
     const files = await emit(`
-      model id is Ebus.id.id;
+      model Id is Ebus.Id.Id;
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,id,identification,,,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
+      "r,Main,,Id,identification,,,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
     );
   });
   it("emits concrete id message", async () => {
     const files = await emit(`
       @zz(8)
-      model id is Ebus.id.id;
+      model Id is Ebus.Id.Id;
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,id,identification,,08,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
+      "r,Main,,Id,identification,,08,0704,,mf,,manufacturer,,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
     );
   });
   it("keeps property name", async () => {
     const files = await emit(`
-      namespace manuf {
-        @values(values_onoff)
-        scalar onoff extends num.UCH;
-        enum values_onoff {
+      namespace Manuf {
+        @values(Values_onoff)
+        scalar onoff extends Num.UCH;
+        enum Values_onoff {
           off: 0,
           on: 1,
         }
-        namespace manufcircuit {
+        namespace Manufcircuit {
           @id(1,2)
           model Foo {
             onoff: onoff,
@@ -290,15 +290,15 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0102,,onoff,,UCH,0=off;1=on,,"
+      "r,Main,,Foo,,,,0102,,onoff,,UCH,0=off;1=on,,"
     );
   });
   it("inherits namespace with zz for circuit name and nearest zz", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       scalar tops extends UCH;
       @zz(0x15)
-      namespace top {
+      namespace Top {
         @qq(0x01)
         @zz(0x08)
         @id(0,1)
@@ -307,12 +307,12 @@ describe("emitting models", () => {
           x: BCD4,
           z: UCH,
         }
-        namespace x {
+        namespace X {
           @id(0,2)
-          model y {}
-          namespace ver1 {
+          model Y {}
+          namespace Ver1 {
             @id(0,2,3)
-            model z {
+            model Z {
               t: tops;
             }
           }
@@ -321,21 +321,21 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,top,,z,,,15,0002,03,t,,UCH,,,\n"+
-      "r,top,,y,,,15,0002,,\n"+
-      "r,top,,Foo,,01,08,0001,,x,m,BCD:4,,,,z,,UCH,,,"
+      "r,Top,,Z,,,15,0002,03,t,,UCH,,,\n"+
+      "r,Top,,Y,,,15,0002,,\n"+
+      "r,Top,,Foo,,01,08,0001,,x,m,BCD:4,,,,z,,UCH,,,"
     );
   });
   it("resolves properties referencing a model property", async () => {
     const files = await emit(`
       @id(1,2)
       model Scanme {
-        id: Ebus.id.id.id;
+        id: Ebus.Id.Id.id;
       }
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Scanme,,,,0102,,id,,STR:5,,,device id"
+      "r,Main,,Scanme,,,,0102,,id,,STR:5,,,device id"
     );
   });
   it("flattens properties referencing a whole model", async () => {
@@ -343,44 +343,44 @@ describe("emitting models", () => {
       @id(1,2)
       model Scanme {
         /** entry */
-        ref: Ebus.id.id;
+        ref: Ebus.Id.Id;
       }
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Scanme,,,,0102,,mf,,manufacturer,,,entry,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
+      "r,Main,,Scanme,,,,0102,,mf,,manufacturer,,,entry,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
     );
   });
   it("works with scan condition", async () => {
     const files = await emit(`
       @id(0,1)
-      @condition(Ebus.id.id.sw, ">1")
+      @condition(Ebus.Id.Id.sw, ">1")
       model Foo {}
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
       "*[id_sw],scan,,,,SW\n"+
-      "[id_sw>1]r,main,,Foo,,,,0001,,"
+      "[id_sw>1]r,Main,,Foo,,,,0001,,"
     );
   });
   it("works with scan conditions", async () => {
     const files = await emit(`
       @id(0,1)
-      @condition(Ebus.id.id.sw, ">1")
-      @condition(Ebus.id.id.hw, "0700", "0800")
+      @condition(Ebus.Id.Id.sw, ">1")
+      @condition(Ebus.Id.Id.hw, "0700", "0800")
       model Foo {}
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
       "*[id_hw],scan,,,,HW\n"+
       "*[id_sw],scan,,,,SW\n"+
-      "[id_hw=0700;0800][id_sw>1]r,main,,Foo,,,,0001,,"
+      "[id_hw=0700;0800][id_sw>1]r,Main,,Foo,,,,0001,,"
     );
   });
   it("works with own condition", async () => {
     const files = await emit(`
       @id(0,2)
-      model Bar {disc: num.UCH}
+      model Bar {disc: Num.UCH}
       @id(0,1)
       @condition(Bar.disc, "1")
       model Foo {}
@@ -388,8 +388,8 @@ describe("emitting models", () => {
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
       "*[bar_disc],,,bar,,disc\n"+
-      "r,main,,Bar,,,,0002,,disc,,UCH,,,\n"+
-      "[bar_disc=1]r,main,,Foo,,,,0001,,"
+      "r,Main,,Bar,,,,0002,,disc,,UCH,,,\n"+
+      "[bar_disc=1]r,Main,,Foo,,,,0001,,"
     );
   });
   it("works with auth level", async () => {
@@ -400,18 +400,18 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,high,Foo,,,,0001,,"
+      "r,Main,high,Foo,,,,0001,,"
     );
   });
   it("combines divisor/factor", async () => {
     const files = await emit(`
       @divisor(10)
-      scalar div10 extends num.D2C;
+      scalar div10 extends Num.D2C;
       @factor(10)
-      scalar mul10 extends num.D2C;
+      scalar mul10 extends Num.D2C;
       @id(0,1)
       model Foo {
-        p: num.D2C,
+        p: Num.D2C,
         q: div10,
         r: mul10,
       }
@@ -428,107 +428,107 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,,p,,D2C,,,,q,,D2C,10,,,r,,D2C,-10,,\n"+
-      "r,main,,Bar,,,,0002,,s,,D2C,-2,,\n"+
-      "r,main,,Bar2,,,,0003,,t,,D2C,2,,"
+      "r,Main,,Foo,,,,0001,,p,,D2C,,,,q,,D2C,10,,,r,,D2C,-10,,\n"+
+      "r,Main,,Bar,,,,0002,,s,,D2C,-2,,\n"+
+      "r,Main,,Bar2,,,,0003,,t,,D2C,2,,"
     );
   });
   it("includes imported namespace models", async () => {
     const importTsp = `
       import "ebus"; using Ebus;
-      namespace importfile_inc {
+      namespace Importfile_inc {
         @base(0,1)
         model r {}
         @inherit(r)
         @ext
         model Foo {
-          uch: num.UCH,
+          uch: Num.UCH,
         }
       }
     `;
     const files = await emit(`
       @zz(0x15)
-      namespace circ {
+      namespace Circ {
         @id(0,2)
         model Bar {
         }
         /** included stuff */
         union _includes {
           /** included file */
-          importfile_inc,
+          Importfile_inc,
         }
       }
     `, {}, {emitNamespace: true,
-      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
-      "r,circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,Bar,,,15,0002,,\n"+
       // "# included stuff\n"+
-      "r,circ,,Foo,,,15,0001,,uch,,UCH,,,"
+      "r,Circ,,Foo,,,15,0001,,uch,,UCH,,,"
     );
     assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
   });
   it("includes imported namespace models with conditions", async () => {
     const importTsp = `
       import "ebus"; using Ebus;
-      namespace importfile_inc {
+      namespace Importfile_inc {
         @base(0,1)
         model r {}
         @inherit(r)
         @ext
         model Foo {
-          uch: num.UCH,
+          uch: Num.UCH,
         }
       }
     `;
     const files = await emit(`
       @zz(0x15)
-      namespace circ {
+      namespace Circ {
         @id(0,2)
         model Bar {
         }
         /** included stuff */
         union _includes {
           /** included file */
-          @condition(Ebus.id.id.sw, ">1")
-          importfile_inc,
+          @condition(Ebus.Id.Id.sw, ">1")
+          Importfile_inc,
         }
       }
     `, {}, {emitNamespace: true,
-      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
       "*[id_sw],scan,,,,SW\n"+
-      "r,circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,Bar,,,15,0002,,\n"+
       // "# included stuff\n"+
-      "[id_sw>1]r,circ,,Foo,,,15,0001,,uch,,UCH,,,"
+      "[id_sw>1]r,Circ,,Foo,,,15,0001,,uch,,UCH,,,"
     );
     assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
   });
   it("includes loaded namespace models with conditions", async () => {
     const importTsp = `
       import "ebus"; using Ebus;
-      namespace importfile_inc {
+      namespace Importfile_inc {
         @base(0,1)
         model r {}
         @inherit(r)
         @ext
         model Foo {
-          uch: num.UCH,
+          uch: Num.UCH,
         }
       }
     `;
     const files = await emit(`
       @zz(0x15)
-      namespace circ {
+      namespace Circ {
         @id(0,2)
         model Bar {
         }
         /** included stuff */
         union _includes {
           /** loaded file */
-          @condition(Ebus.id.id.sw, ">1")
-          importfile_inc: importfile_inc,
+          @condition(Ebus.Id.Id.sw, ">1")
+          importfile_inc: Importfile_inc,
         }
       }
     `, {}, {emitNamespace: true,
@@ -536,7 +536,7 @@ describe("emitting models", () => {
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
       "*[id_sw],scan,,,,SW\n"+
-      "r,circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,Bar,,,15,0002,,\n"+
       // "# included stuff\n"+
       "[id_sw>1]!load,importfile.inc,,,loaded file"
     );
@@ -547,10 +547,10 @@ describe("emitting models", () => {
   it("references imported namespace models", async () => {
     const importTsp = `
       import "ebus"; using Ebus;
-      namespace importfile_inc;
+      namespace Importfile_inc;
       @id(0,1)
       model Foo {
-        uch: num.UCH,
+        uch: Num.UCH,
       }
     `;
     const files = await emit(`
@@ -560,13 +560,13 @@ describe("emitting models", () => {
       /** included stuff */
       union _includes {
         /** included file */
-        importfile_inc,
+        Importfile_inc,
       }
     `, {includes: true}, {emitNamespace: true,
       extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
-      "r,main,,Bar,,,,0002,,\n"+
+      "r,Main,,Bar,,,,0002,,\n"+
       "# included stuff\n"+
       "!include,importfile.inc,,,included file"
     );
@@ -577,7 +577,7 @@ describe("emitting models", () => {
   it("emit diagnostic on invalid type", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
       @id(1,0)
-      model m0 {
+      model M0 {
         m: uint8
       }
     `);
@@ -591,7 +591,7 @@ describe("emitting models", () => {
   it("emit diagnostic on too deep model", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
       model m0 {
-        m: num.UCH
+        m: Num.UCH
       }
       model m1 {
         m: m0
@@ -624,9 +624,9 @@ describe("emitting models", () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
       @id(1,0)
       @zz(0xfe)
-      model m {
+      model M {
         @in
-        m: num.UCH
+        m: Num.UCH
       }
     `);
     expectDiagnostics(diagnostics, [
@@ -639,9 +639,9 @@ describe("emitting models", () => {
   it("emit diagnostic on invalid length", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
       @id(1,0)
-      model m {
+      model M {
         @maxLength(33)
-        m: str.STR
+        m: Str.STR
       }
     `);
     expectDiagnostics(diagnostics, [
@@ -659,7 +659,7 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,02;03;04,"
+      "r,Main,,Foo,,,,0001,02;03;04,"
     );
   });
   it("works with @chain and @ext", async () => {
@@ -673,7 +673,7 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0001,02;03;04,"
+      "r,Main,,Foo,,,,0001,02;03;04,"
     );
   });
   it("works with @chain and length", async () => {
@@ -684,12 +684,12 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,,,,0706,0502:8;0503:8;0504:8,"
+      "r,Main,,Foo,,,,0706,0502:8;0503:8;0504:8,"
     );
   });
   it("works with translation", async () => {
     const files = await emit(`
-      using Ebus.num;
+      using Ebus.Num;
       /** Main circuit */
       @id(0,1)
       model Foo {
@@ -701,7 +701,7 @@ describe("emitting models", () => {
     }]});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,main,,Foo,Haupteinheit,,,0001,,x,,UCH,,,Temperatur"
+      "r,Main,,Foo,Haupteinheit,,,0001,,x,,UCH,,,Temperatur"
     );
   });
 });

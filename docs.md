@@ -124,7 +124,7 @@ Define authentication level.
 Define the base message ID to be combined with an extension ID.
 
 ```typespec
-@Ebus.base(pb: valueof Ebus.Pb, sb: valueof Ebus.Sb, ...dd: valueof Ebus.Symbol[])
+@Ebus.base(pb: valueof Ebus.pb, sb: valueof Ebus.sb, ...dd: valueof Ebus.symbol[])
 ```
 
 ##### Target
@@ -135,16 +135,16 @@ Define the base message ID to be combined with an extension ID.
 
 | Name | Type                          | Description               |
 | ---- | ----------------------------- | ------------------------- |
-| pb   | `valueof scalar Ebus.Pb`      | the primary message ID.   |
-| sb   | `valueof scalar Ebus.Sb`      | the secondary message ID. |
-| dd   | `valueof model Ebus.Symbol[]` | further message ID parts. |
+| pb   | `valueof scalar Ebus.pb`      | the primary message ID.   |
+| sb   | `valueof scalar Ebus.sb`      | the secondary message ID. |
+| dd   | `valueof model Ebus.symbol[]` | further message ID parts. |
 
 #### `@chain`
 
 Define chained message IDs.
 
 ```typespec
-@Ebus.chain(length: valueof uint8, dd: valueof Ebus.Symbol[], ...dds: valueof Ebus.Symbol[][])
+@Ebus.chain(length: valueof uint8, dd: valueof Ebus.symbol[], ...dds: valueof Ebus.symbol[][])
 ```
 
 ##### Target
@@ -156,8 +156,8 @@ Define chained message IDs.
 | Name   | Type                            | Description                                                                                |
 | ------ | ------------------------------- | ------------------------------------------------------------------------------------------ |
 | length | `valueof scalar uint8`          | the (maximum) length of a single message part of this chain, or 0 for default (=24).       |
-| dd     | `valueof model Ebus.Symbol[]`   | second message ID part the chain is built from (first one taken from id or ext decorator). |
-| dds    | `valueof model Ebus.Symbol[][]` | list of further message ID parts the chain is built from.                                  |
+| dd     | `valueof model Ebus.symbol[]`   | second message ID part the chain is built from (first one taken from id or ext decorator). |
+| dds    | `valueof model Ebus.symbol[][]` | list of further message ID parts the chain is built from.                                  |
 
 #### `@condition`
 
@@ -201,7 +201,7 @@ Define the divisor.
 Define the extension message ID to be combined with a base ID.
 
 ```typespec
-@Ebus.ext(...dd: valueof Ebus.Symbol[])
+@Ebus.ext(...dd: valueof Ebus.symbol[])
 ```
 
 ##### Target
@@ -212,7 +212,7 @@ Define the extension message ID to be combined with a base ID.
 
 | Name | Type                          | Description                  |
 | ---- | ----------------------------- | ---------------------------- |
-| dd   | `valueof model Ebus.Symbol[]` | message ID extensions parts. |
+| dd   | `valueof model Ebus.symbol[]` | message ID extensions parts. |
 
 #### `@factor`
 
@@ -237,7 +237,7 @@ Define the factor.
 Define the whole message ID.
 
 ```typespec
-@Ebus.id(pb: valueof Ebus.Pb, sb: valueof Ebus.Sb, ...dd: valueof Ebus.Symbol[])
+@Ebus.id(pb: valueof Ebus.pb, sb: valueof Ebus.sb, ...dd: valueof Ebus.symbol[])
 ```
 
 ##### Target
@@ -248,9 +248,9 @@ Define the whole message ID.
 
 | Name | Type                          | Description               |
 | ---- | ----------------------------- | ------------------------- |
-| pb   | `valueof scalar Ebus.Pb`      | the primary message ID.   |
-| sb   | `valueof scalar Ebus.Sb`      | the secondary message ID. |
-| dd   | `valueof model Ebus.Symbol[]` | further message ID parts. |
+| pb   | `valueof scalar Ebus.pb`      | the primary message ID.   |
+| sb   | `valueof scalar Ebus.sb`      | the secondary message ID. |
+| dd   | `valueof model Ebus.symbol[]` | further message ID parts. |
 
 #### `@in`
 
@@ -323,7 +323,7 @@ None
 Define the source address.
 
 ```typespec
-@Ebus.qq(value?: valueof Ebus.Source)
+@Ebus.qq(value?: valueof Ebus.source)
 ```
 
 ##### Target
@@ -334,7 +334,7 @@ Define the source address.
 
 | Name  | Type                         | Description            |
 | ----- | ---------------------------- | ---------------------- |
-| value | `valueof scalar Ebus.Source` | the source address QQ. |
+| value | `valueof scalar Ebus.source` | the source address QQ. |
 
 #### `@unit`
 
@@ -393,7 +393,7 @@ None
 Define the target address.
 
 ```typespec
-@Ebus.zz(value?: valueof Ebus.Target)
+@Ebus.zz(value?: valueof Ebus.target)
 ```
 
 ##### Target
@@ -404,9 +404,9 @@ Define the target address.
 
 | Name  | Type                         | Description            |
 | ----- | ---------------------------- | ---------------------- |
-| value | `valueof scalar Ebus.Target` | the target address ZZ. |
+| value | `valueof scalar Ebus.target` | the target address ZZ. |
 
-### Ebus.internal
+### Ebus.Internal
 
 - [`@bcd`](#@bcd)
 - [`@hex`](#@hex)
@@ -418,7 +418,7 @@ Define the target address.
 Define BCD encoding.
 
 ```typespec
-@Ebus.internal.bcd
+@Ebus.Internal.bcd
 ```
 
 ##### Target
@@ -434,7 +434,7 @@ None
 Define HEX encoding.
 
 ```typespec
-@Ebus.internal.hex
+@Ebus.Internal.hex
 ```
 
 ##### Target
@@ -450,7 +450,7 @@ None
 Define the max bits.
 
 ```typespec
-@Ebus.internal.maxBits(value: valueof uint8)
+@Ebus.Internal.maxBits(value: valueof uint8)
 ```
 
 ##### Target
@@ -473,7 +473,7 @@ For date/time types coded as sequence of individual parts this means reverse seq
 and seconds,minutes,hours instead of hours,minutes,seconds for times).
 
 ```typespec
-@Ebus.internal.reverse
+@Ebus.Internal.reverse
 ```
 
 ##### Target

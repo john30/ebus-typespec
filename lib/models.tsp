@@ -1,11 +1,12 @@
 import "./types.tsp";
 
 namespace Ebus;
-using Ebus.num;
+using Ebus.Num;
+using Ebus.Str;
 
-namespace id {
+namespace Id {
 
-  enum manufacturers {
+  enum Values_manufacturers {
     Dungs: 0x06,
     "FH Ostfalia": 0x0f,
     TEM: 0x10,
@@ -35,27 +36,27 @@ namespace id {
     // Pb, // <= this is how to declare the base type as it seems for unions, see https://github.com/microsoft/typespec/issues/2737
   }
 
-  @values(manufacturers)
+  @values(Values_manufacturers)
   scalar manufacturer extends UCH;
 
   /** identification */
   @id(0x07, 0x04)
-  model id {
+  model Id {
     /** device manufacturer */
     mf?: manufacturer,
     /** device id */
     @maxLength(5)
-    id?: str.STR,
+    id?: STR,
     /** software version */
-    sw?: num.PIN,
+    sw?: PIN,
     /** hardware version */
-    hw?: num.PIN,
+    hw?: PIN,
   }
 
   @zz(BROADCAST)
   @passive
-  model id_bcast is id;
+  model IdBcast is Id;
 
   @zz(BROADCAST)
-  model id_write is id;
+  model IdWrite is Id;
 }

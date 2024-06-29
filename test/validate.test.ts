@@ -12,17 +12,17 @@ describe("validating models", () => {
   it("emit diagnostic on property recursion", async () => {
     const diagnostics = await runner.diagnose(`
       @id(1,0)
-      model m0 {
-        m: m1
+      model M0 {
+        m: M1
       }
-      model m1 {
-        m: m0
+      model M1 {
+        m: M0
       }
     `);
     expectDiagnostics(diagnostics, [
       {
         code: "ebus/banned-inheritance",
-        message: `The inheritance is too deep in m0.`,
+        message: `The inheritance is too deep in M0.`,
       },
     ]);
   });

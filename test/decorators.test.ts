@@ -42,7 +42,7 @@ describe("decorators", () => {
 
     it("set broadcast zz on model via union", async () => {
       const { Test } = (await runner.compile(
-        `@zz(targets.Broadcast) @test model Test {}`
+        `@zz(Targets.broadcast) @test model Test {}`
       )) as { Test: Model };
       strictEqual(getZz(runner.program, Test), 0xfe);
     });
@@ -92,7 +92,7 @@ describe("decorators", () => {
       expectDiagnostics(diagnostics, {
         severity: "error",
         code: "invalid-argument",
-        message: "Argument of type '0x100' is not assignable to parameter of type 'valueof Ebus.Symbol'"
+        message: "Argument of type '0x100' is not assignable to parameter of type 'valueof Ebus.symbol'"
       })
     });
   });

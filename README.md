@@ -28,13 +28,13 @@ This is a short overview of the [decorators](lib/decorators.tsp) offered by the 
 
 ## Data types
 All the standard eBUS base data types like UCH etc. are available in the [`Ebus` types namespace](lib/types.tsp) under:
-* `Ebus.num`: numeric+bit types
-* `Ebus.str`: string types including hex sequence
-* `Ebus.dtm`: date/time type
+* `Ebus.Num`: numeric+bit types
+* `Ebus.Str`: string types including hex sequence
+* `Ebus.Dtm`: date/time type
 
 ## Models
 The identification message is available in the [`Ebus` model namespace](lib/models.tsp) under:
-* `Ebus.id`: read/write/broadcast version of identification
+* `Ebus.Id`: read/write/broadcast versions of identification message
 
 ## Emitter
 The CSV emitter is available as with the following parameters:
@@ -47,11 +47,11 @@ Here is a small example of a message carrying just a single byte:
 ```typespec
 import "@ebusd/ebus-typespec";
 using Ebus;
-using Ebus.num;
+using Ebus.Num;
 
 @zz(0x08)
 @id(0x01, 0x02)
-model message {
+model Message {
   field1: UCH,
 }
 ```
@@ -60,7 +60,7 @@ This fits to an eBUS byte sequence like this
 ```hex
 ff08010200 / 0105
 ```
-that transfers the `message` from source `0xff` where the target `0x08` replied with a value of 5 for `field1`.
+that transfers the `Message` from source `0xff` where the target `0x08` replied with a value of 5 for `field1`.
 
 ## Scripts
 This library also provides the following scripts via npm:
@@ -69,3 +69,34 @@ This library also provides the following scripts via npm:
 
 ## Documentation
 See [here for the documentation](docs.md) generated from the source.
+
+## Style guide
+Following the [TypeSpec style guide](https://typespec.io/docs/handbook/style-guide) with these additions/exceptions:
+* template models are supposed to be in camelCase (instead of PascalCase), e.g.  
+  ```typespec
+  model tempSensor {temp: UCH, sensor: UCH}
+  ```
+* default models (inherited from by "real" models) are supposed to be in camelCase (instead of PascalCase), e.g.  
+  ```typespec
+  @base(8, 9)
+  model r {}
+  ```
+  versus a "real" model, e.g.  
+  ```typespec
+  @inherit(r)
+  @ext(1, 2)
+  model Temperature {
+    value: UCH,
+  }
+  ```
+* the name of value lists in `enum` is supposed to begin with `Values_` followed by the name of the message or field referring to, e.g.  
+  ```typespec
+  enum Values_manufacturer {...}
+  ```
+* due to absence of an option to include models in a namepsace from another namespace, the construct for includsion is putting these namespaces into a union named `_includes`:  
+  ```typespec
+    union _includes {
+      NamespaceModelName,
+      // etc.
+    }
+  ```

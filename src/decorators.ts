@@ -498,7 +498,7 @@ export function getMaxBits(program: Program, target: Scalar): number | undefined
   return getNum(program.stateMap(StateKeys.maxBits).get(target));
 }
 
-setTypeSpecNamespace("internal", $reverse, $bcd, $hex, $maxBits);
+setTypeSpecNamespace("Internal", $reverse, $bcd, $hex, $maxBits);
 
 
 /**
