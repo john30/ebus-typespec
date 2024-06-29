@@ -79,7 +79,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           nearestNamespace = n.name;
         }
         const zz = getZz(program, n);
-        if (zz) {
+        if (zz!==undefined) {
           // topmost namespace with @zz decides the circuit name.
           // if absent, then the file name is taken
           if (!nearestCircuit) {
