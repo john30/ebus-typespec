@@ -1,6 +1,7 @@
-import {emitFile, getDoc, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
-import {CodeTypeEmitter, StringBuilder, code, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
+import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
+import {CodeTypeEmitter, StringBuilder, code, type AssetEmitter, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
+import jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {getAuth, getChain, getConditions, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
@@ -35,9 +36,15 @@ const mapConds = (idModel: Type|undefined, sf: SourceFile<object>, conds?: [Mode
   return `[${condName+values}]`;
 }).join('');
 
+
 export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
   #sourceFileByPath = new Map<string, SourceFile<any>>();
+
+  constructor(emitter: AssetEmitter<string, EbusdEmitterOptions>,
+    private translations = new Map<string, string>()) {
+    super(emitter);
+  }
 
   programContext(program: Program): Context {
     const sourceFile = this.emitter.createSourceFile('');
@@ -122,7 +129,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
       const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive, broadcastTarget);
       const fields = this.modelPropertiesRw(model, write&&!passive, broadcastTarget);
-      const comment = getDoc(program, model) ?? getDoc(program, inheritFrom);
+      const comment = this.#getDoc(model) ?? this.#getDoc(inheritFrom);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom); // todo could do same handling as for zz
       // when inheriting id, only one of them may have pbsb, rest of id is concatenated
       const baseId = getId(program, inheritFrom);
@@ -264,10 +271,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }
         res.unit ??= getUnit(program, s);
         if (commentProp) {
-          res.comment ??= getDoc(program, commentProp);
+          res.comment ??= this.#getDoc(commentProp);
           commentProp = undefined;
         }
-        res.comment ??= getDoc(program, s);
+        res.comment ??= this.#getDoc(s);
         if (s.kind==='ModelProperty') {
           s = s.type as Scalar|ModelProperty;
         } else {
@@ -330,7 +337,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const sf = this.#getCurrentSourceFile();
     const [idModel] = program.resolveTypeReference('Ebus.id.id');
     if (this.emitter.getOptions()["includes"]) {
-      const comment = getDoc(program, union);
+      const comment = this.#getDoc(union);
       if (comment) {
         decls.push(`# ${comment}`);
       }
@@ -340,7 +347,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }
         const isLoad = typeof uv.name === 'string' && !!uv.name;
         const conds = mapConds(idModel, sf, getConditions(program, uv)||[]);
-        addInclude(uv.type, getDoc(program, uv), conds, isLoad);
+        addInclude(uv.type, this.#getDoc(uv), conds, isLoad);
       });
       return this.emitter.result.declaration(name, decls.join('\n'));
     }
@@ -366,7 +373,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         && this.#sourceFileByPath.get(referenceContext.fullname)?.meta.refCount===1) {
           this.emitter.emitTypeReference(namespace, {referenceContext}) // force emit the included file itself, once only
         }
-        addInclude(namespace, getDoc(program, uv), conds, true);
+        addInclude(namespace, this.#getDoc(uv), conds, true);
       } else {
         current.referencedBy = union;
         current.conds = conds;
@@ -528,13 +535,43 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     //  : this.emitter.getOptions()["file-type"] === "yaml" ? "yaml" :
     return "csv";
   }
+
+  #getDoc(target: Type) {
+    const str = getDocNoTrans(this.emitter.getProgram(), target);
+    return !str ? str : (this.translations.get(str) || str);
+  }
+  
 }
 
+export async function getEbusdEmitterClass(host: CompilerHost, translationFile?: string): Promise<typeof EbusdEmitter> {
+  let translations: Map<string, string>;
+  if (translationFile) {
+    const content = (await host.readFile(translationFile)).text;
+    if (content) {
+      const data = jsYaml.load(content);
+      translations = new Map();
+      for (const [k, v] of Object.entries(data as Record<string, string>)) {
+        translations.set(k, v);
+        if (v.endsWith('.') && k.endsWith('.')) {
+          // for convenience
+          translations.set(k.substring(0, k.length-1), v.substring(0, v.length-1));
+        }
+      }
+    }
+  }
+
+  class ParamedEbusdEmitter extends EbusdEmitter {
+    constructor(emitter: AssetEmitter<string, EbusdEmitterOptions>) {
+      super(emitter, translations);
+    }
+  };
+  return ParamedEbusdEmitter;
+}
 
 export async function $onEmit(context: EmitContext<EbusdEmitterOptions>) {
   const emitter =
   // context.options["file-type"]==='csv'?
-  context.getAssetEmitter(EbusdEmitter)
+  context.getAssetEmitter(await getEbusdEmitterClass(context.program.host, context.options.translations));
   emitter.emitProgram();
   await emitter.writeOutput();
 }

@@ -2,7 +2,7 @@ import {type Diagnostic} from "@typespec/compiler";
 import {createAssetEmitter} from "@typespec/compiler/emitter-framework";
 import {createTestHost, expectDiagnosticEmpty} from "@typespec/compiler/testing";
 import {parse} from "yaml";
-import {EbusdEmitter} from "../src/csv_emitter.js";
+import {getEbusdEmitterClass} from "../src/csv_emitter.js";
 import {type EbusdEmitterOptions} from "../src/lib.js";
 import {EbusTestLibrary} from "../src/testing/index.js";
 
@@ -34,14 +34,14 @@ export async function emitWithDiagnostics(
     options["file-type"] = "csv";
   }
 
-  code = (testOptions.extraSpecFiles||[]).filter(f=>!f.main).map(({name}) => `import "./${name}"; `).join('')
+  code = (testOptions.extraSpecFiles||[]).filter(f=>!f.main && f.name.endsWith('.tsp')).map(({name}) => `import "./${name}"; `).join('')
   + (testOptions.emitNamespace
     ? `import "ebus"; using Ebus; namespace test; ${code}`
     : `import "ebus"; using Ebus; ${code}`);
   const host = await getHostForTspFile(code, testOptions.extraSpecFiles);
   const emitter = createAssetEmitter(
     host.program,
-    EbusdEmitter,
+    await getEbusdEmitterClass(host.compilerHost, options.translations),
     {
       emitterOutputDir: "tsp-output",
       options,

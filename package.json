@@ -46,6 +46,7 @@
     "@typespec/compiler": "~0.57.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@typespec/compiler": "~0.57.0",
     "@typespec/library-linter": "~0.57.0",
     "@typespec/tspd": "latest",
@@ -53,6 +54,9 @@
     "typedoc": "^0.26.1",
     "typedoc-plugin-markdown": "^4.1.0",
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
   },
   "scripts": {
     "build": "tsc && npm run build:tsp",

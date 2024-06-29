@@ -687,4 +687,21 @@ describe("emitting models", () => {
       "r,main,,Foo,,,,0706,0502:8;0503:8;0504:8,"
     );
   });
+  it("works with translation", async () => {
+    const files = await emit(`
+      using Ebus.num;
+      /** Main circuit */
+      @id(0,1)
+      model Foo {
+        /** temperature */
+        x: UCH,
+      }
+    `, {translations: 'de.yaml'}, {emitNamespace: true, extraSpecFiles: [{
+      name: 'de.yaml', code: 'Main circuit: Haupteinheit\ntemperature: Temperatur'
+    }]});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,main,,Foo,Haupteinheit,,,0001,,x,,UCH,,,Temperatur"
+    );
+  });
 });

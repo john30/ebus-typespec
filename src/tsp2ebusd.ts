@@ -12,6 +12,7 @@ let outFile: WriteStream|undefined = undefined;
 async function run(): Promise<void> {
   const args = process.argv.slice(2);
   let inFiles: string[] = [];
+  let translations: string|undefined = undefined;
   let outFileName: string|undefined = undefined;
   let ebusdHostPort: [string, number]|undefined = undefined;
   for (let idx = 0; idx < args.length; idx++) {
@@ -28,6 +29,7 @@ async function run(): Promise<void> {
         'usage: tsp2ebusd [-e host[:port]] [-o outfile] [infile*]',
         'converts eBUS TypeSpec file(s) or stdin to an ebusd CSV file or stdout.',
         'with:',
+        '  -t, --trans file         the translation JSON/YAML file',
         '  -e, --ebusd host[:port]  the ebusd host and optional port of ebusd REPL to send the CSV output to (needs to have the "--define" feature enabled)',
         '  -o, --output file        the output file to write to instead of stdout',
         '  infile                   the input file(s) to use instead of stdin',
@@ -37,6 +39,8 @@ async function run(): Promise<void> {
     }
     if (arg==='-o' || arg==='--output') {
       outFileName = args[++idx];
+    } else if (arg==='-t' || arg==='--trans') {
+      translations = args[++idx];
     } else if (arg==='-e' || arg==='--ebusd') {
       const parts = args[++idx].split(':');
       if (!parts[0].length) {
@@ -93,6 +97,11 @@ async function run(): Promise<void> {
   const options: CompilerOptions = {
     emit: ['@ebusd/ebus-typespec'],
     additionalImports: ['@ebusd/ebus-typespec'],
+    options: {
+      '@ebusd/ebus-typespec': {
+        translations,
+      }
+    }
   };
   const outputFiles: Record<string, string> = {};
   const host: CompilerHost = {

@@ -10,6 +10,10 @@ export interface EbusdEmitterOptions {
   "file-type"?: FileType;
   /** Emit includes files as includes instead of inline (incomplete!). */
   includes?: boolean;
+  /**
+   * File name with translations to use.
+   */
+  translations?: string;
 }
 
 export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
@@ -26,6 +30,11 @@ export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
       type: "boolean",
       nullable: true,
       description: "Emit includes files as includes instead of inline (incomplete!)",
+    },
+    translations: {
+      type: "string",
+      nullable: true,
+      description: "File name with translations to use."
     }
   },
 }
