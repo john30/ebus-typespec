@@ -39,6 +39,12 @@ Serialize the schema as csv
 
 Emit includes files as includes instead of inline (incomplete!)
 
+#### `translations`
+
+**Type:** `string`
+
+File name with translations to use.
+
 ## Linter
 
 ### Usage
