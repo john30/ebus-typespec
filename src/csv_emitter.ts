@@ -12,8 +12,9 @@ const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScript
 const isSourceFileWithPath = (scope: Scope<object>): scope is SourceFileScope<object> => scope.kind === "sourceFile" && !!scope.sourceFile.path;
 const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s.replaceAll('"', '""')}"` : s;
 const pascalCase = (s?: string) => s ? s.substring(0,1).toUpperCase()+s.substring(1) : s;
+const isDigit = (ch: string) => ch>='0' && ch<='9';
 const normName: Record<'circuit'|'message'|'field', (s?: string) => string|undefined> = {
-  circuit: (s) => pascalCase(s),// ? s.toLowerCase() : s,
+  circuit: (s) => s?pascalCase(s.startsWith('_')&&isDigit(s[1])?s.substring(1):s):s,
   message: (s) => pascalCase(s),
   field: (s) => s ? s.toLowerCase() : s,
 }

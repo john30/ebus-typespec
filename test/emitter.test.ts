@@ -742,4 +742,17 @@ describe("emitting models", () => {
       'r,Main,,Foo,"the comment, and another.",,,0706,,x,,UCH,,,"special with ""dquote"" here."',
     );
   });
+  it("works with circuit normalization", async () => {
+    const files = await emit(`
+      @zz(0x5)
+      namespace _123 {
+        @id(7,6)
+        model Foo {}
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      'r,123,,Foo,,,05,0706,,',
+    );
+  });
 });
