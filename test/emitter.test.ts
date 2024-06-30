@@ -372,9 +372,9 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[id_hw],scan,,,,HW\n"+
       "*[id_sw],scan,,,,SW\n"+
-      "[id_hw=0700;0800][id_sw>1]r,Main,,Foo,,,,0001,,"
+      "*[id_hw],scan,,,,HW\n"+
+      "[id_sw>1][id_hw=0700;0800]r,Main,,Foo,,,,0001,,"
     );
   });
   it("works with own condition", async () => {

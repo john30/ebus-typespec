@@ -31,7 +31,11 @@ export function $condition(context: DecoratorContext, target: Model|Namespace|Un
  * @returns value if provided on the given target or undefined.
  */
 export function getConditions(program: Program, target: Model|Namespace|UnionVariant): [ModelProperty|Model, ...string[]][] {
-  return program.stateMap(StateKeys.condition).get(target);
+  const ret = program.stateMap(StateKeys.condition).get(target) as [ModelProperty|Model, ...string[]][];
+  if (!ret || ret.length<=1) {
+    return ret;
+  }
+  return [...ret].reverse();
 }
 
 /**
