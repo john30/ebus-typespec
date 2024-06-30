@@ -728,4 +728,18 @@ describe("emitting models", () => {
       "r,Main,,Foo,Haupteinheit,,,0001,,x,,UCH,,,Temperatur"
     );
   });
+  it("works with escaping", async () => {
+    const files = await emit(`
+      /** the comment, and another. */
+      @id(7,6)
+      model Foo {
+        /** special with "dquote" here. */
+        x: Num.UCH,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      'r,Main,,Foo,"the comment, and another.",,,0706,,x,,UCH,,,"special with ""dquote"" here."',
+    );
+  });
 });

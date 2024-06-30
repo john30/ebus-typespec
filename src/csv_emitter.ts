@@ -10,7 +10,7 @@ const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).subs
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
 const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
 const isSourceFileWithPath = (scope: Scope<object>): scope is SourceFileScope<object> => scope.kind === "sourceFile" && !!scope.sourceFile.path;
-const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s}"` : s;
+const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s.replaceAll('"', '""')}"` : s;
 const pascalCase = (s?: string) => s ? s.substring(0,1).toUpperCase()+s.substring(1) : s;
 const normName: Record<'circuit'|'message'|'field', (s?: string) => string|undefined> = {
   circuit: (s) => pascalCase(s),// ? s.toLowerCase() : s,
