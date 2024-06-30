@@ -112,9 +112,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       nearestCircuit = nearestCircuit.split('.')[0]; // strip off further other suffixes
       const nearestCircuitLower = nearestCircuit.toLowerCase();
       const parts = basename(sf.path, extname(sf.path)).split('.');
-      if (parts.length > 1 && (extname(sf.path)==='.inc' ? parts[0] === nearestCircuitLower : parts[0].length === 2 && parts[1] === nearestCircuitLower)) {
-        nearestCircuit = '';
-      } else if (parts.length===1 && parts[0]===nearestCircuitLower) {
+      if (parts.length>1 && parts[0].match(/^[0-9a-fA-F]{2,2}$/)) {
+        parts.splice(0, 1); // remove zz part
+      }
+      if (parts[0] === nearestCircuitLower) {
         nearestCircuit = '';
       }
     }
@@ -188,6 +189,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         } else {
           ids += idsuffix;
         }
+      }
+      if (zz!==undefined && basename(sf.path).startsWith(hex(zz)+'.')) {
+        // avoid inline zz when already part of file name
+        zz = undefined;
+      }
+      if (nearestCircuit && basename(sf.path).includes('.'+nearestCircuit.toLowerCase()+'.')) {
+        nearestCircuit = undefined;
       }
       const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
       // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields

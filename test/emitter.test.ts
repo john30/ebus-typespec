@@ -690,9 +690,12 @@ describe("emitting models", () => {
   it("does not use numeric suffix or components from file name", async () => {
     const files = await emit(``, {}, {emitNamespace: true, extraSpecFiles: [{name: '53.mc2.mc.5.tsp',  code: `
       import "ebus"; using Ebus;
-      namespace Mc2.Mc;
-      @id(1,2)
-      model Foo {}
+      namespace Subdir;
+      @zz(0x53)
+      namespace Mc2.Mc {
+        @id(1,2)
+        model Foo {}
+      }
     `}, {name: 'second.tsp', code: `
       import "ebus"; using Ebus;
       namespace Second;
@@ -701,7 +704,7 @@ describe("emitting models", () => {
     `}]});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file), undefined); // not emitted as empty
-    assert.strictEqual(stripHeader(files['53.mc2.mc.5.csv']),
+    assert.strictEqual(stripHeader(files['subdir/53.mc2.mc.5.csv']),
       "r,,,Foo,,,,0102,,"
     );
     assert.strictEqual(stripHeader(files['second.csv']),
