@@ -325,3 +325,67 @@ namespace Dtm {
   @encode("", Num.BI0_7)
   scalar TTQ extends plainTime;
 }
+
+// /** All known base data types. */
+// namespace All {
+//   alias BI0 = Num.BI0;
+//   alias BI1 = Num.BI1;
+//   alias BI2 = Num.BI2;
+//   alias BI3 = Num.BI3;
+//   alias BI4 = Num.BI4;
+//   alias BI5 = Num.BI5;
+//   alias BI6 = Num.BI6;
+//   alias BI7 = Num.BI7;
+//   alias BI0_7 = Num.BI0_7;
+//   alias UCH = Num.UCH;
+//   alias SCH = Num.SCH;
+//   alias D1B = Num.D1B;
+//   alias BCD = Num.BCD;
+//   alias HCD = Num.HCD;
+//   alias D1C = Num.D1C;
+//   alias PIN = Num.PIN;
+//   alias UIN = Num.UIN;
+//   alias UIR = Num.UIR;
+//   alias SIN = Num.SIN;
+//   alias SIR = Num.SIR;
+//   alias HCD2 = Num.HCD2;
+//   alias D2B = Num.D2B;
+//   alias D2C = Num.D2C;
+//   alias FLT = Num.FLT;
+//   alias FLR = Num.FLR;
+//   alias BCD3 = Num.BCD3;
+//   alias HCD3 = Num.HCD3;
+//   alias ULG = Num.ULG;
+//   alias ULR = Num.ULR;
+//   alias SLG = Num.SLG;
+//   alias SLR = Num.SLR;
+//   alias BCD4 = Num.BCD4;
+//   alias HCD4 = Num.HCD4;
+//   alias EXP = Num.EXP;
+//   alias EXR = Num.EXR;
+//   alias STR = Str.STR;
+//   alias NTS = Str.NTS;
+//   alias IGN = Str.IGN;
+//   alias HEX = Str.HEX;
+//   alias BDY = Dtm.BDY;
+//   alias HDY = Dtm.HDY;
+//   alias BDA = Dtm.BDA;
+//   alias BDA4 = Dtm.BDA4;
+//   alias BDA3 = Dtm.BDA3;
+//   alias BDZ = Dtm.BDZ;
+//   alias HDA = Dtm.HDA;
+//   alias HDA4 = Dtm.HDA4;
+//   alias HDA3 = Dtm.HDA3;
+//   alias DAY = Dtm.DAY;
+//   alias DTM = Dtm.DTM;
+//   alias BTI = Dtm.BTI;
+//   alias HTI = Dtm.HTI;
+//   alias VTI = Dtm.VTI;
+//   alias BTM = Dtm.BTM;
+//   alias VTM = Dtm.VTM;
+//   alias HTM = Dtm.HTM;
+//   alias MIN = Dtm.MIN;
+//   alias TTM = Dtm.TTM;
+//   alias TTH = Dtm.TTH;
+//   alias TTQ = Dtm.TTQ;
+// }
