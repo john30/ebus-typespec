@@ -114,9 +114,9 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const parts = basename(sf.path, extname(sf.path)).split('.');
       if (parts.length>1 && parts[0].match(/^[0-9a-fA-F]{2,2}$/)) {
         parts.splice(0, 1); // remove zz part
-      }
-      if (parts[0] === nearestCircuitLower) {
-        nearestCircuit = '';
+        if (parts[0] === nearestCircuitLower) {
+          nearestCircuit = '';
+        }
       }
     }
     const [idModel] = program.resolveTypeReference('Ebus.Id.Id');
