@@ -30,9 +30,6 @@ export async function emitWithDiagnostics(
   options: EbusdEmitterOptions = {},
   testOptions: TestOptions = { emitNamespace: true }
 ): Promise<[Record<string, any>, readonly Diagnostic[]]> {
-  if (!options["file-type"]) {
-    options["file-type"] = "csv";
-  }
 
   code = (testOptions.extraSpecFiles||[]).filter(f=>!f.main && f.name.endsWith('.tsp')).map(({name}) => `import "./${name}"; `).join('')
   + (testOptions.emitNamespace
@@ -58,11 +55,9 @@ export async function emitWithDiagnostics(
   await emitter.writeOutput();
   const schemas: Record<string, any> = {};
   const files: string[] = [];
-  const fileType = options?.["file-type"] === "csv" ? 'csv'
-  : options?.["file-type"] === "yaml" ? 'yaml' : 'json';
   const readDirs = async (parent: string = '') => {
     for (const file of await emitter.getProgram().host.readDir("./tsp-output"+(parent?`/${parent}`:''))) {
-      if (file.endsWith(fileType) || file.endsWith('.inc')) {
+      if (file.endsWith('.csv') || file.endsWith('.inc')) {
         files.push((parent?`${parent}/`:'')+file);
       } else {
         await readDirs((parent?`${parent}/`:'')+file);
@@ -77,13 +72,7 @@ export async function emitWithDiagnostics(
       name = name.substring(5);
     }
     const sf = await emitter.getProgram().host.readFile(`./tsp-output/${file}`);
-    if (fileType === "csv") {
-      schemas[name] = sf.text;
-    } else if (fileType === "yaml") {
-      schemas[name] = parse(sf.text);
-    } else {
-      schemas[name] = JSON.parse(sf.text);
-    }
+    schemas[name] = sf.text;
   }
 
   return [schemas, host.program.diagnostics];

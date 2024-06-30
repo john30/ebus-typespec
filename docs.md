@@ -27,12 +27,6 @@ emit:
 
 ### Emitter options
 
-#### `file-type`
-
-**Type:** `"csv"`
-
-Serialize the schema as csv
-
 #### `includes`
 
 **Type:** `boolean`

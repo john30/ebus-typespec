@@ -1,13 +1,6 @@
 import {createTypeSpecLibrary, paramMessage, type JSONSchemaType} from "@typespec/compiler";
 
-export type FileType = "csv";// | "yaml" | "json";
-
 export interface EbusdEmitterOptions {
-  /**
-   * Serialize the schema as either csv, yaml, or json.
-   * @default csv
-   */
-  "file-type"?: FileType;
   /** Emit includes files as includes instead of inline (incomplete!). */
   includes?: boolean;
   /**
@@ -20,12 +13,6 @@ export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
   type: "object",
   additionalProperties: false,
   properties: {
-    "file-type": {
-      type: "string",
-      enum: ["csv"],//, "yaml", "json"],
-      nullable: true,
-      description: "Serialize the schema as csv", //either csv, yaml, or json.",
-    },
     includes: {
       type: "boolean",
       nullable: true,
