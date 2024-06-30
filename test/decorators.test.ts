@@ -1,4 +1,4 @@
-import {type Model} from "@typespec/compiler";
+import {type Model, type Namespace} from "@typespec/compiler";
 import {expectDiagnostics, type BasicTestRunner} from "@typespec/compiler/testing";
 import {deepEqual, strictEqual} from "node:assert";
 import {beforeEach, describe, it} from "node:test";
@@ -38,6 +38,15 @@ describe("decorators", () => {
         `@zz(0xfe) @test model Test {}`
       )) as { Test: Model };
       strictEqual(getZz(runner.program, Test), 0xfe);
+    });
+
+    it("set zz on deepest namespace", async () => {
+      const { comp } = (await runner.compile(`
+        @zz(0xfe) @test namespace file.comp {
+          @test model Test {}
+        }
+      `)) as { comp: Namespace, Test: Model };
+      strictEqual(getZz(runner.program, comp), 0xfe);
     });
 
     it("set broadcast zz on model via union", async () => {
