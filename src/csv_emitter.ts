@@ -96,6 +96,14 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (context.referencedBy && fileCircuit.endsWith('_inc')
         || extname(sf?.path)==='.inc' && fileCircuit===basename(sf.path, '.inc')+'_inc') {
           fileCircuit = ''; // leave circuit blank in include files unless the circuit name was set explicitly
+        } else {
+          const parts = fileCircuit.split('.');
+          if (parts.length>1 && parts[0].match(/^[0-9a-fA-F]{2,2}$/)) {
+             // use topmost non-zz part and avoid component parts like mc in ehp.mc
+            fileCircuit = parts[1];
+          } else if (parts.length>1) {
+            fileCircuit = ''; // avoid hw/sw filtered parts
+          }
         }
         nearestCircuit = nearestNamespace && nearestNamespace.toLowerCase()===fileCircuit ? nearestNamespace : fileCircuit;
       }
@@ -105,6 +113,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const nearestCircuitLower = nearestCircuit.toLowerCase();
       const parts = basename(sf.path, extname(sf.path)).split('.');
       if (parts.length > 1 && (extname(sf.path)==='.inc' ? parts[0] === nearestCircuitLower : parts[0].length === 2 && parts[1] === nearestCircuitLower)) {
+        nearestCircuit = '';
+      } else if (parts.length===1 && parts[0]===nearestCircuitLower) {
         nearestCircuit = '';
       }
     }
@@ -502,18 +512,22 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     let root = nsf && nsf.split('.')[0].toLowerCase();
     let ext = this.#fileExtension();
     const fp = fileParent(node);
-    let fpName = fp?.path && basename(fp.path, extname(fp.path));
-    if (fpName?.endsWith('_inc')) {
+    let fileCircuit = fp?.path && basename(fp.path, extname(fp.path));
+    // similar to nearestCircuit calculation in modelDeclaration()
+    if (fileCircuit?.endsWith('_inc')) {
       if (!this.emitter.getOptions()["includes"] && !(forLoad || currentCtx.isLoad)) {
         return {exclude: true};
       }
-      if (root===fpName) {
+      if (root===fileCircuit) {
         root = '';
       }
       ext = 'inc';
-      fpName = fpName.substring(0, fpName.length-4);
+      fileCircuit = fileCircuit.substring(0, fileCircuit.length-4);
+    } else if (fileCircuit && root && fileCircuit.toLowerCase().includes(root.toLowerCase())) {
+      // prevent root prefix
+      root = '';
     }
-    const name = (fpName || (typ&&this.declarationName(typ)) || '').toLowerCase();
+    const name = (fileCircuit || (typ&&this.declarationName(typ)) || '').toLowerCase();
     const fullname = `${root&&root!==name?root+'/':''}${name}`;
     let sourceFile = this.#sourceFileByPath.get(fullname);
     if (!sourceFile) {
