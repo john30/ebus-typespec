@@ -142,7 +142,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const direction = write ? (passive ? 'uw' : 'w') : (passive ? 'u' : 'r');
       // add a generic default line for each direction at least
       if (!sf.imports.has(direction)) {
-        sf.imports.set(direction, [direction]);
+        sf.imports.set(direction, [direction,'']);
       }
       const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive, broadcastTarget);
       const fields = this.modelPropertiesRw(model, write&&!passive, broadcastTarget);

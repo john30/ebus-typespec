@@ -17,10 +17,13 @@ const stripHeader = (s: string) => {
   s = s.trim();
   while (s) {
     const parts = s.split('\n', 2);
-    if (!defaultLines.includes(parts[0])) {
+    if (defaultLines.includes(parts[0])) {
+      s = s.substring(parts[0].length+1).trim();
+    } else if (parts[0].endsWith(',') && defaultLines.includes(parts[0].substring(0, parts[0].length-1))) {
+      s = s.substring(parts[0].length+1).trim();
+    } else {
       return s;
     }
-    s = s.substring(parts[0].length+1).trim();
   }
   return s;
 };
