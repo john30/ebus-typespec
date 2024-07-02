@@ -53,10 +53,12 @@ namespace Id {
     hw?: PIN,
   }
 
+  /** answer to identification query */
   @zz(BROADCAST)
   @passive
-  model IdBcast is Id;
+  model IdAnswer is Id;
 
+  /** query identification */
   @zz(BROADCAST)
-  model IdWrite is Id;
+  model IdQuery is Id;
 }

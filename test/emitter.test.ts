@@ -274,6 +274,17 @@ describe("emitting models", () => {
       "r,Main,,Id,identification,,08,0704,,mf,,UCH,6=Dungs;15=FH Ostfalia;16=TEM;17=Lamberti;20=CEB;21=Landis-Staefa;22=FERRO;23=MONDIAL;24=Wikon;25=Wolf;32=RAWE;48=Satronic;64=ENCON;80=Kromschröder;96=Eberle;101=EBV;117=Grässlin;133=ebm-papst;149=SIG;165=Theben;167=Thermowatt;181=Vaillant;192=Toby;197=Weishaupt;253=ebusd.eu;253=ebusd,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
     );
   });
+  it("emits other id messages", async () => {
+    const files = await emit(`
+      model IdQuery is Ebus.Id.IdQuery;
+      model IdAnswer is Ebus.Id.IdAnswer;
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "w,Main,,IdQuery,query identification,,fe,0704,,\n"+
+      "u,Main,,IdAnswer,answer to identification query,,fe,0704,,mf,,UCH,6=Dungs;15=FH Ostfalia;16=TEM;17=Lamberti;20=CEB;21=Landis-Staefa;22=FERRO;23=MONDIAL;24=Wikon;25=Wolf;32=RAWE;48=Satronic;64=ENCON;80=Kromschröder;96=Eberle;101=EBV;117=Grässlin;133=ebm-papst;149=SIG;165=Theben;167=Thermowatt;181=Vaillant;192=Toby;197=Weishaupt;253=ebusd.eu;253=ebusd,,device manufacturer,id,,STR:5,,,device id,sw,,PIN,,,software version,hw,,PIN,,,hardware version"
+    );
+  });
   it("keeps property name", async () => {
     const files = await emit(`
       namespace Manuf {
