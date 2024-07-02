@@ -214,6 +214,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const properties = Array.from(model.properties.values());
     let recursion = 0;
     let commentProp: ModelProperty|undefined;
+    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
@@ -239,7 +240,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         commentProp = undefined;
         continue;
       }
-      let res = {} as {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
+      let res = {} as Attrs;
       let s: ModelProperty|Scalar = p;
       let isOwn = false;
       do {
@@ -248,7 +249,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           if (!res.pname) {
             res.pname = s.name;
           }
-        } else if (this.#isStdType(s, true)) {
+        } else if (this.#isStdType(s, true) && (!s.baseScalar || this.#isStdType(s.baseScalar))) {
           isOwn = true;
           // set length depending on difference to max in base type
           if (res.length!==undefined) {
