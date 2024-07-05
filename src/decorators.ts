@@ -96,13 +96,14 @@ export function $auth(context: DecoratorContext, target: Model, value: string) {
     });
     return;
   }
-  if (context.program.stateMap(StateKeys.auth).has(target)) {
-    reportDiagnostic(context.program, {
-      code: "multiple-decorator",
-      target: context.getArgumentTarget(0)!,
-      format: { which: 'auth'},
-    });
-  }
+  // multiple @auth allowed for override purposes
+  // if (context.program.stateMap(StateKeys.auth).has(target)) {
+  //   reportDiagnostic(context.program, {
+  //     code: "multiple-decorator",
+  //     target: context.getArgumentTarget(0)!,
+  //     format: { which: 'auth'},
+  //   });
+  // }
   context.program.stateMap(StateKeys.auth).set(target, value);
 }
 
@@ -161,13 +162,14 @@ export function $qq(context: DecoratorContext, target: Model, value?: Numeric) {
     });
     return;
   }
-  if (context.program.stateMap(StateKeys.qq).has(target)) {
-    reportDiagnostic(context.program, {
-      code: "multiple-decorator",
-      target: context.getArgumentTarget(0)!,
-      format: { which: 'qq'},
-    });
-  }
+  // multiple @qq allowed for override purposes
+  // if (context.program.stateMap(StateKeys.qq).has(target)) {
+  //   reportDiagnostic(context.program, {
+  //     code: "multiple-decorator",
+  //     target: context.getArgumentTarget(0)!,
+  //     format: { which: 'qq'},
+  //   });
+  // }
   context.program.stateMap(StateKeys.qq).set(target, value);
 }
 
@@ -198,13 +200,14 @@ export function $zz(context: DecoratorContext, target: Model|Namespace, value?: 
     });
     return;
   }
-  if (context.program.stateMap(StateKeys.zz).has(target)) {
-    reportDiagnostic(context.program, {
-      code: "multiple-decorator",
-      target: context.getArgumentTarget(0)!,
-      format: { which: 'zz'},
-    });
-  }
+  // multiple @zz allowed for override purposes
+  // if (context.program.stateMap(StateKeys.zz).has(target)) {
+  //   reportDiagnostic(context.program, {
+  //     code: "multiple-decorator",
+  //     target: context.getArgumentTarget(0)!,
+  //     format: { which: 'zz'},
+  //   });
+  // }
   context.program.stateMap(StateKeys.zz).set(target, value===undefined?0xaa:value);
 }
 

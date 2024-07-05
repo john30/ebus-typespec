@@ -74,16 +74,17 @@ describe("decorators", () => {
       })
     });
 
-    it("emit diagnostic with multiple declaration", async () => {
-      const diagnostics = await runner.diagnose(
-        `@zz(0x08) @zz(0x09) @test model Test {}`
-      );
-      expectDiagnostics(diagnostics, {
-        severity: "error",
-        code: "ebus/multiple-decorator",
-        message: "Only single decorator \"@zz\" allowed."
-      })
-    });
+    // multiple @zz allowed for override purposes
+    // it("emit diagnostic with multiple declaration", async () => {
+    //   const diagnostics = await runner.diagnose(
+    //     `@zz(0x08) @zz(0x09) @test model Test {}`
+    //   );
+    //   expectDiagnostics(diagnostics, {
+    //     severity: "error",
+    //     code: "ebus/multiple-decorator",
+    //     message: "Only single decorator \"@zz\" allowed."
+    //   })
+    // });
   });
 
   describe("@id", () => {
