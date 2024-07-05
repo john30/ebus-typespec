@@ -139,6 +139,7 @@ export const $lib = createTypeSpecLibrary({
     id: { description: "message ID" },
     chain: { description: "message chain" },
     inherit: { description: "inherited model(s)" },
+    example: { description: "example data" },
     bcd: { description: 'BCD encoding' },
     hex: { description: 'HEX encoding' },
     maxBits: { description: 'max number of bits' },

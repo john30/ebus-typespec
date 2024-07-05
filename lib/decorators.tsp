@@ -78,6 +78,14 @@ extern dec chain(target: Model, length: valueof uint8, dd: valueof symbol[], ...
 extern dec inherit(target: Model, ...models: Model[]);
 
 /**
+ * Define a data example.
+ * @param desc a text describing the example.
+ * @param q the query part of the message, i.e. pb, sb, and dd bytes sent to the target.
+ * @param a the answer part of the message, i.e. dd bytes received from the target.
+ */
+extern dec example(target: Model, desc: valueof string, q: valueof string|symbol[], a?: valueof string|symbol[]);
+
+/**
  * Define message part outbound to target.
  */
 extern dec out(target: ModelProperty);

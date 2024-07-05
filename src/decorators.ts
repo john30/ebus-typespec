@@ -401,6 +401,76 @@ export function getInherit(program: Program, target: Model): Model[] {
   return program.stateMap(StateKeys.inherit).get(target);
 }
 
+const parseHex = (s: string|number[]): number[]|undefined|null => {
+  if (Array.isArray(s)) {
+    return s;
+  }
+  if (typeof s !== 'string') {
+    return undefined;
+  }
+  if (/[^0-9a-fA-F, ]/.test(s)) {
+    return null;
+  }
+  const ret: number[] = [];
+  for (const part of s.toLowerCase().split(/[^0-9a-f]+/)) {
+    for (let pos = 0; pos < part.length; pos+=2) {
+      const str = part.substring(pos, pos+2);
+      if (str.length!==2) {
+        return null;
+      }
+      const val = parseInt(str, 16);
+      if (!isFinite(val) || val<0 || val>0xff) {
+        return null;
+      }
+      ret.push(val);
+    }
+  }
+  return ret;
+}
+
+/**
+ * Implementation of the `@example` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param desc a text describing the example.
+ * @param q the query part of the message, i.e. pb, sb, and dd bytes sent to the target.
+ * @param a the answer part of the message, i.e. dd bytes received from the target.
+ */
+export function $example(context: DecoratorContext, target: Model, desc: string, q: string|number[], a?: string|number[]) {
+  const qn = parseHex(q);
+  if (qn === null) {
+    reportDiagnostic(context.program, {
+      code: "invalid-length",
+      target,
+      format: { which: 'example q', value: `or value ${q}`},
+    });
+  }
+  const an = a ? parseHex(a) : undefined;
+  if (an === null) {
+    reportDiagnostic(context.program, {
+      code: "invalid-length",
+      target,
+      format: { which: 'example a', value: `or value ${a}`},
+    });
+  }
+  if (qn && qn !== null) {
+    const current = context.program.stateMap(StateKeys.example).get(target) || [];
+    context.program.stateMap(StateKeys.example).set(target, [...current, {desc, q: qn, a}]);
+  }
+}
+
+/**
+ * Accessor for the `@example` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function geExamples(program: Program, target: Model): {desc: string, q: number[], a?: number[]}[] {
+  return program.stateMap(StateKeys.example).get(target);
+}
+
 
 /**
  * Implementation of the `@reverse` decorator.
