@@ -24,6 +24,12 @@ extern dec write(target: Model);
 extern dec passive(target: Model);
 
 /**
+ * Define the poll priority (only for active read).
+ * @param value the poll priority (between 1 and 9).
+ */
+extern dec poll(target: Model, value?: valueof uint8);
+
+/**
  * Define authentication level.
  * @param value the authentication level (e.g. 'install').
  */

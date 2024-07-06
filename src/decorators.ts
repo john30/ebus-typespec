@@ -81,6 +81,38 @@ export function getPassive(program: Program, target: Model): boolean {
 }
 
 /**
+ * Implementation of the `@poll` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $poll(context: DecoratorContext, target: Model, value?: Numeric) {
+  if (value!==undefined) {
+    const val = getNum(value);
+    if (val!==undefined && (val<1 || val>9)) {
+      reportDiagnostic(context.program, {
+        code: "banned-values",
+        target: context.getArgumentTarget(0)!,
+        format: { detail: val!==undefined && val>9 ? '9' : '<1' },
+      });
+    }
+  }
+  context.program.stateMap(StateKeys.poll).set(target, value);
+}
+
+/**
+ * Accessor for the `@poll` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getPoll(program: Program, target: Model): number | undefined {
+  return getNum(program.stateMap(StateKeys.poll).get(target));
+}
+
+/**
  * Implementation of the `@auth` decorator.
  *
  * @param context Decorator context.

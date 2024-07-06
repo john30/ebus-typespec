@@ -133,6 +133,7 @@ export const $lib = createTypeSpecLibrary({
     condition: { description: "message condition(s)" },
     write: { description: "write direction" },
     passive: { description: "passive only" },
+    poll: { description: "poll priority" },
     auth: { description: "authentication level" },
     qq: { description: "source address QQ" },
     zz: { description: "target address ZZ" },

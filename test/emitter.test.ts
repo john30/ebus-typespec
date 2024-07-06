@@ -417,6 +417,17 @@ describe("emitting models", () => {
       "r,Main,high,Foo,,,,0001,,"
     );
   });
+  it("works with poll prio", async () => {
+    const files = await emit(`
+      @id(0,1)
+      @poll(1)
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r1,Main,,Foo,,,,0001,,"
+    );
+  });
   it("combines divisor/factor", async () => {
     const files = await emit(`
       @divisor(10)

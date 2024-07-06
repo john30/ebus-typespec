@@ -3,7 +3,10 @@ import {CodeTypeEmitter, StringBuilder, code, type AssetEmitter, type Context, t
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import jsYaml from "js-yaml";
 import {basename, extname} from "path";
-import {getAuth, getChain, getConditions, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getQq, getUnit, getValues, getWrite, getZz, isSourceAddr} from "./decorators.js";
+import {
+  getAuth, getChain, getConditions, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
+  getQq, getUnit, getValues, getWrite, getZz, isSourceAddr
+} from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
@@ -199,9 +202,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         nearestCircuit = undefined;
       }
       const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
+      const poll = direction==='r' && !level && getPoll(program, model);
       // message: type,circuit,level,name,comment,qq,zz,pbsb,id,...fields
       // field: name,part,type,divisor/values,unit,comment
-      const message = [conds+direction, normName.circuit(nearestCircuit), level, normName.message(name), escape(comment), hex(qq), hex(zz), pbsb, ids]
+      const message = [conds+direction+(poll||''), normName.circuit(nearestCircuit), level, normName.message(name), escape(comment), hex(qq), hex(zz), pbsb, ids]
       decls.push([...message, ...(baseFields?[baseFields]:[]), fields].join());
     }
     return this.emitter.result.declaration(name, decls.join('\n'));
