@@ -67,18 +67,22 @@ namespace Num {
   scalar BI0_7 extends uint8;
 
   /** 1 byte unsigned integer, 0 - 254, replacement 0xff. */
+  @maxValueExclusive(0xff)
   scalar UCH extends uint8;
   /** 1 byte signed integer, -127 - +127, replacement 0x7f. */
+  @maxValueExclusive(0x7f)
   scalar SCH extends int8;
   /** same as SCH. */
   alias D1B = SCH;
   /** 1 byte unsigned decimal in BCD, 0 - 99, replacement 0xff. */
+  @maxValue(99)
   @Internal.bcd
   scalar BCD extends uint8;
   /**
    * 1 byte unsigned decimal digits in hex, 0 - 99
    * (0x00 - 0x63).
    */
+  @maxValue(99)
   @Internal.hex
   scalar HCD extends uint8;
   /**
@@ -86,31 +90,39 @@ namespace Num {
    * (0x00 - 0xc8, replacement 0xff).
    */
   @divisor(2)
+  @maxValue(100)
   scalar D1C extends uint8;
 
   // 2 byte length
 
   /** 2 byte unsigned decimal in BCD, shown as 4 digits, 0000 - 9999 (fixed length). */
+  @maxValue(9999)
   @Internal.reverse
   @Internal.bcd
   scalar PIN extends uint16;
   /** 2 byte unsigned integer, 0 - 65534, replacement 0xffff. */
+  @maxValueExclusive(0xffff)
   scalar UIN extends uint16;
   /** 2 byte unsigned integer, 0 - 65534, replacement 0xffff, big endian. */
+  @maxValueExclusive(0xffff)
   @Internal.reverse
   scalar UIR extends UIN;
   /** 2 byte signed integer, -32767 - +32767, replacement 0x7fff. */
+  @maxValueExclusive(0x7fff)
   scalar SIN extends int16;
   /** 2 byte signed integer, -32767 - +32767, replacement 0x7fff, big endian. */
+  @maxValueExclusive(0x7fff)
   @Internal.reverse
   scalar SIR extends SIN;
   /** 2 byte unsigned decimal in BCD, 0 - 9999, replacement 0xffff. */
+  @maxValue(9999)
   @Internal.bcd
   scalar BCD2 extends uint16;
   /**
    * 2 byte unsigned decimal digits in hex, 0 - 9999
    * (0x00,0x00 - 0x63,0x63).
    */
+  @maxValue(9999)
   @Internal.hex
   scalar HCD2 extends uint16;
   /**
@@ -138,34 +150,42 @@ namespace Num {
 
   //todo 3 byte int
   /** 3 byte unsigned decimal in BCD, 0 - 999999, replacement 0xffffff. */
+  @maxValue(999999)
   @Internal.bcd
   scalar BCD3 extends uint32; // todo 3 bytes
   /**
    * 3 byte unsigned decimal digits in hex, 0 - 999999
    * (0x00,0x00,0x00 - 0x63,0x63,0x63).
    */
+  @maxValue(999999)
   @Internal.hex
   scalar HCD3 extends uint32; // todo 3 bytes
 
   // 4 byte length
 
   /** 4 byte unsigned integer, 0 - 4294967294, replacement 0xffffffff. */
+  @maxValueExclusive(0xffffffff)
   scalar ULG extends uint32;
   /** 4 byte unsigned integer, 0 - 4294967294, replacement 0xffffffff, big endian. */
+  @maxValueExclusive(0xffffffff)
   @Internal.reverse
   scalar ULR extends ULG;
   /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x7fffffff. */
+  @maxValueExclusive(0x7fffffff)
   scalar SLG extends int32;
   /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x7fffffff, big endian. */
+  @maxValueExclusive(0x7fffffff)
   @Internal.reverse
   scalar SLR extends SLG;
   /** 4 byte unsigned decimal in BCD, 0 - 99999999, replacement 0xffffffff. */
+  @maxValue(99999999)
   @Internal.bcd
   scalar BCD4 extends uint32;
   /**
    * 4 byte unsigned decimal digits in hex, 0 - 99999999
    * (0x00,0x00,0x00,0x00 - 0x63,0x63,0x63,0x63).
    */
+  @maxValue(99999999)
   @Internal.hex
   scalar HCD4 extends uint32;
   /**
@@ -205,12 +225,14 @@ namespace Dtm {
    * 1 byte weekday, "Mon" - "Sun"
    * (0x00 - 0x06).
    */
-  scalar BDY extends uint8; // todo weekday
+  @maxValue(0x06)
+  scalar BDY extends uint8; // todo weekday values
   /**
    * 1 byte weekday, "Mon" - "Sun" [Vaillant type]
    * (0x01 - 0x07).
    */
-  scalar HDY extends uint8; // todo weekday
+  @maxValue(0x07)
+  scalar HDY extends uint8; // todo weekday values
   /**
    * 4 byte date with weekday in BCD, 01.01.2000 - 31.12.2099
    * (0x01,0x01,WW,0x00 - 0x31,0x12,WW,0x99, WW is weekday Mon=0x01 - Sun=0x07, replacement 0xff).
