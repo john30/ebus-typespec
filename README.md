@@ -93,10 +93,11 @@ Following the [TypeSpec style guide](https://typespec.io/docs/handbook/style-gui
   ```typespec
   enum Values_manufacturer {...}
   ```
-* due to absence of an option to include models in a namepsace from another namespace, the construct for includsion is putting these namespaces into a union named `_includes`:  
+* due to absence of an option to include models in a namepsace from another namespace, the construct for inclusion is putting these namespaces into a union named `_includes`:  
   ```typespec
     union _includes {
-      NamespaceModelName,
+      NamespaceModelName, // <= unnamed entry inlines the referenced definition or emits a !include instruction
+      named: NamespaceModelName, // <= named entry emits a !load instruction
       // etc.
     }
   ```
