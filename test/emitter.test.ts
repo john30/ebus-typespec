@@ -780,4 +780,19 @@ describe("emitting models", () => {
       'r,123,,Foo,,,05,0706,,',
     );
   });
+  it("picks up comment from type", async () => {
+    const files = await emit(`
+      /** type comment */
+      scalar typ extends Num.UCH;
+      model Base<T> {
+        value: T;
+      }
+      @id(7,6)
+      model Foo is Base<typ>;
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      'r,Main,,Foo,,,,0706,,value,,UCH,,,type comment',
+    );
+  });
 });
