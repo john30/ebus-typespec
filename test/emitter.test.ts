@@ -530,7 +530,48 @@ describe("emitting models", () => {
     );
     assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
   });
-  it("includes loaded namespace models with conditions", async () => {
+  it("includes imported namespace models with conditions and multi ref", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      namespace Importfile_inc {
+        @base(0,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _includes {
+          /** included file */
+          @condition(Ebus.Id.Id.sw, "<=2")
+          Importfile_inc,
+          /** included file */
+          @condition(Ebus.Id.Id.sw, ">5")
+          Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "*[id_sw],scan,,,,SW\n"+
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      // "# included stuff\n"+
+      "[id_sw<=2]r,Circ,,Foo,,,15,0001,,uch,,UCH,,,\n"+
+      "[id_sw>5]r,Circ,,Foo,,,15,0001,,uch,,UCH,,,"
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+    it("includes loaded namespace models with conditions", async () => {
     const importTsp = `
       import "ebus"; using Ebus;
       namespace Importfile_inc {
