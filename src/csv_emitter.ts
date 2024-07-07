@@ -414,11 +414,14 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return this.emitter.result.declaration(name, decls.join('\n')); // at least empty string needed to combine emitted declarations from above
   }
 
+  private ownNs?: Namespace;
   #isStdType(type: Type, ownOnly=false) {
     if (ownOnly) {
-      const g = this.emitter.getProgram().getGlobalNamespaceType();
-      const own = g.namespaces.get('Ebus');
-      return own && isDeclaredInNamespace(type as Model, own);
+      if (!this.ownNs) {
+        const g = this.emitter.getProgram().getGlobalNamespaceType();
+        this.ownNs = g.namespaces.get('Ebus');
+      }
+      return this.ownNs && isDeclaredInNamespace(type as Model, this.ownNs);
     }
     return this.emitter.getProgram().checker.isStdType(type);
   }
