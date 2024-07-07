@@ -717,6 +717,29 @@ describe("emitting models", () => {
       },
     ]);
   });
+  it("works with special length types", async () => {
+    const files = await emit(`
+      using Ebus.Num;using Ebus.Dtm;
+      model Base<T> {
+        value: T;
+      }
+      @id(0,1)
+      model Bcd is Base<BCD3>;
+      @id(0,2)
+      model Hcd is Base<HCD3>;
+      @id(0,3)
+      model Bda is Base<BDA3>;
+      @id(0,4)
+      model Hda is Base<HDA3>;
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Bcd,,,,0001,,value,,BCD:3,,,\n"+
+      "r,Main,,Hcd,,,,0002,,value,,HCD:3,,,\n"+
+      "r,Main,,Bda,,,,0003,,value,,BDA:3,,,\n"+
+      "r,Main,,Hda,,,,0004,,value,,HDA:3,,,"
+    );
+  });
   it("works with @chain", async () => {
     const files = await emit(`
       @id(0,1,2)
