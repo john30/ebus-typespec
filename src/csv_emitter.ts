@@ -574,7 +574,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
 
   #getDoc(target: Type) {
     const str = getDocNoTrans(this.emitter.getProgram(), target);
-    return !str ? str : (this.translations.get(str) || str);
+    return !str ? str : (this.translations.get(str) || str).replaceAll('\n', '\\n');
   }
   
 }
