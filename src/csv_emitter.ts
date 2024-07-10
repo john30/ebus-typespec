@@ -246,15 +246,21 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
       let res = {} as Attrs;
       let s: ModelProperty|Scalar = p;
-      let isOwn = false;
+      let isOwn: undefined|'inter'|'final' = undefined;
       do {
-        res = {...res, name: s.name};
+        const prevOwn = isOwn;
+        // only uppercase may be ebus namespace type (not e.g. "manufacturer")
+        isOwn = s.kind==='Scalar' && s.name[0].toUpperCase()===s.name[0] && this.#isStdType(s, true)
+          ? (!s.baseScalar || this.#isStdType(s.baseScalar) ? 'final' : 'inter')
+          : undefined;
+        if (!isOwn || !res.name || (isOwn && !prevOwn)) {
+          res = {...res, name: s.name};
+        }
         if (s.kind==='ModelProperty') {
           if (!res.pname) {
             res.pname = s.name;
           }
-        } else if (this.#isStdType(s, true) && (!s.baseScalar || this.#isStdType(s.baseScalar))) {
-          isOwn = true;
+        } else if (isOwn==='final') {
           // set length depending on difference to max in base type
           if (res.length!==undefined) {
             const length = isNumericType(program, s) ? getMaxBits(program, s) : getMaxLength(program, s);
@@ -299,11 +305,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           }
         }
         res.unit ??= getUnit(program, s);
-        if (commentProp) {
-          res.comment ??= this.#getDoc(commentProp);
-          commentProp = undefined;
+        if (!isOwn) {
+          if (commentProp) {
+            res.comment ??= this.#getDoc(commentProp);
+            commentProp = undefined;
+          }
+          res.comment ??= this.#getDoc(s);
         }
-        res.comment ??= this.#getDoc(s);
         if (s.kind==='ModelProperty') {
           s = s.type as Scalar|ModelProperty;
         } else {

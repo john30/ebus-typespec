@@ -731,13 +731,16 @@ describe("emitting models", () => {
       model Bda is Base<BDA3>;
       @id(0,4)
       model Hda is Base<HDA3>;
+      @id(0,5)
+      model Vtm is Base<VTM>;
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
       "r,Main,,Bcd,,,,0001,,value,,BCD:3,,,\n"+
       "r,Main,,Hcd,,,,0002,,value,,HCD:3,,,\n"+
       "r,Main,,Bda,,,,0003,,value,,BDA:3,,,\n"+
-      "r,Main,,Hda,,,,0004,,value,,HDA:3,,,"
+      "r,Main,,Hda,,,,0004,,value,,HDA:3,,,\n"+
+      "r,Main,,Vtm,,,,0005,,value,,VTM,,,"
     );
   });
   it("works with @chain", async () => {

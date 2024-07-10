@@ -246,12 +246,12 @@ namespace Dtm {
    * 3 byte date in BCD, 01.01.2000 - 31.12.2099
    * (0x01,0x01,0x00 - 0x31,0x12,0x99, replacement 0xff).
    */
-  scalar BDA3 extends plainDate; // todo 3 bytes
+  scalar BDA3 extends BDA; // todo 3 bytes
   /**
    * 3 byte date with zero-based weekday in BCD, 01.01.2000 - 31.12.2099
    * (0x01,0x01,WZ,0x00 - 0x31,0x12,WZ,0x99, WZ is zero-based weekday Mon=0x00 - Sun=0x06, replacement 0xff).
    */
-  scalar BDZ extends plainDate;
+  scalar BDZ extends BDA;
   /**
    * 4 byte date with weekday, 01.01.2000 - 31.12.2099
    * (0x01,0x01,WW,0x00 - 0x1f,0x0c,WW,0x63, WW is weekday Mon=0x01 - Sun=0x07, replacement 0xff).
@@ -265,7 +265,7 @@ namespace Dtm {
    * 3 byte date, 01.01.2000 - 31.12.2099
    * (0x01,0x01,0x00 - 0x1f,0x0c,0x63, replacement 0xff).
    */
-  scalar HDA3 extends plainDate; // todo 3 bytes
+  scalar HDA3 extends HDA; // todo 3 bytes
   /**
    * 2 byte date, days since 01.01.1900, 01.01.1900 - 06.06.2079
    * (0x00,0x00 - 0xff,0xff).
