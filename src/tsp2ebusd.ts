@@ -67,19 +67,12 @@ async function run(): Promise<void> {
       let name = extname(inFile)==='.tsp' ? inFile : `${inFile}.tsp`;
       const relative = !isAbsolute(name);
       if (relative) {
-        name = './'+name;
+        name = resolve(name);
       }
       if (!entryFile) {
-        if (!relative) {
-          // bit of a hack for aquiring the context of the cwd for typespec compiler
-          name = './main.tsp';
-        }
         entryFile = name;
       }
       inputFiles[name] = createSourceFile(await readFile(inFile, 'utf-8'), name);
-      if (relative) {
-        inputFiles[resolve(name)] = inputFiles[name];
-      }
     }
   } else {
     entryFile = './main.tsp';
@@ -88,8 +81,8 @@ async function run(): Promise<void> {
       input.push(chunk);
     }
     inputFiles[entryFile] = createSourceFile(input.join(''), entryFile);
+    inputFiles[entryFile.substring(2)] = inputFiles[entryFile];
   }
-  inputFiles[entryFile.substring(2)] = inputFiles[entryFile];
   // console.log('inp',Object.keys(inputFiles))
   const inputSourceStat = {isDirectory: () => false, isFile: () => true};
   const logs: ProcessedLog[] = [];
@@ -103,13 +96,25 @@ async function run(): Promise<void> {
       }
     }
   };
+  // console.log('HERRE',process.cwd());
   const outputFiles: Record<string, string> = {};
+  // const trace = <T>(method: string, output: T, ...args: any[]): T => {
+  //   console.error(method, ...args);
+  //   console.error(method+' result=', output);
+  //   return output;
+  // }
   const host: CompilerHost = {
     ...NodeHost,
     logSink,
-    realpath: async (path) => inputFiles[path] ? path : NodeHost.realpath(path),
-    readFile: async (path) => inputFiles[path] || await NodeHost.readFile(path),
-    stat: async (path) => inputFiles[path] ? inputSourceStat : NodeHost.stat(path),
+    realpath: async (path) => // trace('realpath',
+      inputFiles[path] ? path : NodeHost.realpath(path),
+      // path),
+    readFile: async (path) => // trace('readFile',
+      inputFiles[path] || await NodeHost.readFile(path),
+      // path),
+    stat: async (path) => // trace('stat',
+      inputFiles[path] ? inputSourceStat : NodeHost.stat(path),
+      // path),
     writeFile: async (path, content) => {outputFiles[path] = content},
     mkdirp: async (path) => path,
   };
