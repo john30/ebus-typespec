@@ -82,6 +82,7 @@ Available ruleSets:
 - [`@chain`](#@chain)
 - [`@condition`](#@condition)
 - [`@divisor`](#@divisor)
+- [`@example`](#@example)
 - [`@ext`](#@ext)
 - [`@factor`](#@factor)
 - [`@id`](#@id)
@@ -89,6 +90,7 @@ Available ruleSets:
 - [`@inherit`](#@inherit)
 - [`@out`](#@out)
 - [`@passive`](#@passive)
+- [`@poll`](#@poll)
 - [`@qq`](#@qq)
 - [`@unit`](#@unit)
 - [`@values`](#@values)
@@ -189,6 +191,26 @@ Define the divisor.
 | Name  | Type                     | Description  |
 | ----- | ------------------------ | ------------ |
 | value | `valueof scalar numeric` | the divisor. |
+
+#### `@example`
+
+Define a data example.
+
+```typespec
+@Ebus.example(desc: valueof string, q: valueof string | Ebus.symbol[], a?: valueof string | Ebus.symbol[])
+```
+
+##### Target
+
+`Model`
+
+##### Parameters
+
+| Name | Type                                    | Description                                                                  |
+| ---- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| desc | `valueof scalar string`                 | a text describing the example.                                               |
+| q    | `valueof union string \| Ebus.symbol[]` | the query part of the message, i.e. pb, sb, and dd bytes sent to the target. |
+| a    | `valueof union string \| Ebus.symbol[]` | the answer part of the message, i.e. dd bytes received from the target.      |
 
 #### `@ext`
 
@@ -311,6 +333,24 @@ Define passive only.
 ##### Parameters
 
 None
+
+#### `@poll`
+
+Define the poll priority (only for active read).
+
+```typespec
+@Ebus.poll(value?: valueof uint8)
+```
+
+##### Target
+
+`Model`
+
+##### Parameters
+
+| Name  | Type                   | Description                          |
+| ----- | ---------------------- | ------------------------------------ |
+| value | `valueof scalar uint8` | the poll priority (between 1 and 9). |
 
 #### `@qq`
 
