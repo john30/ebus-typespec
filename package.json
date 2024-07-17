@@ -1,6 +1,6 @@
 {
   "name": "@ebusd/ebus-typespec",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "author": "John Baier",
   "description": "TypeSpec library for defining eBUS messages and emitting to ebusd CSV.",
   "homepage": "https://github.com/john30/ebus-typespec",
@@ -43,12 +43,12 @@
     "*.md"
   ],
   "peerDependencies": {
-    "@typespec/compiler": "~0.57.0"
+    "@typespec/compiler": "~0.58.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@typespec/compiler": "~0.57.0",
-    "@typespec/library-linter": "~0.57.0",
+    "@typespec/compiler": "~0.58.0",
+    "@typespec/library-linter": "~0.58.0",
     "@typespec/tspd": "latest",
     "@types/node": "latest",
     "typedoc": "^0.26.1",
@@ -63,6 +63,6 @@
     "watch": "tsc --watch",
     "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit && chmod a+x dist/src/tsp2ebusd.js",
     "test": "node --test --test-force-exit ./dist/test/",
-    "docs": "npx tspd doc --enable-experimental . && mv README.md docs.md && rm -rf docs && git checkout README.md"
+    "docs": "sed -i -e 's# *hideInPageTOC: true,##' node_modules/@typespec/tspd/dist/src/ref-doc/api-docs.js; npx tspd doc --enable-experimental . && mv README.md docs.md && rm -rf docs && git checkout README.md"
   }
 }
