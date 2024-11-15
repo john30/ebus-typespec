@@ -392,7 +392,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     if (current.referencedBy) {
       reportDiagnostic(program, {
         code: "banned-inheritance",
-        format: {},
+        format: {} as Record<string, string>,
         target: union,
       });
       return this.emitter.result.none(); // only single reference level supported

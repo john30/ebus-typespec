@@ -120,7 +120,7 @@ async function run(): Promise<void> {
   };
   const program = await compile(host, entryFile, options);
   if (program.hasError() || program.diagnostics.length) {
-    throw new Error(`compilation failed:\n${program.diagnostics.map(formatDiagnostic).join('\n')}`);
+    throw new Error(`compilation failed:\n${program.diagnostics.map(d => formatDiagnostic(d)).join('\n')}`);
   }
   const filenames = Object.keys(outputFiles);
   if (filenames.length==0) {
