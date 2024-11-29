@@ -93,13 +93,15 @@ extern dec example(target: Model, desc: valueof string, q: valueof string|symbol
 
 /**
  * Define message part outbound to target.
+ * @param writeOnly optional true to put in only if write direction, false to put in only if read direction (alyways if absent).
  */
-extern dec out(target: ModelProperty);
+extern dec out(target: ModelProperty, writeOnly?: valueof boolean);
 
 /**
  * Define message part inbound from target.
+ * @param writeOnly optional true to put in only if write direction, false to put in only if read direction (alyways if absent).
  */
-extern dec in(target: ModelProperty);
+extern dec in(target: ModelProperty, writeOnly?: valueof boolean);
 
 /**
  * Define the unit.

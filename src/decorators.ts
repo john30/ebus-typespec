@@ -615,9 +615,10 @@ setTypeSpecNamespace("Internal", $reverse, $bcd, $hex, $maxBits);
  *
  * @param context Decorator context.
  * @param target Decorator target.
+ * @param writeOnly optional true to put in only if write direction, false to put in only if read direction (alyways if absent).
  */
-export function $in(context: DecoratorContext, target: ModelProperty) {
-  context.program.stateMap(StateKeys.out).set(target, false);
+export function $in(context: DecoratorContext, target: ModelProperty, writeOnly?: boolean) {
+  context.program.stateMap(StateKeys.out).set(target, {out: false, writeOnly});
 }
 
 /**
@@ -625,9 +626,10 @@ export function $in(context: DecoratorContext, target: ModelProperty) {
  *
  * @param context Decorator context.
  * @param target Decorator target.
+ * @param writeOnly optional true to put in only if write direction, false to put in only if read direction (alyways if absent).
  */
-export function $out(context: DecoratorContext, target: ModelProperty) {
-  context.program.stateMap(StateKeys.out).set(target, true);
+export function $out(context: DecoratorContext, target: ModelProperty, writeOnly?: boolean) {
+  context.program.stateMap(StateKeys.out).set(target, {out: true, writeOnly});
 }
 
 /**
@@ -635,9 +637,10 @@ export function $out(context: DecoratorContext, target: ModelProperty) {
  *
  * @param program TypeSpec program.
  * @param target Decorator target.
- * @returns value if provided on the given target (true when `out`, false when `in`), or undefined.
+ * @returns value if provided on the given target, or undefined.
+ * out is true when `out`, false when `in`, and writeOnly is the optional param given to the decorator.
  */
-export function getOut(program: Program, target: ModelProperty): boolean {
+export function getOut(program: Program, target: ModelProperty): {out: boolean, writeOnly?: boolean} {
   return program.stateMap(StateKeys.out).get(target);
 }
 

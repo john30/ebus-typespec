@@ -1,4 +1,4 @@
-import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
+import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type NumericValue, type Program, type Scalar, type StringValue, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
 import {CodeTypeEmitter, StringBuilder, code, type AssetEmitter, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import jsYaml from "js-yaml";
@@ -129,16 +129,14 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
       const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
       let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? nearestZz;
-      let broadcastTarget = false;
+      let broadcastOrMasterTarget = false;
       if (zz === 0xfe || isSourceAddr(zz)) {
         // special: broadcast or source as target
         if (passive===undefined) {
           // auto for write depending on zz unless @passive was set
           write ??= true;
         }
-        if (zz === 0xfe) {
-          broadcastTarget = true;
-        }
+        broadcastOrMasterTarget = true;
       } else if (zz===0xaa) { // explicit unset in child (see decorator handling)
         zz = undefined;
       }
@@ -147,8 +145,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       if (!sf.imports.has(direction)) {
         sf.imports.set(direction, [direction,'']);
       }
-      const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive, broadcastTarget);
-      const fields = this.modelPropertiesRw(model, write&&!passive, broadcastTarget);
+      const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive, broadcastOrMasterTarget, write);
+      const fields = this.modelPropertiesRw(model, write&&!passive, broadcastOrMasterTarget, write);
       const comment = this.#getDoc(model) ?? this.#getDoc(inheritFrom);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom); // todo could do same handling as for zz
       // when inheriting id, only one of them may have pbsb, rest of id is concatenated
@@ -211,14 +209,14 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return this.emitter.result.declaration(name, decls.join('\n'));
   }
 
-  modelPropertiesRw(model: Model, activeWrite?: boolean, broadcastTarget?: boolean): EmitterOutput<string> {
+  modelPropertiesRw(model: Model, activeWrite?: boolean, broadcastOrMasterTarget?: boolean, write?: boolean): EmitterOutput<string> {
     const b = new StringBuilder()
     let first = true
     const program = this.emitter.getProgram();
     const properties = Array.from(model.properties.values());
     let recursion = 0;
     let commentProp: ModelProperty|undefined;
-    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', divisor?: number, values?: string[], unit?: string, comment?: string};
+    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], defaultValue?: NumericValue|StringValue, unit?: string, comment?: string};
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
@@ -280,9 +278,9 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         res.length ??= isNumericType(program, s) ? getMaxBits(program, s) : getMaxLength(program, s);
         res.remainLength ??= !isNumericType(program, s) && getMinLength(program, s)===0;
         if (!res.dir && s.kind==='ModelProperty') {
-          const out = getOut(program, s as ModelProperty);
+          const {out, writeOnly} = getOut(program, s as ModelProperty) || {};
           if (out!==undefined) {
-            if (broadcastTarget && out===false) {
+            if (broadcastOrMasterTarget && out===false) {
               reportDiagnostic(program, {
                 code: "banned-in",
                 format: { },
@@ -290,18 +288,21 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
               });
             }
             res.dir = out ? 'm' : 's';
+            res.writeOnly = writeOnly;
           }
         }
         const d = getDivisor(program, s);
         if (d!==undefined && d!==0) {
           res.divisor = (res.divisor||1) * d;
         }
-        if (!res.divisor && !res.values) {
+        if (!res.divisor && !res.values && !res.defaultValue) {
           const members = getValues(program, s)?.members;
           if (members) {
             const values: string[] = [];
             members.forEach(m => m.value!==undefined && values.push(m.value+'='+m.name));
             res.values = values;
+          } else if (p.defaultValue && (p.defaultValue.valueKind==='NumericValue' || p.defaultValue.valueKind==='StringValue')) {
+            res.defaultValue = p.defaultValue;
           }
         }
         res.unit ??= getUnit(program, s);
@@ -330,8 +331,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         });
         continue;
       }
+      if (res.writeOnly!==undefined && !!write!==res.writeOnly) {
+        continue;
+      }
       // field,part (m/s),type / templates,divider / values,unit,comment
       const divisor = res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor)
+      : res.defaultValue ? `=${res.defaultValue.value}`
       : res.values?.join(';');
       let typ: string = res.name;
       if (typ.length>4 && typ[3]==='_') {
@@ -343,7 +348,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       } else if (res.length) {
         typ += ':'+(res.remainLength?'*':res.length);
       }
-      const field = [normName.field(res.pname),res.dir,typ,divisor,res.unit,escape(res.comment)];
+      // remove explicit res.dir if matches message default
+      const field = [normName.field(res.pname),res.dir===(write?'m':'s')?'':res.dir,typ,divisor,res.unit,escape(res.comment)];
       if (first) {
         first = false;
       } else {

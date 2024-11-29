@@ -131,6 +131,54 @@ describe("emitting models", () => {
       "w,Main,,Foo,,,,0001,,x,,UCH,,,"
     );
   });
+  it("works with multi inherit and limit in", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @base(0,1)
+      model r {
+      }
+      @write
+      @base(0,1)
+      model w {
+      }
+      @ext
+      @inherit(r,w)
+      model Foo {
+        x: UCH,
+        @in(false)
+        y: UCH,
+      }
+    `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,,0001,,x,,UCH,,,,y,,UCH,,,\n"+
+      "w,Main,,Foo,,,,0001,,x,,UCH,,,"
+    );
+  });
+  it("works with multi inherit and limit out", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @base(0,1)
+      model r {
+      }
+      @write
+      @base(0,1)
+      model w {
+      }
+      @ext
+      @inherit(r,w)
+      model Foo {
+        x: UCH,
+        @out(true)
+        y: UCH,
+      }
+    `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,,0001,,x,,UCH,,,\n"+
+      "w,Main,,Foo,,,,0001,,x,,UCH,,,,y,,UCH,,,"
+    );
+  });
   it("works with values", async () => {
     const files = await emit(`
       using Ebus.Num;
@@ -148,6 +196,33 @@ describe("emitting models", () => {
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
       "r,Main,,Foo,,,,0001,,m,,UCH,1=one;2=two,,"
+    );
+  });
+  it("works with default numeric value", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @id(0,1)
+      model Foo {
+        m: UCH = 1,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,,0001,,m,,UCH,=1,,"
+    );
+  });
+  it("works with default string value", async () => {
+    const files = await emit(`
+      using Ebus.Str;
+      @id(0,1)
+      model Foo {
+        @maxLength(5)
+        m: STR = "123",
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,,0001,,m,,STR:5,=123,,"
     );
   });
   it("works with bits", async () => {
