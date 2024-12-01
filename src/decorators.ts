@@ -1,6 +1,5 @@
 import type {
-  DecoratorContext, Enum, Model, ModelProperty, Namespace,
-  Numeric, Program, Scalar, UnionVariant,
+  DecoratorContext, Enum, Model, ModelProperty, Namespace, Numeric, Program, Scalar, UnionVariant
 } from "@typespec/compiler";
 import {
   getPropertyType, isIntrinsicType, isNumeric, isNumericType, setTypeSpecNamespace
@@ -766,4 +765,33 @@ export function $values(context: DecoratorContext, target: Scalar|ModelProperty,
  */
 export function getValues(program: Program, target: Scalar|ModelProperty): Enum | undefined {
   return program.stateMap(StateKeys.values).get(target);
+}
+
+/**
+ * Implementation of the `@constValue` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to assign.
+ */
+export function $constValue(context: DecoratorContext, target: Scalar|ModelProperty, value: Numeric|string) {
+  if (context.program.stateMap(StateKeys.constValue).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'const'},
+    });
+  }
+  context.program.stateMap(StateKeys.constValue).set(target, value);
+}
+
+/**
+ * Accessor for the `@constValue` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getConstValue(program: Program, target: Scalar|ModelProperty): Numeric|String | undefined {
+  return program.stateMap(StateKeys.constValue).get(target);
 }

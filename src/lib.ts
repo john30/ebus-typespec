@@ -149,6 +149,7 @@ export const $lib = createTypeSpecLibrary({
     unit: { description: "unit" },
     divisor: { description: "divisor" },
     values: { description: "known values" },
+    constValue: { description: "const value" },
   },
 });
 

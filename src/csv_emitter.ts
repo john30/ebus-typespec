@@ -1,10 +1,10 @@
-import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type NumericValue, type Program, type Scalar, type StringValue, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
+import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMinLength, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Numeric, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
 import {CodeTypeEmitter, StringBuilder, code, type AssetEmitter, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
-  getAuth, getChain, getConditions, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
+  getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
   getQq, getUnit, getValues, getWrite, getZz, isSourceAddr
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
@@ -216,7 +216,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const properties = Array.from(model.properties.values());
     let recursion = 0;
     let commentProp: ModelProperty|undefined;
-    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], defaultValue?: NumericValue|StringValue, unit?: string, comment?: string};
+    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], constValue?: string, unit?: string, comment?: string};
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
@@ -295,14 +295,17 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (d!==undefined && d!==0) {
           res.divisor = (res.divisor||1) * d;
         }
-        if (!res.divisor && !res.values && !res.defaultValue) {
+        if (!res.divisor && !res.values && !res.constValue) {
           const members = getValues(program, s)?.members;
           if (members) {
             const values: string[] = [];
             members.forEach(m => m.value!==undefined && values.push(m.value+'='+m.name));
             res.values = values;
-          } else if (p.defaultValue && (p.defaultValue.valueKind==='NumericValue' || p.defaultValue.valueKind==='StringValue')) {
-            res.defaultValue = p.defaultValue;
+          } else {
+            const cv = getConstValue(program, s);
+            if (cv !== undefined) {
+              res.constValue = cv.toString();
+            }
           }
         }
         res.unit ??= getUnit(program, s);
@@ -336,7 +339,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
       // field,part (m/s),type / templates,divider / values,unit,comment
       const divisor = res.divisor?Math.round(res.divisor<1?-1.0/res.divisor:res.divisor)
-      : res.defaultValue ? `=${res.defaultValue.value}`
+      : res.constValue ? `=${res.constValue}`
       : res.values?.join(';');
       let typ: string = res.name;
       if (typ.length>4 && typ[3]==='_') {

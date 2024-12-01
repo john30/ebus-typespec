@@ -81,6 +81,7 @@ Available ruleSets:
 - [`@base`](#@base)
 - [`@chain`](#@chain)
 - [`@condition`](#@condition)
+- [`@constValue`](#@constvalue)
 - [`@divisor`](#@divisor)
 - [`@example`](#@example)
 - [`@ext`](#@ext)
@@ -173,6 +174,24 @@ Define the condition(s) for the whole message (if given multiple times, all cond
 | -------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | property | `union ModelProperty \| Model` | the referenced model property, or a model in case of existance check or single property only.                           |
 | values   | `valueof model string[]`       | the optional alternative values the property needs to match (one of the values must match for the condition to be met). |
+
+#### `@constValue`
+
+Define the const value.
+
+```typespec
+@Ebus.constValue(value: valueof numeric | string)
+```
+
+##### Target
+
+`union numeric | boolean | ModelProperty`
+
+##### Parameters
+
+| Name  | Type                              | Description      |
+| ----- | --------------------------------- | ---------------- |
+| value | `valueof union numeric \| string` | the const value. |
 
 #### `@divisor`
 
@@ -273,7 +292,7 @@ Define the whole message ID.
 Define message part inbound from target.
 
 ```typespec
-@Ebus.in
+@Ebus.in(writeOnly?: valueof boolean)
 ```
 
 ##### Target
@@ -282,7 +301,9 @@ Define message part inbound from target.
 
 ##### Parameters
 
-None
+| Name      | Type                     | Description                                                                                                  |
+| --------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| writeOnly | `valueof scalar boolean` | optional true to put in only if write direction, false to put in only if read direction (alyways if absent). |
 
 #### `@inherit`
 
@@ -307,7 +328,7 @@ Define the inherited model(s).
 Define message part outbound to target.
 
 ```typespec
-@Ebus.out
+@Ebus.out(writeOnly?: valueof boolean)
 ```
 
 ##### Target
@@ -316,7 +337,9 @@ Define message part outbound to target.
 
 ##### Parameters
 
-None
+| Name      | Type                     | Description                                                                                                  |
+| --------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| writeOnly | `valueof scalar boolean` | optional true to put in only if write direction, false to put in only if read direction (alyways if absent). |
 
 #### `@passive`
 
@@ -402,9 +425,9 @@ Define the known values.
 
 ##### Parameters
 
-| Name   | Type   | Description |
-| ------ | ------ | ----------- |
-| values | `Enum` |             |
+| Name   | Type   | Description       |
+| ------ | ------ | ----------------- |
+| values | `Enum` | the known values. |
 
 #### `@write`
 

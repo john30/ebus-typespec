@@ -198,12 +198,13 @@ describe("emitting models", () => {
       "r,Main,,Foo,,,,0001,,m,,UCH,1=one;2=two,,"
     );
   });
-  it("works with default numeric value", async () => {
+  it("works with const numeric value", async () => {
     const files = await emit(`
       using Ebus.Num;
       @id(0,1)
       model Foo {
-        m: UCH = 1,
+      @constValue(1)
+        m: UCH,
       }
     `);
     const file = files["main.csv"];
@@ -211,13 +212,14 @@ describe("emitting models", () => {
       "r,Main,,Foo,,,,0001,,m,,UCH,=1,,"
     );
   });
-  it("works with default string value", async () => {
+  it("works with const string value", async () => {
     const files = await emit(`
       using Ebus.Str;
       @id(0,1)
       model Foo {
         @maxLength(5)
-        m: STR = "123",
+        @constValue("123")
+        m: STR,
       }
     `);
     const file = files["main.csv"];

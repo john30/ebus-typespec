@@ -123,9 +123,15 @@ extern dec factor(target: numeric|plainTime|ModelProperty, value: valueof numeri
 
 /**
  * Define the known values.
- * @param value the divisor.
+ * @param values the known values.
  */
 extern dec values(target: numeric|boolean|ModelProperty, values: Enum);
+
+/**
+ * Define the const value.
+ * @param value the const value.
+ */
+extern dec constValue(target: numeric|boolean|ModelProperty, value: valueof numeric|string);
 
 
 namespace Internal {
