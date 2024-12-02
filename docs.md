@@ -434,7 +434,7 @@ Define the known values.
 Define write direction.
 
 ```typespec
-@Ebus.write
+@Ebus.write(toSource?: valueof boolean)
 ```
 
 ##### Target
@@ -443,7 +443,9 @@ Define write direction.
 
 ##### Parameters
 
-None
+| Name     | Type                     | Description                                                                                 |
+| -------- | ------------------------ | ------------------------------------------------------------------------------------------- |
+| toSource | `valueof scalar boolean` | true to use the source address pendant of the target address instead of the target address. |
 
 #### `@zz`
 
