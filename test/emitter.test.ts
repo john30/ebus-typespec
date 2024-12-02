@@ -775,9 +775,69 @@ describe("emitting models", () => {
     expectDiagnostics(diagnostics, [
       {
         code: "ebus/banned-in",
-        message: `Invalid @in with broadcast target.`,
+        message: `Invalid @in with broadcast or source target.`,
       },
     ]);
+  });
+  it("emit diagnostic on invalid @in with source @zz", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      @id(1,0)
+      @zz(0x03)
+      model M {
+        @in
+        m: Num.UCH
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-in",
+        message: `Invalid @in with broadcast or source target.`,
+      },
+    ]);
+  });
+  it("emit diagnostic on invalid @in with source @write", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      @id(1,0)
+      @zz(0x08)
+      @write(true)
+      model M {
+        @in
+        m: Num.UCH
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-in",
+        message: `Invalid @in with broadcast or source target.`,
+      },
+    ]);
+  });
+  it("emit diagnostic on invalid source @write", async () => {
+    const [_, diagnostics] = await emitWithDiagnostics(`
+      @id(1,0)
+      @zz(0x09)
+      @write(true)
+      model M {
+      }
+    `);
+    expectDiagnostics(diagnostics, [
+      {
+        code: "ebus/banned-write-target",
+        message: `Invalid write target address "${"09"}".`,
+      },
+    ]);
+  });
+  it("works with source @write", async () => {
+    const files = await emit(`
+      @zz(0x8)
+      @id(7,6)
+      @write(true)
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      'w,Main,,Foo,,,03,0706,,',
+    );
   });
   it("emit diagnostic on invalid length", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`

@@ -42,9 +42,10 @@ export function getConditions(program: Program, target: Model|Namespace|UnionVar
  *
  * @param context Decorator context.
  * @param target Decorator target.
+ * @param toSource true to use the source address pendant of the target address instead of the target address.
  */
-export function $write(context: DecoratorContext, target: Model) {
-  context.program.stateMap(StateKeys.write).set(target, true);
+export function $write(context: DecoratorContext, target: Model, toSource?: boolean) {
+  context.program.stateMap(StateKeys.write).set(target, !toSource);
 }
 
 /**
@@ -54,7 +55,7 @@ export function $write(context: DecoratorContext, target: Model) {
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getWrite(program: Program, target: Model): boolean {
+export function getWrite(program: Program, target: Model): boolean | undefined {
   return program.stateMap(StateKeys.write).get(target);
 }
 
@@ -75,7 +76,7 @@ export function $passive(context: DecoratorContext, target: Model) {
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getPassive(program: Program, target: Model): boolean {
+export function getPassive(program: Program, target: Model): boolean | undefined {
   return program.stateMap(StateKeys.passive).get(target);
 }
 
@@ -158,6 +159,13 @@ const validSource: Uint8Array = new Uint8Array([
 ]);
 const invalidTarget: Uint8Array = new Uint8Array([0xa9,0xaa]);
 export const isSourceAddr = (qq?: number) => qq!==undefined && validSource.includes(qq);
+export const getSourceAddr = (zz: number) => {
+  if (isSourceAddr(zz)) {
+    return zz;
+  }
+  zz = (zz+0x100-5)&0xff;
+  return validSource.includes(zz) ? zz : undefined;
+};
 
 const getNum = (value: Numeric|number): number|undefined => {
   if (typeof value === 'number') {

@@ -5,7 +5,7 @@ import jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
   getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
-  getQq, getUnit, getValues, getWrite, getZz, isSourceAddr
+  getQq, getSourceAddr, getUnit, getValues, getWrite, getZz, isSourceAddr
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
@@ -129,6 +129,21 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
       const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
       let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? nearestZz;
+      if (write===false) {
+        write = true;
+        if (zz!==undefined && !isSourceAddr(zz)) {
+          const newZz = getSourceAddr(zz);
+          if (newZz===undefined) {
+            reportDiagnostic(program, {
+              code: "banned-write-target",
+              format: { value: hex(zz) },
+              target: model,
+            });
+          } else {
+            zz = newZz;
+          }
+        }
+      }
       let broadcastOrMasterTarget = false;
       if (zz === 0xfe || isSourceAddr(zz)) {
         // special: broadcast or source as target

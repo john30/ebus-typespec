@@ -41,6 +41,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Invalid target address "${"value"}".`,
       },
     },
+    "banned-write-target": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid write target address "${"value"}".`,
+      },
+    },
     "banned-auth": {
       severity: "error",
       messages: {
@@ -80,7 +86,7 @@ export const $lib = createTypeSpecLibrary({
     "banned-in": {
       severity: "error",
       messages: {
-        default: paramMessage`Invalid @in with broadcast target.`,
+        default: paramMessage`Invalid @in with broadcast or source target.`,
       },
     },
     "duplicate-id": {

@@ -15,8 +15,9 @@ extern dec condition(target: Namespace|Model|UnionVariant, property: ModelProper
 
 /**
  * Define write direction.
+ * @param toSource true to use the source address pendant of the target address instead of the target address.
  */
-extern dec write(target: Model);
+extern dec write(target: Model, toSource?: valueof boolean);
 
 /**
  * Define passive only.
