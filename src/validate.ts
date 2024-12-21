@@ -1,5 +1,5 @@
-import {createDiagnosticCollector, type Model, type ModelProperty, type Program, type Scalar} from "@typespec/compiler";
-import {getChain, getDivisor, getId, getIdType, getValues} from "./decorators.js";
+import {createDiagnosticCollector, getNamespaceFullName, type Model, type ModelProperty, type Program, type Scalar} from "@typespec/compiler";
+import {getChain, getIdType, getValues} from "./decorators.js";
 import {reportDiagnostic, StateKeys} from "./lib.js";
 
 
@@ -17,7 +17,7 @@ export const $onValidate = (program: Program): void => {
         reportDiagnostic(program, {
           code: "invalid-length",
           target,
-          format: { which: isExt ? 'ext' : 'id', value: '0'},
+          format: { which: isExt ? '@ext' : '@id', value: '0'},
         });
       } else {
         const badLength = chain.dds.find(dd => dd.length !== length);
@@ -25,28 +25,29 @@ export const $onValidate = (program: Program): void => {
           reportDiagnostic(program, {
             code: "invalid-length",
             target,
-            format: { which: 'chain', value: badLength.length.toString()},
+            format: { which: '@chain', value: badLength.length.toString()},
           });
         }
       }
     }
     // check for model recursion
-    const seen = new Set<Model>();
-    const checkRecursion = (model: Model): Model|undefined => {
-      if (seen.has(model)) {
+    const nameOf = (model: Model): string => (model.namespace?getNamespaceFullName(model.namespace)+'.':'')+model.name;
+    const checkRecursion = (model: Model, parents: string[]): Model|undefined => {
+      const name = nameOf(model);
+      if (parents.includes(name)) {
         return model;
       }
-      seen.add(model);
+      const subParents = [...parents, name];
       for (const prop of model.properties.values()) {
         if (prop.type.kind==='Model') {
-          const ret = checkRecursion(prop.type);
+          const ret = checkRecursion(prop.type, subParents);
           if (ret) {
             return ret;
           }
         }
       }
     }
-    const model = checkRecursion(target);
+    const model = checkRecursion(target, []);
     if (model) {
       reportDiagnostic(program, {
         code: "banned-inheritance",

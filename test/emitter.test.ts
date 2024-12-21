@@ -734,32 +734,33 @@ describe("emitting models", () => {
   it("emit diagnostic on too deep model", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
       model m0 {
-        m: Num.UCH
+        e: Num.BI0,
       }
       model m1 {
-        m: m0
+        f: m0,
+        g: m0,
+        h: m0,
+        i: m0,
+        j: m0,
+        k: m0,
+        l: m0,
       }
       model m2 {
-        m: m1
-      }
-      model m3 {
-        m: m2
-      }
-      model m4 {
-        m: m3
-      }
-      model m5 {
-        m: m4
+        o: m1,
+        o2: m1,
+        o3: m1,
+        o4: m1,
       }
       @id(1,0)
-      model m6 {
-        m: m5
+      model m3 {
+        p: m2,
+        p2: m2,
       }
     `);
     expectDiagnostics(diagnostics, [
       {
         code: "ebus/banned-inheritance",
-        message: `The inheritance is too deep in m.`,
+        message: `The inheritance is too deep in k.`,
       },
     ]);
   });

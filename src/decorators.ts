@@ -485,7 +485,7 @@ export function $example(context: DecoratorContext, target: Model, desc: string,
     reportDiagnostic(context.program, {
       code: "invalid-length",
       target,
-      format: { which: 'example q', value: `or value ${q}`},
+      format: { which: '@example q', value: `or value ${q}`},
     });
   }
   const an = a ? parseHex(a) : undefined;
@@ -493,7 +493,7 @@ export function $example(context: DecoratorContext, target: Model, desc: string,
     reportDiagnostic(context.program, {
       code: "invalid-length",
       target,
-      format: { which: 'example a', value: `or value ${a}`},
+      format: { which: '@example a', value: `or value ${a}`},
     });
   }
   if (qn && qn !== null) {

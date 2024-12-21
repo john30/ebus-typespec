@@ -122,7 +122,7 @@ export const $lib = createTypeSpecLibrary({
     "invalid-length": {
       severity: "error",
       messages: {
-        default: paramMessage`Invalid @${"which"} length ${"value"}.`,
+        default: paramMessage`Invalid ${"which"} length ${"value"}.`,
       },
     },
     "missing-decorator": {

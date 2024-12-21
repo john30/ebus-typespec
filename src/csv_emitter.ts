@@ -200,7 +200,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (badLength) {
           reportDiagnostic(program, {
             code: "invalid-length",
-            format: { which: 'chain', value: badLength },
+            format: { which: '@chain', value: badLength },
             target: model,
           }); 
         } else {
@@ -230,24 +230,39 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     const program = this.emitter.getProgram();
     const properties = Array.from(model.properties.values());
     let recursion = 0;
+    let recursionReported = false;
+    let lengthReported = false;
     let commentProp: ModelProperty|undefined;
     type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], constValue?: string, unit?: string, comment?: string};
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
-        if (p.type.kind==='Model' && p.type.properties && recursion<5) {
+        if (p.type.kind==='Model' && p.type.properties && recursion<64) {
+          // recursion limited by number of references
           // insert the referenced models properties inplace and go on with those (this is recursive)
           const append = Array.from(p.type.properties.values());
           properties.splice(idx+1, 0, ...append);
           recursion++;
           // extract the comment only from reference:
           commentProp = p;
+          if (!lengthReported && properties.length>16*2*8) {
+            // worst length limited by NN=16 bytes * 2 * 8 bits
+            lengthReported = true;
+            reportDiagnostic(program, {
+              code: "invalid-length",
+              target: model,
+              format: {which: 'model', value: `${properties.length}`},
+            });
+          }
         } else {
-          reportDiagnostic(program, {
-            code: "banned-inheritance",
-            target: model,
-            format: {ref: p.name},
-          });
+          if (!recursionReported) {
+            recursionReported = true;
+            reportDiagnostic(program, {
+              code: "banned-inheritance",
+              target: model,
+              format: {ref: p.name},
+            });
+          }
           commentProp = undefined;
         }
         continue;
