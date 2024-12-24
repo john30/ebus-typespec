@@ -293,11 +293,11 @@ describe("emitting models", () => {
     expectDiagnostics(diagnostics, [
       {
         code: "ebus/duplicate-id",
-        message: `There are multiple models with the same id "tsp-output/test/main.csv,,r,,,1,2".`,
+        message: `There are multiple models with the same id "tsp-output/test/main.csv,,r,,,1,2,".`,
       },
       {
         code: "ebus/duplicate-id",
-        message: `There are multiple models with the same id "tsp-output/test/main.csv,,r,,,1,2".`,
+        message: `There are multiple models with the same id "tsp-output/test/main.csv,,r,,,1,2,".`,
       },
     ]);
   });

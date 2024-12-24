@@ -168,22 +168,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const baseId = getId(program, inheritFrom);
       const modelId = getId(program, model);
       const id = [...(baseId||[]), ...(modelId||[])];
-      if (id.length<2) {
-        reportDiagnostic(program, {
-          code: "short-id",
-          format: { id: id.join() },
-          target: model,
-        }); // impossible by decorators anyway
-      } else {
-        this.#idDuplicateTracker.track([sf?.path||'', conds, direction, qq, zz, ...id].join(), model);
-      }
       const idh = hexs(id);
       const pbsb = idh.substring(0, 4);
       let ids = idh.substring(4);
       const chain = getChain(program, model) || getChain(program, inheritFrom);
+      let idsuffix = '';
       if (chain) {
         let badLength = ids.length ? '' : 'missing DD';
-        let idsuffix = '';
         if (!badLength) {
           const lengthSuffix = chain.length ? `:${chain.length}` : '';
           idsuffix += lengthSuffix;
@@ -206,6 +197,15 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         } else {
           ids += idsuffix;
         }
+      }
+      if (id.length<2) {
+        reportDiagnostic(program, {
+          code: "short-id",
+          format: { id: id.join() },
+          target: model,
+        }); // impossible by decorators anyway
+      } else {
+        this.#idDuplicateTracker.track([sf?.path||'', conds, direction, qq, zz, ...id, idsuffix].join(), model);
       }
       if (zz!==undefined && basename(sf.path).startsWith(hex(zz)+'.')) {
         // avoid inline zz when already part of file name
@@ -233,11 +233,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     let recursionReported = false;
     let lengthReported = false;
     let commentProp: ModelProperty|undefined;
+    const chainFactor = getChain(program, model) ? 24 : 1; // something like 2x 12 months as limit
     type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], constValue?: string, unit?: string, comment?: string};
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
-        if (p.type.kind==='Model' && p.type.properties && recursion<64) {
+        if (p.type.kind==='Model' && p.type.properties && recursion<64*chainFactor) {
           // recursion limited by number of references
           // insert the referenced models properties inplace and go on with those (this is recursive)
           const append = Array.from(p.type.properties.values());
@@ -245,7 +246,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           recursion++;
           // extract the comment only from reference:
           commentProp = p;
-          if (!lengthReported && properties.length>16*2*8) {
+          if (!lengthReported && properties.length>16*2*8*chainFactor) {
             // worst length limited by NN=16 bytes * 2 * 8 bits
             lengthReported = true;
             reportDiagnostic(program, {
