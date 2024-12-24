@@ -348,6 +348,15 @@ namespace Dtm {
   scalar TTQ extends plainTime;
 }
 
+/** The known contributed base data types. */
+namespace Contrib {
+  /**
+   * TEM_P parameter, "00-000" - "31-127"
+   * (0x00,0x00 - 0xff,0x0f).
+   */
+  scalar TEM_P extends uint16;
+}
+
 // /** All known base data types. */
 // namespace All {
 //   alias BI0 = Num.BI0;
@@ -410,4 +419,5 @@ namespace Dtm {
 //   alias TTM = Dtm.TTM;
 //   alias TTH = Dtm.TTH;
 //   alias TTQ = Dtm.TTQ;
+//   alias TEM_P = Contrib.TEM_P;
 // }
