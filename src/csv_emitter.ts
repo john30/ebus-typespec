@@ -330,7 +330,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           const members = getValues(program, s)?.members;
           if (members) {
             const values: string[] = [];
-            members.forEach(m => m.value!==undefined && values.push(m.value+'='+m.name));
+            members.forEach(m => m.value!==undefined && values.push(m.value+'='+m.name.replace(/^_([0-9]+)$/, '$1')));
             res.values = values;
           } else {
             const cv = getConstValue(program, s);

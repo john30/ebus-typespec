@@ -187,6 +187,7 @@ describe("emitting models", () => {
       enum Values_men {
         one: 1,
         two: 2,
+        _3: 3,
       }
       @id(0,1)
       model Foo {
@@ -195,7 +196,7 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,Main,,Foo,,,,0001,,m,,UCH,1=one;2=two,,"
+      "r,Main,,Foo,,,,0001,,m,,UCH,1=one;2=two;3=3,,"
     );
   });
   it("works with const numeric value", async () => {
