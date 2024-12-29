@@ -374,8 +374,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       : res.values?.join(';');
       let typ: string = res.name;
       if (typ.length>4 && typ[3]==='_') {
-        // expect to end with digits e.g. BI3_1
-        typ = typ.substring(0, 3)+':'+typ.substring(4);
+        if (isDigit(typ[4])) {
+          // expect to end with digits e.g. BI3_1
+          typ = typ.substring(0, 3)+':'+typ.substring(4);
+        }
       } else if (typ.length>3 && typ.toUpperCase()===typ) {
         // expect to end with digits e.g. BCD4
         typ = typ.substring(0, 3)+':'+typ.substring(3);

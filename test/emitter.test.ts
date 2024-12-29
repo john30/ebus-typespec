@@ -1001,4 +1001,16 @@ describe("emitting models", () => {
       'r,Main,,Foo,,,,0706,,value,,UCH,,,type comment',
     );
   });
+  it("emits contrib type", async () => {
+    const files = await emit(`
+      @id(7,6)
+      model Foo  {
+        value: Ebus.Contrib.TEM_P;
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      'r,Main,,Foo,,,,0706,,value,,TEM_P,,,',
+    );
+  });
 });
