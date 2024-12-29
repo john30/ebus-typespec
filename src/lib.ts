@@ -7,6 +7,8 @@ export interface EbusdEmitterOptions {
    * File name with translations to use.
    */
   translations?: string;
+  /** Emit min+max values. */
+  withMinMax?: boolean;
 }
 
 export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
@@ -22,6 +24,11 @@ export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
       type: "string",
       nullable: true,
       description: "File name with translations to use."
+    },
+    withMinMax: {
+      type: "boolean",
+      nullable: true,
+      description: "Emit min+max values"
     }
   },
 }

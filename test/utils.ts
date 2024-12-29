@@ -38,7 +38,7 @@ export async function emitWithDiagnostics(
   const host = await getHostForTspFile(code, testOptions.extraSpecFiles);
   const emitter = createAssetEmitter(
     host.program,
-    await getEbusdEmitterClass(host.compilerHost, options.translations),
+    await getEbusdEmitterClass(host.compilerHost, options.includes, options.withMinMax, options.translations),
     {
       emitterOutputDir: "tsp-output",
       options,

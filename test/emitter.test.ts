@@ -3,16 +3,20 @@ import assert from "assert";
 import {describe, it} from "node:test";
 import {emit, emitWithDiagnostics} from "./utils.js";
 
-const headerLine =
+const headerPrefix =
   `type,circuit,level,name,comment,qq,zz,pbsb,id,`
-  +`*name,part,type,divisor/values,unit,comment\n`;
+  +`*name,part,type,divisor/values`;
+const headerSuffix =  `,unit,comment\n`;
 const defaultLines = ['*r', '*w', '*u', '*uw'];
-const stripHeader = (s: string) => {
+const stripHeader = (s: string, withMinMax?: boolean) => {
   if (!s) {
     return s;
   }
-  if (s.startsWith(headerLine)) {
-    s = s.substring(headerLine.length);
+  if (s.startsWith(headerPrefix)) {
+    const headerLine = headerPrefix+(withMinMax?',range':'')+headerSuffix;
+    if (s.startsWith(headerLine)) {
+      s = s.substring(headerLine.length);
+    }
   }
   s = s.trim();
   while (s) {
@@ -1011,6 +1015,31 @@ describe("emitting models", () => {
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
       'r,Main,,Foo,,,,0706,,value,,TEM_P,,,',
+    );
+  });
+  it("emits min/max", async () => {
+    const files = await emit(`
+      @id(7,6)
+      model Foo  {
+        @minValue(1) @maxValue(3)
+        value: Num.UCH;
+      }
+    `, {withMinMax: true});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file, true),
+      'r,Main,,Foo,,,,0706,,value,,UCH,,1-3,,',
+    );
+  });
+  it("does not emit base min/max", async () => {
+    const files = await emit(`
+      @id(7,6)
+      model Foo  {
+        value: Num.SIN;
+      }
+    `, {withMinMax: true});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file, true),
+      'r,Main,,Foo,,,,0706,,value,,SIN,,,,',
     );
   });
 });
