@@ -163,7 +163,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
       const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive, broadcastOrMasterTarget, write);
       const fields = this.modelPropertiesRw(model, write&&!passive, broadcastOrMasterTarget, write);
-      const comment = this.#getDoc(model) ?? this.#getDoc(inheritFrom);
+      const comment = this.#getDoc(model);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom); // todo could do same handling as for zz
       // when inheriting id, only one of them may have pbsb, rest of id is concatenated
       const baseId = getId(program, inheritFrom);

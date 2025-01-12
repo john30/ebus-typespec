@@ -101,7 +101,6 @@ describe("emitting models", () => {
       }
       @ext(3,4)
       @inherit(base)
-      /** a test */
       model Foo {
         /** an x */
         x: UCH,
@@ -109,7 +108,7 @@ describe("emitting models", () => {
     `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "r,Main,,Foo,a test,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x"
+      "r,Main,,Foo,,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x"
     );
   });
   it("works with multi inherit", async () => {
