@@ -39,6 +39,12 @@ Emit includes files as includes instead of inline (incomplete!)
 
 File name with translations to use.
 
+#### `withMinMax`
+
+**Type:** `boolean`
+
+Emit min+max values
+
 ## Linter
 
 ### Usage
