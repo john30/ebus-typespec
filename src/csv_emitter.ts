@@ -1,4 +1,4 @@
-import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMaxValue, getMinLength, getMinValue, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union} from "@typespec/compiler";
+import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMaxValue, getMinLength, getMinValue, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union, type UnionVariant} from "@typespec/compiler";
 import {CodeTypeEmitter, StringBuilder, code, type AssetEmitter, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import jsYaml from "js-yaml";
@@ -21,25 +21,6 @@ const normName: Record<'circuit'|'message'|'field', (s?: string) => string|undef
   message: (s) => pascalCase(s),
   field: (s) => s ? s.toLowerCase() : s,
 }
-const mapConds = (idModel: Type|undefined, sf: SourceFile<object>, conds?: [ModelProperty|Model, ...string[]][]) => conds?.map(c => {
-  const values = c.length>1 ? (c[1].match(/^[<>=]/)?'':'=')+c.slice(1).join(';') : '';
-  const ref = c[0];
-  let propName = ref.kind==='ModelProperty' ? ref.name : '';
-  const model = propName ? (ref as ModelProperty).model : ref as Model;
-  let modelName = model?.name;
-  let condName = (modelName+(propName==='value'?'':'_'+propName)).toLowerCase();
-  let circuitName = '';
-  if (idModel && model===idModel) {
-    modelName = '';
-    circuitName = 'scan';
-    propName = propName.toUpperCase(); // todo support lowercase in ebusd as well
-  } else {
-    modelName = (modelName||'').toLowerCase();
-  }
-  sf.imports.set(condName, [`[${condName}]`,circuitName,'',modelName!,'',propName]);
-  return `[${condName+values}]`;
-}).join('');
-
 
 export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
@@ -58,26 +39,53 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     };
   }
 
-  modelDeclaration(model: Model, name: string): EmitterOutput<string> {
+  mapConditions(idModel: Type|undefined, sf: SourceFile<object>, program: Program, circuit: string, model: Model|UnionVariant, fallbackNs?: Namespace): string {
+    const conds: [ModelProperty|Model, number|undefined, ...string[]][] = getConditions(program, model)||(fallbackNs&&getConditions(program, fallbackNs));
+    // const ns = target.kind==='UnionVariant' ? target.type.kind==='Namespace' ? target.type.namespace : undefined : target.namespace;
+    // let ownZz = ns ? getZz(context.program, ns) : undefined;
+    return conds?.map(c => {
+      const values = c.length>2 ? (c[2].match(/^[<>=]/)?'':'=')+c.slice(2).join(';') : '';
+      const ref = c[0];
+      let propName = ref.kind==='ModelProperty' ? ref.name : '';
+      const model = propName ? (ref as ModelProperty).model : ref as Model;
+      const {nearestZz: modelZz, nearestCircuit: modelCirc} = model ? this.getNearestZzNamespace(sf, model) : {};
+      const zz = c[1]!==undefined ? c[1] : modelZz;
+      let modelName = model?.name;
+      let condName = (modelName+(zz===undefined?'':'_'+hex(zz))+(propName==='value'?'':'_'+propName)).toLowerCase();
+      let circuitName = '';
+      if (idModel && model===idModel) {
+        modelName = '';
+        circuitName = 'scan';
+        propName = propName.toUpperCase(); // todo support lowercase in ebusd as well
+      } else {
+        if (modelCirc && modelCirc!==circuit) {
+          circuitName = modelCirc;
+          condName = modelCirc+'_'+condName;
+        }
+        modelName = (modelName||'').toLowerCase();
+      }
+      sf.imports.set(condName, [`[${condName}]`,circuitName,'',modelName!,hex(zz),propName]);
+      return `[${condName+values}]`;
+    }).join('')||'';
+  }
+  
+  
+  getNearestZzNamespace(sf: SourceFile<Object>, model: Model, referencedBy?: Union) {
     const program = this.emitter.getProgram();
-    const decls: string[] = [];
-    const context = this.emitter.getContext();
-    if (!program.stateSet(StateKeys.id).has(model) || context.exclude) {
-      return this.emitter.result.none();
-    }
-    const sf = this.#getCurrentSourceFile();
     let nearestNamespace: string|undefined;
     let nearestCircuit: string|undefined;
     let nearestZz: number|undefined;
-    for (const frame of [model, context.referencedBy as Union]) {
-      if (!frame) continue;
+    for (const frame of [model, referencedBy]) {
+      if (!frame) {
+        continue;
+      }
       // get "file" namespace
       const fp = fileParent(frame.node as Node);
       for (let n = fp && frame.namespace; n; n=n.namespace) {
         if (n?.name==='Ebus') {
           break;
         }
-        if (frame!==context.referencedBy && fileParent(n.node)!==fp) {
+        if (frame===referencedBy && fileParent(n.node)!==fp) {
           break;
         }
         if (!nearestNamespace) {
@@ -98,7 +106,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
       if (!nearestCircuit) {
         let fileCircuit = basename(fp.path, extname(fp.path));
-        if (context.referencedBy && fileCircuit.endsWith('_inc')
+        if (referencedBy && fileCircuit.endsWith('_inc')
         || extname(sf?.path)==='.inc' && fileCircuit===basename(sf.path, '.inc')+'_inc') {
           fileCircuit = ''; // leave circuit blank in include files unless the circuit name was set explicitly
         } else {
@@ -113,6 +121,18 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         nearestCircuit = nearestNamespace && nearestNamespace.toLowerCase()===fileCircuit ? nearestNamespace : fileCircuit;
       }
     }
+    return {nearestCircuit, nearestZz};
+  }
+  modelDeclaration(model: Model, name: string): EmitterOutput<string> {
+    const program = this.emitter.getProgram();
+    const decls: string[] = [];
+    const context = this.emitter.getContext();
+    if (!program.stateSet(StateKeys.id).has(model) || context.exclude) {
+      return this.emitter.result.none();
+    }
+    const sf = this.#getCurrentSourceFile();
+    let {nearestCircuit, nearestZz} = this.getNearestZzNamespace(sf, model, context.referencedBy);
+    const circuit = nearestCircuit||'';
     if (nearestCircuit) {
       nearestCircuit = nearestCircuit.split('.')[0]; // strip off further other suffixes
       const nearestCircuitLower = nearestCircuit.toLowerCase();
@@ -125,7 +145,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
     }
     const [idModel] = program.resolveTypeReference('Ebus.Id.Id');
-    const conds = (context.conds||'')+mapConds(idModel, sf, getConditions(program, model)||(model.namespace&&getConditions(program, model.namespace))||[]);
+    const conds = (context.conds||'')+this.mapConditions(idModel, sf, program, circuit, model, model.namespace);
     for (const inheritFrom of getInherit(program, model)??[undefined]) {
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
       const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
@@ -442,7 +462,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           return;
         }
         const isLoad = typeof uv.name === 'string' && !!uv.name;
-        const conds = mapConds(idModel, sf, getConditions(program, uv)||[]);
+        const conds = this.mapConditions(idModel, sf, program, '', uv);
         addInclude(uv.type, this.#getDoc(uv), conds, isLoad);
       });
       return this.emitter.result.declaration(name, decls.join('\n'));
@@ -461,7 +481,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         return;
       }
       const namespace = uv.type as Namespace;
-      const conds = mapConds(idModel, sf, getConditions(program, uv)||[]);
+      const conds = this.mapConditions(idModel, sf, program, '', uv);
       const isLoad = typeof uv.name === 'string' && uv.name;
       if (isLoad) {
         const referenceContext = this.#mkContext(namespace.node, namespace, undefined, true);

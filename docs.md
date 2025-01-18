@@ -87,6 +87,7 @@ Available ruleSets:
 - [`@base`](#@base)
 - [`@chain`](#@chain)
 - [`@condition`](#@condition)
+- [`@conditionExt`](#@conditionext)
 - [`@constValue`](#@constvalue)
 - [`@divisor`](#@divisor)
 - [`@example`](#@example)
@@ -164,7 +165,8 @@ Define chained message IDs.
 
 #### `@condition`
 
-Define the condition(s) for the whole message (if given multiple times, all conditions must be met).
+Define a condition for the whole message by checking an own model or property.
+This decorator and `@conditionExt` can be used multiple times to check that all conditions are met.
 
 ```typespec
 @Ebus.condition(property: ModelProperty | Model, ...values: valueof string[])
@@ -176,10 +178,31 @@ Define the condition(s) for the whole message (if given multiple times, all cond
 
 ##### Parameters
 
-| Name     | Type                           | Description                                                                                                             |
-| -------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| property | `union ModelProperty \| Model` | the referenced model property, or a model in case of existance check or single property only.                           |
-| values   | `valueof model string[]`       | the optional alternative values the property needs to match (one of the values must match for the condition to be met). |
+| Name     | Type                           | Description                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| property | `union ModelProperty \| Model` | the referenced model property, or a model in case of existance check or single property only.                                                                                                                                                                                                                                                                                   |
+| values   | `valueof model string[]`       | the optional alternative values the property needs to match (one of the values must match for the condition to be met).<br />For numeric values, a single value (e.g. "18"), a value range separated by dash (e.g. "19-22"), or a value range with comparison (e.g. "<=5", ">10") can be used.<br />For string values, the value needs to be put in single quotes (e.g. 'abc'). |
+
+#### `@conditionExt`
+
+Define a condition for the whole message by checking another target address model or property.
+This decorator and `@condition` can be used multiple times to check that all conditions are met.
+
+```typespec
+@Ebus.conditionExt(property: ModelProperty | Model, zz: valueof Ebus.target, ...values: valueof string[])
+```
+
+##### Target
+
+`union Namespace | Model | UnionVariant`
+
+##### Parameters
+
+| Name     | Type                           | Description                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| property | `union ModelProperty \| Model` | the referenced model property, or a model in case of existance check or single property only.                                                                                                                                                                                                                                                                                   |
+| zz       | `valueof scalar Ebus.target`   | the target address ZZ.                                                                                                                                                                                                                                                                                                                                                          |
+| values   | `valueof model string[]`       | the optional alternative values the property needs to match (one of the values must match for the condition to be met).<br />For numeric values, a single value (e.g. "18"), a value range separated by dash (e.g. "19-22"), or a value range with comparison (e.g. "<=5", ">10") can be used.<br />For string values, the value needs to be put in single quotes (e.g. 'abc'). |
 
 #### `@constValue`
 

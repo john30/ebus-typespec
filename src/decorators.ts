@@ -12,14 +12,33 @@ import {StateKeys, reportDiagnostic} from "./lib.js";
  *
  * @param context Decorator context.
  * @param target Decorator target.
- * @param values the value to set.
+ * @param property the referenced model property, or a model in case of existance check or single property only.
+ * @param values the optional alternative values the property needs to match.
  */
 export function $condition(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, ...values: string[]) {
-  const prev = (context.program.stateMap(StateKeys.condition).get(target)||[]) as [ModelProperty|Model, ...string[]][];
-  if (target.kind==='Namespace' && prev.some(([p]) => p.name===property.name)) {
+  conditionImpl(context, target, property, undefined, ...values);
+}
+
+/**
+ * Implementation of the `@conditionExt` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param property the referenced model property, or a model in case of existance check or single property only.
+ * @param zz the target address ZZ.
+ * @param values the optional alternative values the property needs to match.
+ */
+export function $conditionExt(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, zz: Numeric, ...values: string[]) {
+  conditionImpl(context, target, property, zz, ...values);
+}
+
+function conditionImpl(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, zz: Numeric|undefined, ...values: string[]) {
+  const dest = zz!==undefined ? getNum(zz) : undefined;
+  const prev = (context.program.stateMap(StateKeys.condition).get(target)||[]) as [ModelProperty|Model, number|undefined, ...string[]][];
+  if (target.kind==='Namespace' && prev.some(([p, z]) => p.name===property.name && z===dest)) {
     return;
   }
-  context.program.stateMap(StateKeys.condition).set(target, [...prev, [property, ...values]]);
+  context.program.stateMap(StateKeys.condition).set(target, [...prev, [property, dest, ...values]]);
 }
 
 /**
@@ -29,8 +48,8 @@ export function $condition(context: DecoratorContext, target: Model|Namespace|Un
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getConditions(program: Program, target: Model|Namespace|UnionVariant): [ModelProperty|Model, ...string[]][] {
-  const ret = program.stateMap(StateKeys.condition).get(target) as [ModelProperty|Model, ...string[]][];
+export function getConditions(program: Program, target: Model|Namespace|UnionVariant): [ModelProperty|Model, number|undefined, ...string[]][] {
+  const ret = program.stateMap(StateKeys.condition).get(target) as [ModelProperty|Model, number|undefined, ...string[]][];
   if (!ret || ret.length<=1) {
     return ret;
   }

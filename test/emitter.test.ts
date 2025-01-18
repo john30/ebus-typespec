@@ -487,6 +487,46 @@ describe("emitting models", () => {
       "[bar_disc=1]r,Main,,Foo,,,,0001,,"
     );
   });
+  it("works with external condition", async () => {
+    const files = await emit(`
+      @id(0,2)
+      model Bar {disc: Num.UCH}
+      @id(0,1)
+      @conditionExt(Bar.disc, 0x08, "1")
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "*[bar_08_disc],,,bar,08,disc\n"+
+      "r,Main,,Bar,,,,0002,,disc,,UCH,,,\n"+
+      "[bar_08_disc=1]r,Main,,Foo,,,,0001,,"
+    );
+  });
+  it("works with cross condition", async () => { // experimental
+    const files = await emit(``, {}, {emitNamespace: true, extraSpecFiles: [
+      {name: 'other.tsp', code: `
+        import "ebus"; using Ebus;
+        namespace Other;
+        @zz(0x12)
+        namespace Mc {
+          @id(1,2)
+          model Foo {}
+        }
+      `},
+      {name: 'main.tsp', code: `
+        import "./other.tsp";
+        import "ebus"; using Ebus;
+        @id(0,2)
+        @condition(Other.Mc.Foo)
+        model Bar {disc: Num.UCH}
+      `},
+    ]});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "*[Mc_foo_12_],Mc,,foo,12,\n"+
+      "[Mc_foo_12_]r,Main,,Bar,,,,0002,,disc,,UCH,,,"
+    );
+  });
   it("works with auth level", async () => {
     const files = await emit(`
       @id(0,1)
