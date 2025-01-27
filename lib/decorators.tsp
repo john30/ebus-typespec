@@ -138,6 +138,12 @@ extern dec divisor(target: numeric|plainTime|ModelProperty, value: valueof numer
 extern dec factor(target: numeric|plainTime|ModelProperty, value: valueof numeric);
 
 /**
+ * Define the increment/decrement step value (useful in combination with `@minValue` and/or `@maxValue`).
+ * @param value the increment/decrement step value.
+ */
+extern dec step(target: numeric|ModelProperty, value: valueof numeric);
+
+/**
  * Define the known values.
  * @param values the known values.
  */

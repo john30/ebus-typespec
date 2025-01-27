@@ -72,6 +72,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Invalid factor value "${"value"}".`,
       },
     },
+    "banned-step": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Invalid step value "${"value"}".`,
+      },
+    },
     "banned-values": {
       severity: "error",
       messages: {
@@ -161,6 +167,7 @@ export const $lib = createTypeSpecLibrary({
     reverse: { description: "reverse representation" },
     unit: { description: "unit" },
     divisor: { description: "divisor" },
+    step: { description: "step" },
     values: { description: "known values" },
     constValue: { description: "const value" },
   },

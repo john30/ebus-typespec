@@ -766,6 +766,39 @@ export function getDivisor(program: Program, target: Scalar|ModelProperty): numb
 }
 
 /**
+ * Implementation of the `@step` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param value the value to set.
+ */
+export function $step(context: DecoratorContext, target: Scalar|ModelProperty, value: Numeric) {
+  const val = getNum(value);
+  if (!isNumericType(context.program, getPropertyType(target))
+  || val===undefined || val<=0
+  || context.program.stateMap(StateKeys.step).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "banned-step",
+      target: context.getArgumentTarget(0)!,
+      format: { value: value.toString() },
+    });
+    return;
+  }
+  context.program.stateMap(StateKeys.step).set(target, val);
+}
+
+/**
+ * Accessor for the `@step` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getStep(program: Program, target: Scalar|ModelProperty): number | undefined {
+  return getNum(program.stateMap(StateKeys.step).get(target));
+}
+
+/**
  * Implementation of the `@values` decorator.
  *
  * @param context Decorator context.

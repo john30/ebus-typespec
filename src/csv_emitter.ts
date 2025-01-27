@@ -5,7 +5,7 @@ import jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
   getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
-  getQq, getSourceAddr, getUnit, getValues, getWrite, getZz, isSourceAddr
+  getQq, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
@@ -255,7 +255,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     let lengthReported = false;
     let commentProp: ModelProperty|undefined;
     const chainFactor = getChain(program, model) ? 24 : 1; // something like 2x 12 months as limit
-    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], constValue?: string, min?: number, max?: number, unit?: string, comment?: string};
+    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], constValue?: string, min?: number, max?: number, step?: number, unit?: string, comment?: string};
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
@@ -366,6 +366,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           if (minv !== undefined && maxv !== undefined) {
             res.min = minv;
             res.max = maxv;
+            res.step = getStep(program, s);
           }
         }
         res.unit ??= getUnit(program, s);
@@ -419,7 +420,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         res.dir===(write?'m':'s')?'':res.dir,
         typ,
         divisor,
-        ...(this.withMinMax ? [res.min!==undefined && res.max!==undefined ? `${res.min}-${res.max}` : ''] : []),
+        ...(this.withMinMax ? [res.min!==undefined && res.max!==undefined ? `${res.min}-${res.max}${res.step!==undefined?`:${res.step}`:''}` : ''] : []),
         res.unit,
         escape(res.comment),
       ];

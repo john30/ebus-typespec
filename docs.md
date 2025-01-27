@@ -100,6 +100,7 @@ Available ruleSets:
 - [`@passive`](#@passive)
 - [`@poll`](#@poll)
 - [`@qq`](#@qq)
+- [`@step`](#@step)
 - [`@unit`](#@unit)
 - [`@values`](#@values)
 - [`@write`](#@write)
@@ -421,6 +422,24 @@ Define the source address.
 | Name  | Type                         | Description            |
 | ----- | ---------------------------- | ---------------------- |
 | value | `valueof scalar Ebus.source` | the source address QQ. |
+
+#### `@step`
+
+Define the increment/decrement step value (useful in combination with `@minValue` and/or `@maxValue`).
+
+```typespec
+@Ebus.step(value: valueof numeric)
+```
+
+##### Target
+
+`union numeric | ModelProperty`
+
+##### Parameters
+
+| Name  | Type                     | Description                         |
+| ----- | ------------------------ | ----------------------------------- |
+| value | `valueof scalar numeric` | the increment/decrement step value. |
 
 #### `@unit`
 

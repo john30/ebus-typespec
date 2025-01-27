@@ -1069,6 +1069,19 @@ describe("emitting models", () => {
       'r,Main,,Foo,,,,0706,,value,,UCH,,1-3,,',
     );
   });
+  it("emits min/max with step", async () => {
+    const files = await emit(`
+      @id(7,6)
+      model Foo  {
+        @minValue(1) @maxValue(3) @step(2)
+        value: Num.UCH;
+      }
+    `, {withMinMax: true});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file, true),
+      'r,Main,,Foo,,,,0706,,value,,UCH,,1-3:2,,',
+    );
+  });
   it("does not emit base min/max", async () => {
     const files = await emit(`
       @id(7,6)
