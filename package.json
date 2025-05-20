@@ -43,17 +43,18 @@
     "*.md"
   ],
   "peerDependencies": {
-    "@typespec/compiler": "~0.64.0"
+    "@typespec/compiler": "^1.0.0",
+    "@typespec/asset-emitter": "^0.70.1"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@typespec/compiler": "~0.64.0",
-    "@typespec/library-linter": "~0.64.0",
-    "@typespec/tspd": "latest",
     "@types/node": "latest",
-    "typedoc": "^0.27.6",
-    "typedoc-plugin-markdown": "^4.4.1",
-    "typescript": "^5.7.3"
+    "@typespec/compiler": "^1.0.0",
+    "@typespec/library-linter": "~0.70.0",
+    "@typespec/tspd": "latest",
+    "typedoc": "^0.28.4",
+    "typedoc-plugin-markdown": "^4.6.3",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"
@@ -62,7 +63,7 @@
     "build": "tsc && npm run build:tsp",
     "watch": "tsc --watch",
     "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit && chmod a+x dist/src/tsp2ebusd.js",
-    "test": "node --test --test-force-exit ./dist/test/",
+    "test": "node --test --test-force-exit ./dist/test/*.test.js",
     "docs": "sed -i -e 's# *hideInPageTOC: true,##' node_modules/@typespec/tspd/dist/src/ref-doc/api-docs.js; npx tspd doc --enable-experimental . && mv README.md docs.md && rm -rf docs && git checkout README.md"
   }
 }

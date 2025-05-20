@@ -1,11 +1,26 @@
 import type {
-  DecoratorContext, Enum, Model, ModelProperty, Namespace, Numeric, Program, Scalar, UnionVariant
+  DecoratorContext, Enum, IntrinsicScalarName, Model, ModelProperty, Namespace, Numeric, Program, Scalar, UnionVariant
 } from "@typespec/compiler";
 import {
-  getPropertyType, isIntrinsicType, isNumeric, isNumericType, setTypeSpecNamespace
+  getPropertyType, isNumeric, isNumericType, setTypeSpecNamespace
 } from "@typespec/compiler";
 import {StateKeys, reportDiagnostic} from "./lib.js";
 
+export function isIntrinsicType(
+  program: Program,
+  type: Scalar,
+  kind: IntrinsicScalarName,
+): boolean {
+  const [base] = program.resolveTypeReference(`TypeSpec.${kind}`);
+  let check: Scalar|undefined = type;
+  while (base && check) {
+    if (check===base || check.kind===base.kind && check.namespace===base.namespace && check.name===base.name) {
+      return true;
+    }
+    check = check.baseScalar;
+  }
+  return false;
+}
 
 /**
  * Implementation of the `@condition` decorator.

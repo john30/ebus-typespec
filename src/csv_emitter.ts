@@ -1,5 +1,6 @@
-import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMaxValue, getMinLength, getMinValue, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Node, type Program, type Scalar, type Type, type TypeSpecScriptNode, type Union, type UnionVariant} from "@typespec/compiler";
-import {CodeTypeEmitter, StringBuilder, code, type AssetEmitter, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/compiler/emitter-framework";
+import {CodeTypeEmitter, StringBuilder, code, createAssetEmitter, type AssetEmitter, type Context, type EmittedSourceFile, type EmitterOutput, type Scope, type SourceFile, type SourceFileScope} from "@typespec/asset-emitter";
+import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMaxValue, getMinLength, getMinValue, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Program, type Scalar, type Type, type Union, type UnionVariant} from "@typespec/compiler";
+import type {IntersectionExpressionNode, JsNamespaceDeclarationNode, ModelExpressionNode, ModelStatementNode, NamespaceStatementNode, ObjectLiteralNode, TypeSpecScriptNode} from "@typespec/compiler/ast";
 import {DuplicateTracker} from "@typespec/compiler/utils";
 import jsYaml from "js-yaml";
 import {basename, extname} from "path";
@@ -9,9 +10,11 @@ import {
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
+type Node = TypeSpecScriptNode | NamespaceStatementNode | JsNamespaceDeclarationNode | ModelStatementNode | ModelExpressionNode | IntersectionExpressionNode | ObjectLiteralNode;
+
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
-const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent);
+const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent as Node);
 const isSourceFileWithPath = (scope: Scope<object>): scope is SourceFileScope<object> => scope.kind === "sourceFile" && !!scope.sourceFile.path;
 const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s.replaceAll('"', '""')}"` : s;
 const pascalCase = (s?: string) => s ? s.substring(0,1).toUpperCase()+s.substring(1) : s;
@@ -85,7 +88,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (n?.name==='Ebus') {
           break;
         }
-        if (frame===referencedBy && fileParent(n.node)!==fp) {
+        if (frame===referencedBy && (n.node?fileParent(n.node):undefined)!==fp) {
           break;
         }
         if (!nearestNamespace) {
@@ -485,7 +488,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const conds = this.mapConditions(idModel, sf, program, '', uv);
       const isLoad = typeof uv.name === 'string' && uv.name;
       if (isLoad) {
-        const referenceContext = this.#mkContext(namespace.node, namespace, undefined, true);
+        const referenceContext = this.#mkContext(namespace.node!, namespace, undefined, true);
         if (Object.keys(referenceContext).length && !referenceContext.exclude
         && this.#sourceFileByPath.get(referenceContext.fullname)?.meta.refCount===1) {
           this.emitter.emitTypeReference(namespace, {referenceContext}) // force emit the included file itself, once only
@@ -595,7 +598,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   // }
 
   namespaceContext(namespace: Namespace): Context {
-    return this.#mkContext(namespace.node, namespace); 
+    return this.#mkContext(namespace.node!, namespace); 
   }
 
   modelDeclarationContext(model: Model, modelName: string): Context {
@@ -697,7 +700,7 @@ export async function getEbusdEmitterClass(host: CompilerHost, includes?: boolea
 export async function $onEmit(context: EmitContext<EbusdEmitterOptions>) {
   const emitter =
   // context.options["file-type"]==='csv'?
-  context.getAssetEmitter(await getEbusdEmitterClass(context.program.host, context.options.includes, context.options.withMinMax, context.options.translations));
+  createAssetEmitter(context.program, await getEbusdEmitterClass(context.program.host, context.options.includes, context.options.withMinMax, context.options.translations), context);
   emitter.emitProgram();
   await emitter.writeOutput();
 }

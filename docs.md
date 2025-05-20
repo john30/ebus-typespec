@@ -66,18 +66,15 @@ Available ruleSets:
 
 ### Rules
 
-| Name                 | Description                       |
-| -------------------- | --------------------------------- |
-| `ebus/no-function`   | Make sure function is not used.   |
-| `ebus/no-interface`  | Make sure interface is not used.  |
-| `ebus/no-intrinsic`  | Make sure intrinsic is not used.  |
-| `ebus/no-literal`    | Make sure literal is not used.    |
-| `ebus/no-object`     | Make sure object is not used.     |
-| `ebus/no-operation`  | Make sure operation is not used.  |
-| `ebus/no-projection` | Make sure projection is not used. |
-| `ebus/no-template`   | Make sure template is not used.   |
-| `ebus/no-tuple`      | Make sure tuple is not used.      |
-| `ebus/no-union`      | Make sure union is not used.      |
+| Name                | Description                      |
+| ------------------- | -------------------------------- |
+| `ebus/no-interface` | Make sure interface is not used. |
+| `ebus/no-intrinsic` | Make sure intrinsic is not used. |
+| `ebus/no-literal`   | Make sure literal is not used.   |
+| `ebus/no-operation` | Make sure operation is not used. |
+| `ebus/no-template`  | Make sure template is not used.  |
+| `ebus/no-tuple`     | Make sure tuple is not used.     |
+| `ebus/no-union`     | Make sure union is not used.     |
 
 ## Decorators
 
