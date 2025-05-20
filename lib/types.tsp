@@ -69,11 +69,17 @@ namespace Num {
   /** 1 byte unsigned integer, 0 - 254, replacement 0xff. */
   @minValue(0) @maxValue(0xfe)
   scalar UCH extends uint8;
-  /** 1 byte signed integer, -127 - +127, replacement 0x7f. */
-  @minValue(-127) @maxValue(0x7e)
+  /** 1 byte unsigned integer, 0 - 255 (no replacement). */
+  @minValue(0) @maxValue(0xff)
+  scalar U1L extends uint8;
+  /** 1 byte signed integer, -127 - +127, replacement 0x80. */
+  @minValue(-127) @maxValue(0x7f)
   scalar SCH extends int8;
   /** same as SCH. */
   alias D1B = SCH;
+  /** 1 byte signed integer, -128 - +127 (no replacement) */
+  @minValue(-128) @maxValue(0x7f)
+  scalar S1L extends int8;
   /** 1 byte unsigned decimal in BCD, 0 - 99, replacement 0xff. */
   @minValue(0) @maxValue(99)
   @Internal.bcd
@@ -107,13 +113,27 @@ namespace Num {
   @minValue(0) @maxValue(0xfffe)
   @Internal.reverse
   scalar UIR extends UIN;
-  /** 2 byte signed integer, -32767 - +32767, replacement 0x7fff. */
-  @minValue(0) @maxValue(0x7ffe)
+  /** 2 byte unsigned integer, 0 - 65535 (no replacement), little endian. */
+  @minValue(0) @maxValue(0xffff)
+  scalar U2L extends uint16;
+  /** 2 byte unsigned integer, 0 - 65535 (no replacement), big endian. */
+  @minValue(0) @maxValue(0xffff)
+  @Internal.reverse
+  scalar U2B extends uint16;
+  /** 2 byte signed integer, -32767 - +32767, replacement 0x8000. */
+  @minValue(-32767) @maxValue(0x7fff)
   scalar SIN extends int16;
-  /** 2 byte signed integer, -32767 - +32767, replacement 0x7fff, big endian. */
-  @minValue(-32767) @maxValue(0x7ffe)
+  /** 2 byte signed integer, -32767 - +32767, replacement 0x8000, big endian. */
+  @minValue(-32767) @maxValue(0x7fff)
   @Internal.reverse
   scalar SIR extends SIN;
+  /** 2 byte signed integer, -32768 - +32767 (no replacement), little endian. */
+  @minValue(-32768) @maxValue(0x7fff)
+  scalar S2L extends int16;
+  /** 2 byte signed integer, -32768 - +32767 (no replacement), big endian. */
+  @minValue(-32768) @maxValue(0x7fff)
+  @Internal.reverse
+  scalar S2B extends SIN;
   /** 2 byte unsigned decimal in BCD, 0 - 9999, replacement 0xffff. */
   @minValue(0) @maxValue(9999)
   @Internal.bcd
@@ -160,6 +180,34 @@ namespace Num {
   @minValue(0) @maxValue(999999)
   @Internal.hex
   scalar HCD3 extends uint32; // todo 3 bytes
+  /** 3 byte unsigned integer, 0 - 16777214, replacement 0xffffff. */
+  @minValue(0) @maxValue(0xfffffe)
+  scalar U3N extends uint32; // todo 3 bytes
+  /** 3 byte unsigned integer, 0 - 16777214, replacement 0xffffff, big endian. */
+  @minValue(0) @maxValue(0xfffffe)
+  @Internal.reverse
+  scalar U3R extends U3N; // todo 3 bytes
+  /** 3 byte unsigned integer, 0 - 16777215 (no replacement), little endian. */
+  @minValue(0) @maxValue(0xffffff)
+  scalar U3L extends uint32; // todo 3 bytes
+  /** 3 byte unsigned integer, 0 - 16777215 (no replacement), big endian. */
+  @minValue(0) @maxValue(0xffffff)
+  @Internal.reverse
+  scalar U3B extends U3N; // todo 3 bytes
+  /** 3 byte signed integer, -8388607 - +8388607, replacement 0x800000. */
+  @minValue(-8388607) @maxValue(0x7fffff)
+  scalar S3N extends int32; // todo 3 bytes
+  /** 3 byte signed integer, -8388607 - +8388607, replacement 0x800000, big endian. */
+  @minValue(-8388607) @maxValue(0x7fffff)
+  @Internal.reverse
+  scalar S3R extends S3N; // todo 3 bytes
+  /** 3 byte signed integer, -8388608 - +8388607 (no replacement), little endian. */
+  @minValue(-8388608) @maxValue(0x7fffff)
+  scalar S3L extends int32; // todo 3 bytes
+  /** 3 byte signed integer, -8388608 - +8388607 (no replacement), big endian. */
+  @minValue(-8388608) @maxValue(0x7fffff)
+  @Internal.reverse
+  scalar S3B extends S3N; // todo 3 bytes
 
   // 4 byte length
 
@@ -170,13 +218,27 @@ namespace Num {
   @minValue(0) @maxValue(0xfffffffe)
   @Internal.reverse
   scalar ULR extends ULG;
-  /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x7fffffff. */
-  @minValue(-2147483647) @maxValue(0x7ffffffe)
+  /** 4 byte unsigned integer, 0 - 4294967295 (no replacement), little endian. */
+  @minValue(0) @maxValue(0xffffffff)
+  scalar U4L extends uint32;
+  /** 4 byte unsigned integer, 0 - 4294967295 (no replacement), big endian. */
+  @minValue(0) @maxValue(0xffffffff)
+  @Internal.reverse
+  scalar U4B extends ULG;
+  /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x80000000. */
+  @minValue(-2147483647) @maxValue(0x7fffffff)
   scalar SLG extends int32;
-  /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x7fffffff, big endian. */
-  @minValue(-2147483647) @maxValue(0x7ffffffe)
+  /** 4 byte signed integer, -2147483647 - +2147483647, replacement 0x80000000, big endian. */
+  @minValue(-2147483647) @maxValue(0x7fffffff)
   @Internal.reverse
   scalar SLR extends SLG;
+  /** 4 byte signed integer, -2147483647 - +2147483648 (no replacement), little endian. */
+  @minValue(-2147483647) @maxValue(0x7fffffff)
+  scalar S4L extends int32;
+  /** 4 byte signed integer, -2147483647 - +2147483648 (no replacement), big endian. */
+  @minValue(-2147483647) @maxValue(0x7fffffff)
+  @Internal.reverse
+  scalar S4B extends SLG;
   /** 4 byte unsigned decimal in BCD, 0 - 99999999, replacement 0xffffffff. */
   @minValue(0) @maxValue(99999999)
   @Internal.bcd
@@ -356,68 +418,3 @@ namespace Contrib {
    */
   scalar TEM_P extends uint16;
 }
-
-// /** All known base data types. */
-// namespace All {
-//   alias BI0 = Num.BI0;
-//   alias BI1 = Num.BI1;
-//   alias BI2 = Num.BI2;
-//   alias BI3 = Num.BI3;
-//   alias BI4 = Num.BI4;
-//   alias BI5 = Num.BI5;
-//   alias BI6 = Num.BI6;
-//   alias BI7 = Num.BI7;
-//   alias BI0_7 = Num.BI0_7;
-//   alias UCH = Num.UCH;
-//   alias SCH = Num.SCH;
-//   alias D1B = Num.D1B;
-//   alias BCD = Num.BCD;
-//   alias HCD = Num.HCD;
-//   alias D1C = Num.D1C;
-//   alias PIN = Num.PIN;
-//   alias UIN = Num.UIN;
-//   alias UIR = Num.UIR;
-//   alias SIN = Num.SIN;
-//   alias SIR = Num.SIR;
-//   alias HCD2 = Num.HCD2;
-//   alias D2B = Num.D2B;
-//   alias D2C = Num.D2C;
-//   alias FLT = Num.FLT;
-//   alias FLR = Num.FLR;
-//   alias BCD3 = Num.BCD3;
-//   alias HCD3 = Num.HCD3;
-//   alias ULG = Num.ULG;
-//   alias ULR = Num.ULR;
-//   alias SLG = Num.SLG;
-//   alias SLR = Num.SLR;
-//   alias BCD4 = Num.BCD4;
-//   alias HCD4 = Num.HCD4;
-//   alias EXP = Num.EXP;
-//   alias EXR = Num.EXR;
-//   alias STR = Str.STR;
-//   alias NTS = Str.NTS;
-//   alias IGN = Str.IGN;
-//   alias HEX = Str.HEX;
-//   alias BDY = Dtm.BDY;
-//   alias HDY = Dtm.HDY;
-//   alias BDA = Dtm.BDA;
-//   alias BDA4 = Dtm.BDA4;
-//   alias BDA3 = Dtm.BDA3;
-//   alias BDZ = Dtm.BDZ;
-//   alias HDA = Dtm.HDA;
-//   alias HDA4 = Dtm.HDA4;
-//   alias HDA3 = Dtm.HDA3;
-//   alias DAY = Dtm.DAY;
-//   alias DTM = Dtm.DTM;
-//   alias BTI = Dtm.BTI;
-//   alias HTI = Dtm.HTI;
-//   alias VTI = Dtm.VTI;
-//   alias BTM = Dtm.BTM;
-//   alias VTM = Dtm.VTM;
-//   alias HTM = Dtm.HTM;
-//   alias MIN = Dtm.MIN;
-//   alias TTM = Dtm.TTM;
-//   alias TTH = Dtm.TTH;
-//   alias TTQ = Dtm.TTQ;
-//   alias TEM_P = Contrib.TEM_P;
-// }
