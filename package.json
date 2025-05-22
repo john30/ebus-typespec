@@ -1,6 +1,6 @@
 {
   "name": "@ebusd/ebus-typespec",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "author": "John Baier",
   "description": "TypeSpec library for defining eBUS messages and emitting to ebusd CSV.",
   "homepage": "https://github.com/john30/ebus-typespec",
@@ -43,8 +43,7 @@
     "*.md"
   ],
   "peerDependencies": {
-    "@typespec/compiler": "^1.0.0",
-    "@typespec/asset-emitter": "^0.70.1"
+    "@typespec/compiler": "^1.0.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
@@ -57,6 +56,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@typespec/asset-emitter": "^0.70.1",
     "js-yaml": "^4.1.0"
   },
   "scripts": {
