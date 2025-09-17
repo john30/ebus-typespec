@@ -8,9 +8,7 @@ TypeSpec library for defining eBUS messages and emitting to ebusd CSV.
 npm install @ebusd/ebus-typespec
 ```
 
-## Emitter
-
-### Usage
+## Emitter usage
 
 1. Via the command line
 
@@ -25,29 +23,44 @@ emit:
   - "@ebusd/ebus-typespec"
 ```
 
-### Emitter options
+The config can be extended with options as follows:
 
-#### `includes`
+```yaml
+emit:
+  - "@ebusd/ebus-typespec"
+options:
+  "@ebusd/ebus-typespec":
+    option: value
+```
+
+## Emitter options
+
+### `emitter-output-dir`
+
+**Type:** `absolutePath`
+
+Defines the emitter output directory. Defaults to `{output-dir}/@ebusd/ebus-typespec`
+See [Configuring output directory for more info](https://typespec.io/docs/handbook/configuration/configuration/#configuring-output-directory)
+
+### `includes`
 
 **Type:** `boolean`
 
 Emit includes files as includes instead of inline (incomplete!)
 
-#### `translations`
+### `translations`
 
 **Type:** `string`
 
 File name with translations to use.
 
-#### `withMinMax`
+### `withMinMax`
 
 **Type:** `boolean`
 
 Emit min+max values
 
-## Linter
-
-### Usage
+## Linter usage
 
 Add the following in `tspconfig.yaml`:
 
@@ -61,8 +74,8 @@ linter:
 
 Available ruleSets:
 
-- [`ebus/recommended`](#ebus/recommended)
-- [`ebus/all`](#ebus/all)
+- `ebus/recommended`
+- `ebus/all`
 
 ### Rules
 
@@ -117,9 +130,9 @@ Define authentication level.
 
 ##### Parameters
 
-| Name  | Type                    | Description                                |
-| ----- | ----------------------- | ------------------------------------------ |
-| value | `valueof scalar string` | the authentication level (e.g. 'install'). |
+| Name  | Type             | Description                                |
+| ----- | ---------------- | ------------------------------------------ |
+| value | `valueof string` | the authentication level (e.g. 'install'). |
 
 #### `@base`
 
@@ -135,11 +148,11 @@ Define the base message ID to be combined with an extension ID.
 
 ##### Parameters
 
-| Name | Type                          | Description               |
-| ---- | ----------------------------- | ------------------------- |
-| pb   | `valueof scalar Ebus.pb`      | the primary message ID.   |
-| sb   | `valueof scalar Ebus.sb`      | the secondary message ID. |
-| dd   | `valueof model Ebus.symbol[]` | further message ID parts. |
+| Name | Type                | Description               |
+| ---- | ------------------- | ------------------------- |
+| pb   | [valueof `pb`](#pb) | the primary message ID.   |
+| sb   | [valueof `sb`](#sb) | the secondary message ID. |
+| dd   | `valueof symbol[]`  | further message ID parts. |
 
 #### `@chain`
 
@@ -155,11 +168,11 @@ Define chained message IDs.
 
 ##### Parameters
 
-| Name   | Type                            | Description                                                                                |
-| ------ | ------------------------------- | ------------------------------------------------------------------------------------------ |
-| length | `valueof scalar uint8`          | the (maximum) length of a single message part of this chain, or 0 for default (=24).       |
-| dd     | `valueof model Ebus.symbol[]`   | second message ID part the chain is built from (first one taken from id or ext decorator). |
-| dds    | `valueof model Ebus.symbol[][]` | list of further message ID parts the chain is built from.                                  |
+| Name   | Type                 | Description                                                                                |
+| ------ | -------------------- | ------------------------------------------------------------------------------------------ |
+| length | `valueof uint8`      | the (maximum) length of a single message part of this chain, or 0 for default (=24).       |
+| dd     | `valueof symbol[]`   | second message ID part the chain is built from (first one taken from id or ext decorator). |
+| dds    | `valueof symbol[][]` | list of further message ID parts the chain is built from.                                  |
 
 #### `@condition`
 
@@ -172,14 +185,14 @@ This decorator and `@conditionExt` can be used multiple times to check that all 
 
 ##### Target
 
-`union Namespace | Model | UnionVariant`
+`Namespace | Model | UnionVariant`
 
 ##### Parameters
 
-| Name     | Type                           | Description                                                                                                                                                                                                                                                                                                                                                                     |
-| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| property | `union ModelProperty \| Model` | the referenced model property, or a model in case of existance check or single property only.                                                                                                                                                                                                                                                                                   |
-| values   | `valueof model string[]`       | the optional alternative values the property needs to match (one of the values must match for the condition to be met).<br />For numeric values, a single value (e.g. "18"), a value range separated by dash (e.g. "19-22"), or a value range with comparison (e.g. "<=5", ">10") can be used.<br />For string values, the value needs to be put in single quotes (e.g. 'abc'). |
+| Name     | Type                     | Description                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| property | `ModelProperty \| Model` | the referenced model property, or a model in case of existance check or single property only.                                                                                                                                                                                                                                                                                   |
+| values   | `valueof string[]`       | the optional alternative values the property needs to match (one of the values must match for the condition to be met).<br />For numeric values, a single value (e.g. "18"), a value range separated by dash (e.g. "19-22"), or a value range with comparison (e.g. "<=5", ">10") can be used.<br />For string values, the value needs to be put in single quotes (e.g. 'abc'). |
 
 #### `@conditionExt`
 
@@ -192,15 +205,15 @@ This decorator and `@condition` can be used multiple times to check that all con
 
 ##### Target
 
-`union Namespace | Model | UnionVariant`
+`Namespace | Model | UnionVariant`
 
 ##### Parameters
 
-| Name     | Type                           | Description                                                                                                                                                                                                                                                                                                                                                                     |
-| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| property | `union ModelProperty \| Model` | the referenced model property, or a model in case of existance check or single property only.                                                                                                                                                                                                                                                                                   |
-| zz       | `valueof scalar Ebus.target`   | the target address ZZ.                                                                                                                                                                                                                                                                                                                                                          |
-| values   | `valueof model string[]`       | the optional alternative values the property needs to match (one of the values must match for the condition to be met).<br />For numeric values, a single value (e.g. "18"), a value range separated by dash (e.g. "19-22"), or a value range with comparison (e.g. "<=5", ">10") can be used.<br />For string values, the value needs to be put in single quotes (e.g. 'abc'). |
+| Name     | Type                        | Description                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| property | `ModelProperty \| Model`    | the referenced model property, or a model in case of existance check or single property only.                                                                                                                                                                                                                                                                                   |
+| zz       | [valueof `target`](#target) | the target address ZZ.                                                                                                                                                                                                                                                                                                                                                          |
+| values   | `valueof string[]`          | the optional alternative values the property needs to match (one of the values must match for the condition to be met).<br />For numeric values, a single value (e.g. "18"), a value range separated by dash (e.g. "19-22"), or a value range with comparison (e.g. "<=5", ">10") can be used.<br />For string values, the value needs to be put in single quotes (e.g. 'abc'). |
 
 #### `@constValue`
 
@@ -212,13 +225,13 @@ Define the const value.
 
 ##### Target
 
-`union numeric | boolean | ModelProperty`
+`numeric | boolean | ModelProperty`
 
 ##### Parameters
 
-| Name  | Type                              | Description      |
-| ----- | --------------------------------- | ---------------- |
-| value | `valueof union numeric \| string` | the const value. |
+| Name  | Type                        | Description      |
+| ----- | --------------------------- | ---------------- |
+| value | `valueof numeric \| string` | the const value. |
 
 #### `@divisor`
 
@@ -230,13 +243,13 @@ Define the divisor.
 
 ##### Target
 
-`union numeric | plainTime | ModelProperty`
+`numeric | plainTime | ModelProperty`
 
 ##### Parameters
 
-| Name  | Type                     | Description  |
-| ----- | ------------------------ | ------------ |
-| value | `valueof scalar numeric` | the divisor. |
+| Name  | Type              | Description  |
+| ----- | ----------------- | ------------ |
+| value | `valueof numeric` | the divisor. |
 
 #### `@example`
 
@@ -252,11 +265,11 @@ Define a data example.
 
 ##### Parameters
 
-| Name | Type                                    | Description                                                                  |
-| ---- | --------------------------------------- | ---------------------------------------------------------------------------- |
-| desc | `valueof scalar string`                 | a text describing the example.                                               |
-| q    | `valueof union string \| Ebus.symbol[]` | the query part of the message, i.e. pb, sb, and dd bytes sent to the target. |
-| a    | `valueof union string \| Ebus.symbol[]` | the answer part of the message, i.e. dd bytes received from the target.      |
+| Name | Type                         | Description                                                                  |
+| ---- | ---------------------------- | ---------------------------------------------------------------------------- |
+| desc | `valueof string`             | a text describing the example.                                               |
+| q    | `valueof string \| symbol[]` | the query part of the message, i.e. pb, sb, and dd bytes sent to the target. |
+| a    | `valueof string \| symbol[]` | the answer part of the message, i.e. dd bytes received from the target.      |
 
 #### `@ext`
 
@@ -272,9 +285,9 @@ Define the extension message ID to be combined with a base ID.
 
 ##### Parameters
 
-| Name | Type                          | Description                  |
-| ---- | ----------------------------- | ---------------------------- |
-| dd   | `valueof model Ebus.symbol[]` | message ID extensions parts. |
+| Name | Type               | Description                  |
+| ---- | ------------------ | ---------------------------- |
+| dd   | `valueof symbol[]` | message ID extensions parts. |
 
 #### `@factor`
 
@@ -286,13 +299,13 @@ Define the factor.
 
 ##### Target
 
-`union numeric | plainTime | ModelProperty`
+`numeric | plainTime | ModelProperty`
 
 ##### Parameters
 
-| Name  | Type                     | Description |
-| ----- | ------------------------ | ----------- |
-| value | `valueof scalar numeric` | the factor. |
+| Name  | Type              | Description |
+| ----- | ----------------- | ----------- |
+| value | `valueof numeric` | the factor. |
 
 #### `@id`
 
@@ -308,11 +321,11 @@ Define the whole message ID.
 
 ##### Parameters
 
-| Name | Type                          | Description               |
-| ---- | ----------------------------- | ------------------------- |
-| pb   | `valueof scalar Ebus.pb`      | the primary message ID.   |
-| sb   | `valueof scalar Ebus.sb`      | the secondary message ID. |
-| dd   | `valueof model Ebus.symbol[]` | further message ID parts. |
+| Name | Type                | Description               |
+| ---- | ------------------- | ------------------------- |
+| pb   | [valueof `pb`](#pb) | the primary message ID.   |
+| sb   | [valueof `sb`](#sb) | the secondary message ID. |
+| dd   | `valueof symbol[]`  | further message ID parts. |
 
 #### `@in`
 
@@ -328,9 +341,9 @@ Define message part inbound from target.
 
 ##### Parameters
 
-| Name      | Type                     | Description                                                                                                  |
-| --------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| writeOnly | `valueof scalar boolean` | optional true to put in only if write direction, false to put in only if read direction (alyways if absent). |
+| Name      | Type              | Description                                                                                                  |
+| --------- | ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| writeOnly | `valueof boolean` | optional true to put in only if write direction, false to put in only if read direction (alyways if absent). |
 
 #### `@inherit`
 
@@ -346,9 +359,9 @@ Define the inherited model(s).
 
 ##### Parameters
 
-| Name   | Type            | Description       |
-| ------ | --------------- | ----------------- |
-| models | `model Model[]` | inherited models. |
+| Name   | Type      | Description       |
+| ------ | --------- | ----------------- |
+| models | `Model[]` | inherited models. |
 
 #### `@out`
 
@@ -364,9 +377,9 @@ Define message part outbound to target.
 
 ##### Parameters
 
-| Name      | Type                     | Description                                                                                                  |
-| --------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| writeOnly | `valueof scalar boolean` | optional true to put in only if write direction, false to put in only if read direction (alyways if absent). |
+| Name      | Type              | Description                                                                                                  |
+| --------- | ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| writeOnly | `valueof boolean` | optional true to put in only if write direction, false to put in only if read direction (alyways if absent). |
 
 #### `@passive`
 
@@ -398,9 +411,9 @@ Define the poll priority (only for active read).
 
 ##### Parameters
 
-| Name  | Type                   | Description                          |
-| ----- | ---------------------- | ------------------------------------ |
-| value | `valueof scalar uint8` | the poll priority (between 1 and 9). |
+| Name  | Type            | Description                          |
+| ----- | --------------- | ------------------------------------ |
+| value | `valueof uint8` | the poll priority (between 1 and 9). |
 
 #### `@qq`
 
@@ -416,9 +429,9 @@ Define the source address.
 
 ##### Parameters
 
-| Name  | Type                         | Description            |
-| ----- | ---------------------------- | ---------------------- |
-| value | `valueof scalar Ebus.source` | the source address QQ. |
+| Name  | Type                        | Description            |
+| ----- | --------------------------- | ---------------------- |
+| value | [valueof `source`](#source) | the source address QQ. |
 
 #### `@step`
 
@@ -430,13 +443,13 @@ Define the increment/decrement step value (useful in combination with `@minValue
 
 ##### Target
 
-`union numeric | ModelProperty`
+`numeric | ModelProperty`
 
 ##### Parameters
 
-| Name  | Type                     | Description                         |
-| ----- | ------------------------ | ----------------------------------- |
-| value | `valueof scalar numeric` | the increment/decrement step value. |
+| Name  | Type              | Description                         |
+| ----- | ----------------- | ----------------------------------- |
+| value | `valueof numeric` | the increment/decrement step value. |
 
 #### `@unit`
 
@@ -448,13 +461,13 @@ Define the unit.
 
 ##### Target
 
-`union numeric | ModelProperty`
+`numeric | ModelProperty`
 
 ##### Parameters
 
-| Name  | Type                    | Description |
-| ----- | ----------------------- | ----------- |
-| value | `valueof scalar string` | the unit.   |
+| Name  | Type             | Description |
+| ----- | ---------------- | ----------- |
+| value | `valueof string` | the unit.   |
 
 #### `@values`
 
@@ -466,7 +479,7 @@ Define the known values.
 
 ##### Target
 
-`union numeric | boolean | ModelProperty`
+`numeric | boolean | ModelProperty`
 
 ##### Parameters
 
@@ -488,9 +501,9 @@ Define write direction.
 
 ##### Parameters
 
-| Name     | Type                     | Description                                                                                 |
-| -------- | ------------------------ | ------------------------------------------------------------------------------------------- |
-| toSource | `valueof scalar boolean` | true to use the source address pendant of the target address instead of the target address. |
+| Name     | Type              | Description                                                                                 |
+| -------- | ----------------- | ------------------------------------------------------------------------------------------- |
+| toSource | `valueof boolean` | true to use the source address pendant of the target address instead of the target address. |
 
 #### `@zz`
 
@@ -502,13 +515,13 @@ Define the target address.
 
 ##### Target
 
-`union Model | Namespace`
+`Model | Namespace`
 
 ##### Parameters
 
-| Name  | Type                         | Description            |
-| ----- | ---------------------------- | ---------------------- |
-| value | `valueof scalar Ebus.target` | the target address ZZ. |
+| Name  | Type                        | Description            |
+| ----- | --------------------------- | ---------------------- |
+| value | [valueof `target`](#target) | the target address ZZ. |
 
 ### Ebus.Internal
 
@@ -559,13 +572,13 @@ Define the max bits.
 
 ##### Target
 
-`scalar numeric`
+`numeric`
 
 ##### Parameters
 
-| Name  | Type                   | Description   |
-| ----- | ---------------------- | ------------- |
-| value | `valueof scalar uint8` | the max bits. |
+| Name  | Type            | Description   |
+| ----- | --------------- | ------------- |
+| value | `valueof uint8` | the max bits. |
 
 #### `@reverse`
 

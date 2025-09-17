@@ -23,7 +23,8 @@
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
-      "default": "./dist/src/index.js"
+      "default": "./dist/src/index.js",
+      "typespec": "./lib/main.tsp"
     },
     "./testing": {
       "types": "./dist/src/testing/index.d.ts",
@@ -43,20 +44,20 @@
     "*.md"
   ],
   "peerDependencies": {
-    "@typespec/compiler": "^1.0.0"
+    "@typespec/compiler": "^1.4.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "latest",
-    "@typespec/compiler": "^1.0.0",
-    "@typespec/library-linter": "~0.70.0",
+    "@typespec/compiler": "^1.4.0",
+    "@typespec/library-linter": "~0.74.0",
     "@typespec/tspd": "latest",
-    "typedoc": "^0.28.4",
-    "typedoc-plugin-markdown": "^4.6.3",
-    "typescript": "^5.8.3"
+    "typedoc": "^0.28.13",
+    "typedoc-plugin-markdown": "^4.8.1",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@typespec/asset-emitter": "^0.70.1",
+    "@typespec/asset-emitter": "^0.74.0",
     "js-yaml": "^4.1.0"
   },
   "scripts": {
@@ -64,6 +65,6 @@
     "watch": "tsc --watch",
     "build:tsp": "tsp compile . --warn-as-error --import @typespec/library-linter --no-emit && chmod a+x dist/src/tsp2ebusd.js",
     "test": "node --test --test-force-exit ./dist/test/*.test.js",
-    "docs": "sed -i -e 's# *hideInPageTOC: true,##' node_modules/@typespec/tspd/dist/src/ref-doc/api-docs.js; npx tspd doc --enable-experimental . && mv README.md docs.md && rm -rf docs && git checkout README.md"
+    "docs": "npx tspd doc --enable-experimental --skip-js . && mv README.md docs.md && rm -rf docs && git checkout README.md && sed -i -e 's/^## Usage/## Linter usage/' -e 's/^## Rule/### Rule/' docs.md"
   }
 }
