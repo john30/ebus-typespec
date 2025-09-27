@@ -6,6 +6,7 @@ using Ebus.Str;
 
 namespace Id {
 
+  /** known manufacturer IDs */
   enum Values_manufacturers {
     Dungs: 0x06,
     "FH Ostfalia": 0x0f,
@@ -36,6 +37,7 @@ namespace Id {
     // Pb, // <= this is how to declare the base type as it seems for unions, see https://github.com/microsoft/typespec/issues/2737
   }
 
+  /** manufacturer ID */
   @values(Values_manufacturers)
   scalar manufacturer extends UCH;
 
