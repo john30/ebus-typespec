@@ -67,7 +67,9 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }
         modelName = (modelName||'').toLowerCase();
       }
-      sf.imports.set(condName, [`[${condName}]`,circuitName,'',modelName!,hex(zz),propName]);
+      // general: type,circuit,level,name,comment,qq,zz,pbsb,id
+      // for condition: type=name,circuit,,name=messagename,[comment],qq=[fieldname],[ZZ],pbsb=values
+      sf.imports.set(condName, [...[`[${condName}]`,circuitName,'',modelName!,'',propName], ...zz===undefined?[]:[hex(zz)]]);
       return `[${condName+values}]`;
     }).join('')||'';
   }

@@ -502,7 +502,19 @@ describe("emitting models", () => {
       "[bar_disc=1]r,Main,,Foo,,,,0001,,"
     );
   });
-  it("works with external condition", async () => {
+  it("works with external scan condition", async () => {
+    const files = await emit(`
+      @id(0,1)
+      @conditionExt(Ebus.Id.Id.id, 0x08, "='EHP'")
+      model Foo {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "*[id_08_id],scan,,,,ID,08\n"+
+      "[id_08_id='EHP']r,Main,,Foo,,,,0001,,"
+    );
+  });
+  it("works with external msg condition", async () => {
     const files = await emit(`
       @id(0,2)
       model Bar {disc: Num.UCH}
@@ -512,7 +524,7 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[bar_08_disc],,,bar,08,disc\n"+
+      "*[bar_08_disc],,,bar,,disc,08\n"+
       "r,Main,,Bar,,,,0002,,disc,,UCH,,,\n"+
       "[bar_08_disc=1]r,Main,,Foo,,,,0001,,"
     );
@@ -538,7 +550,7 @@ describe("emitting models", () => {
     ]});
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[Mc_foo_12_],Mc,,foo,12,\n"+
+      "*[Mc_foo_12_],Mc,,foo,,,12\n"+
       "[Mc_foo_12_]r,Main,,Bar,,,,0002,,disc,,UCH,,,"
     );
   });
@@ -707,7 +719,7 @@ describe("emitting models", () => {
     );
     assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
   });
-    it("includes loaded namespace models with conditions", async () => {
+  it("includes loaded namespace models with conditions", async () => {
     const importTsp = `
       import "ebus"; using Ebus;
       namespace Importfile_inc {
@@ -741,6 +753,45 @@ describe("emitting models", () => {
       "r,Circ,,Bar,,,15,0002,,\n"+
       // "# included stuff\n"+
       "[id_sw>1]!load,importfile.inc,,,loaded file"
+    );
+    assert.strictEqual(stripHeader(files["importfile.inc"]),
+      "r,,,Foo,,,,0001,,uch,,UCH,,,"
+    );
+  });
+  it("includes loaded namespace models with conditions on ID existance", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      namespace Importfile_inc {
+        @base(0,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _includes {
+          /** loaded file */
+          @conditionExt(Ebus.Id.Id.id, 0x08, "='EHP'")
+          importfile_inc: Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "*[id_08_id],scan,,,,ID,08\n"+
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      // "# included stuff\n"+
+      "[id_08_id='EHP']!load,importfile.inc,,,loaded file"
     );
     assert.strictEqual(stripHeader(files["importfile.inc"]),
       "r,,,Foo,,,,0001,,uch,,UCH,,,"
