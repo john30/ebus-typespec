@@ -231,6 +231,21 @@ describe("emitting models", () => {
       "r,Main,,Foo,,,,0001,,m,,STR:5,=123,,"
     );
   });
+  it("works with const numeric value in template", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @constValue(65535)
+      scalar constval extends U2L;
+      @id(0,1)
+      model Foo {
+        m: constval,
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,,0001,,m,,U2L,=65535,,"
+    );
+  });
   it("works with bits", async () => {
     const files = await emit(`
       using Ebus.Num;
