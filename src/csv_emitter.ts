@@ -457,6 +457,11 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     };
     const program = this.emitter.getProgram();
     const sf = this.#getCurrentSourceFile();
+    const sfp = sf?.meta?.fileParent;
+    const uf = fileParent(union.namespace!.node!);
+    if (uf?.path!==sfp?.path) {
+      return this.emitter.result.none();
+    }
     const [idModel] = program.resolveTypeReference('Ebus.Id.Id');
     if (this.includes) {
       const comment = this.#getDoc(union);
@@ -467,8 +472,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (uv.type.kind!=='Namespace') {
           return;
         }
-        const isLoad = typeof uv.name === 'string' && !!uv.name;
-        const conds = this.mapConditions(idModel, sf, program, '', uv);
+        const isLoad = typeof uv.name === 'string';
+        const conds = this.mapConditions(idModel, sf, program, '', uv, union.namespace);
         addInclude(uv.type, this.#getDoc(uv), conds, isLoad);
       });
       return this.emitter.result.declaration(name, decls.join('\n'));
@@ -487,15 +492,16 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         return;
       }
       const namespace = uv.type as Namespace;
-      const conds = this.mapConditions(idModel, sf, program, '', uv);
-      const isLoad = typeof uv.name === 'string' && uv.name;
-      if (isLoad) {
-        const referenceContext = this.#mkContext(namespace.node!, namespace, undefined, true);
+      const conds = this.mapConditions(idModel, sf, program, '', uv, union.namespace);
+      const isInclude = typeof uv.name === 'string' && uv.name.startsWith('_include');
+      const isLoad = !isInclude && typeof uv.name === 'string';
+      const referenceContext = this.#mkContext(namespace.node!, namespace, undefined, isLoad, isInclude);
+      if (isLoad || isInclude) {
         if (Object.keys(referenceContext).length && !referenceContext.exclude
         && this.#sourceFileByPath.get(referenceContext.fullname)?.meta.refCount===1) {
           this.emitter.emitTypeReference(namespace, {referenceContext}) // force emit the included file itself, once only
         }
-        addInclude(namespace, this.#getDoc(uv), conds, true);
+        addInclude(namespace, this.#getDoc(uv), conds, isLoad);
       } else {
         current.referencedBy = union;
         current.conds = conds;
@@ -607,12 +613,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return this.#mkContext(model.node as Node, model.namespace, model);
   }
 
-  #mkContext(node: Node, namespace?: Namespace, typ?: Model, forLoad = false): Context {
+  #mkContext(node: Node, namespace?: Namespace, typ?: Model, forLoad = false, forInclude = false): Context {
     // if (this.#isStdType(model) && model.name === "object") {
     //   return {};
     // }
     const currentCtx = this.emitter.getContext();
-    if (currentCtx.referencedBy && !currentCtx.isLoad) {
+    if (currentCtx.referencedBy && !currentCtx.isLoad && !currentCtx.isInclude) {
       return currentCtx;
     }
     for (let n = namespace; n; n=n.namespace) {
@@ -627,7 +633,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     let fileCircuit = fp?.path && basename(fp.path, extname(fp.path));
     // similar to nearestCircuit calculation in modelDeclaration()
     if (fileCircuit?.endsWith('_inc')) {
-      if (!this.includes && !(forLoad || currentCtx.isLoad)) {
+      if (!this.includes && !(forLoad || currentCtx.isLoad || forInclude || currentCtx.isInclude)) {
         return {exclude: true};
       }
       if (root===fileCircuit) {
@@ -649,6 +655,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       sourceFile.meta.shouldEmit = true;
       sourceFile.meta.bundledRefs = [];
       sourceFile.meta.refCount = 1;
+      sourceFile.meta.fileParent = fp;
       this.#sourceFileByPath.set(fullname, sourceFile);
     } else {
       sourceFile.meta.refCount++;
@@ -657,6 +664,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return {
       scope: sourceFile.globalScope,
       isLoad: forLoad,
+      isInclude: forInclude,
       fullname,
     };
   }

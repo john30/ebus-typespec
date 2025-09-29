@@ -769,6 +769,21 @@ describe("emitting models", () => {
         model Foo {
           uch: Num.UCH,
         }
+        union _includes {
+          _include: SecondImportfile_inc, // generates !include
+        }
+      }
+    `;
+    const secondImportTsp = `
+      import "ebus"; using Ebus;
+      namespace SecondImportfile_inc {
+        @base(1,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Me {
+          uch: Num.UCH,
+        }
       }
     `;
     const files = await emit(`
@@ -779,22 +794,32 @@ describe("emitting models", () => {
         }
         /** included stuff */
         union _includes {
-          /** loaded file */
+          /** conditionally loaded file */
           @conditionExt(Ebus.Id.Id.id, 0x08, "='EHP'")
           importfile_inc: Importfile_inc,
+          /** default loaded file */
+          SecondImportfile_inc, // generates !load
         }
       }
     `, {}, {emitNamespace: true,
-      extraSpecFiles: [{name: 'importfile_inc.tsp', code: importTsp}],
+      extraSpecFiles: [
+        {name: 'importfile_inc.tsp', code: importTsp},
+        {name: 'secondimportfile_inc.tsp', code: secondImportTsp},
+      ],
     });
     assert.strictEqual(stripHeader(files["main.csv"]),
       "*[id_08_id],scan,,,,ID,08\n"+
       "r,Circ,,Bar,,,15,0002,,\n"+
       // "# included stuff\n"+
-      "[id_08_id='EHP']!load,importfile.inc,,,loaded file"
+      "r,Circ,,Me,,,15,0101,,uch,,UCH,,,\n"+
+      "[id_08_id='EHP']!load,importfile.inc,,,conditionally loaded file"
     );
     assert.strictEqual(stripHeader(files["importfile.inc"]),
-      "r,,,Foo,,,,0001,,uch,,UCH,,,"
+      "r,,,Foo,,,,0001,,uch,,UCH,,,\n"+
+      "!include,secondimportfile.inc,,,"
+    );
+    assert.strictEqual(stripHeader(files["secondimportfile.inc"]),
+      "r,,,Me,,,,0101,,uch,,UCH,,,"
     );
   });
   it("references imported namespace models", async () => {
