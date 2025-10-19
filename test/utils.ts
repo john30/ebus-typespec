@@ -29,7 +29,6 @@ export async function emitWithDiagnostics(
   options: EbusdEmitterOptions = {},
   testOptions: TestOptions = { emitNamespace: true }
 ): Promise<[Record<string, any>, readonly Diagnostic[]]> {
-
   code = (testOptions.extraSpecFiles||[]).filter(f=>!f.main && f.name.endsWith('.tsp')).map(({name}) => `import "./${name}"; `).join('')
   + (testOptions.emitNamespace
     ? `import "ebus"; using Ebus; namespace test; ${code}`

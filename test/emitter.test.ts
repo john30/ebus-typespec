@@ -473,6 +473,25 @@ describe("emitting models", () => {
       "[id_sw>1]r,Main,,Foo,,,,0001,,"
     );
   });
+  it("works with file name condition", async () => {
+    const files = await emit(`
+    `, undefined, {extraSpecFiles: [
+      {name: '08.xxx.mc.4.HW1234.tsp', code: `
+        import "ebus"; using Ebus;
+        namespace xxx;
+
+        @id(0,1)
+        model Foo {}
+      `},
+    ]});
+    assert.strictEqual(Object.keys(files).sort().join(),
+      ['08.xxx.mc.4.HW1234.csv'].join()
+    );
+    const file = files["08.xxx.mc.4.HW1234.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,,,Foo,,,,0001,,"
+    );
+  });
   it("works with scan conditions", async () => {
     const files = await emit(`
       @id(0,1)

@@ -645,7 +645,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       // prevent root prefix
       root = '';
     }
-    const name = (fileCircuit || (typ&&this.declarationName(typ)) || '').toLowerCase();
+    const name = fileCircuit || ((typ&&this.declarationName(typ)) || '').toLowerCase();
     const fullname = `${root&&root!==name?root+'/':''}${name}`;
     let sourceFile = this.#sourceFileByPath.get(fullname);
     if (!sourceFile) {
