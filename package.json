@@ -44,21 +44,21 @@
     "*.md"
   ],
   "peerDependencies": {
-    "@typespec/compiler": "^1.4.0"
+    "@typespec/compiler": "^1.8.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "latest",
-    "@typespec/compiler": "^1.4.0",
-    "@typespec/library-linter": "~0.74.0",
+    "@typespec/compiler": "^1.8.0",
+    "@typespec/library-linter": "~0.78.0",
     "@typespec/tspd": "latest",
-    "typedoc": "^0.28.13",
+    "typedoc": "^0.28.16",
     "typedoc-plugin-markdown": "^4.9.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@typespec/asset-emitter": "^0.74.0",
-    "js-yaml": "^4.1.0"
+    "@typespec/asset-emitter": "^0.78.0",
+    "js-yaml": "^4.1.1"
   },
   "scripts": {
     "build": "tsc && npm run build:tsp",
