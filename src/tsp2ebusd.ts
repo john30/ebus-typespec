@@ -5,9 +5,34 @@ import {createWriteStream, type WriteStream} from "fs";
 import {readFile} from "node:fs/promises";
 import {createConnection} from "node:net";
 import {createInterface} from "node:readline";
-import {extname, isAbsolute, resolve} from "path";
+import {extname, isAbsolute, resolve, sep} from "path";
+
+const EBUSD_TIMEOUT = 3000;
+const MICROEBUSD_TIMEOUT = 3000;
+const SVC_TIMEOUT = 10000;
+const SVC_URL = 'https://micro.ebusd.eu/convert';
 
 let outFile: WriteStream|undefined = undefined;
+
+type MicroEbusdTarget = {id: string, auth: string, build: string, api: URL, name: string, inline?: true};
+
+const fetchTimeout = async <T>(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+  timeout: number,
+  handler: (response: Response) => Promise<T>,
+): Promise<T> => {
+  const abort = new AbortController();
+  const timer = setTimeout(() => {
+    abort.abort('request timed out');
+  }, timeout);
+  try {
+    const response = await fetch(input, {...init, signal: abort.signal});
+    return await handler(response);
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 async function run(): Promise<void> {
   const args = process.argv.slice(2);
@@ -15,6 +40,7 @@ async function run(): Promise<void> {
   let translations: string|undefined = undefined;
   let outFileName: string|undefined = undefined;
   let ebusdHostPort: [string, number]|undefined = undefined;
+  let microEbusdTarget: MicroEbusdTarget|undefined = undefined;
   for (let idx = 0; idx < args.length; idx++) {
     const arg = args[idx];
     if (arg==='-') {
@@ -26,11 +52,13 @@ async function run(): Promise<void> {
     }
     if (arg==='-h' || arg==='--help') {
       const helpTxt = [
-        'usage: tsp2ebusd [-e host[:port]] [-o outfile] [infile*]',
-        'converts eBUS TypeSpec file(s) or stdin to an ebusd CSV file or stdout.',
+        'usage: tsp2ebusd [-e host[:port]] [-m url [-i]] [-o outfile] [infile*]',
+        'converts eBUS TypeSpec file(s) or stdin to an ebusd CSV file or stdout or a micro-ebusd instance.',
         'with:',
         '  -t, --trans file         the translation JSON/YAML file',
         '  -e, --ebusd host[:port]  the ebusd host and optional port of ebusd REPL to send the CSV output to (needs to have the "--define" feature enabled)',
+        '  -m, --micro-ebusd url    the micro-ebusd URL to send the output to, complete URL or just hostname with/without "https://" prefix if needed (uses conversion service and triggers micro-ebusd to load it)',
+        '  -i, --inline             whether to send the conversion output inline to micro-ebusd (i.e. temporary only)',
         '  -o, --output file        the output file to write to instead of stdout',
         '  infile                   the input file(s) to use instead of stdin',
       ];
@@ -42,6 +70,9 @@ async function run(): Promise<void> {
     } else if (arg==='-t' || arg==='--trans') {
       translations = args[++idx];
     } else if (arg==='-e' || arg==='--ebusd') {
+      if (microEbusdTarget) {
+        throw new Error('cannot use ebusd and micro-ebusd simultaneously');
+      }
       const parts = args[++idx].split(':');
       if (!parts[0].length) {
         throw new Error('invalid ebusd host');
@@ -51,6 +82,35 @@ async function run(): Promise<void> {
         throw new Error('invalid ebusd port');
       }
       ebusdHostPort = [parts[0], ebusdPort];
+    } else if (arg==='-m' || arg==='--micro-ebusd') {
+      if (ebusdHostPort) {
+        throw new Error('cannot use ebusd and micro-ebusd simultaneously');
+      }
+      let str = args[++idx];
+      if (!str.startsWith('http') || !str.includes('://')) {
+        str = 'http://'+str;
+      }
+      const url = URL.parse(str);
+      if (!url) {
+        throw new Error('invalid micro-ebusd URL');
+      }
+      url.pathname += 'api/v1/';
+      const statusUrl = new URL(url);
+      statusUrl.pathname += 'status';
+      console.log('connecting micro-ebusd...');
+      microEbusdTarget = await fetchTimeout(statusUrl, {}, MICROEBUSD_TIMEOUT, async (ret) => {
+        const data = (await ret.json()) as {id: string, build: string, ebus: {proto: string, auth: string}};
+        if (!data?.id || !data.build || data.ebus?.proto!=='easi' || !data.ebus.auth) {
+          throw new Error('not a micro-ebusd URL');
+        }
+        return {api: url, id: data.id, auth: data.ebus.auth, build: data.build, name: 'out.csv'};
+      });
+      console.log('preparing for micro-ebusd '+microEbusdTarget.id);
+    } else if (arg==='-i' || arg==='--micro-ebusd-inline') {
+      if (!microEbusdTarget) {
+        throw new Error('pass micro-ebusd URL first');
+      }
+      microEbusdTarget.inline = true;
     } else {
       throw new Error('invalid arguments');
     }
@@ -96,8 +156,17 @@ async function run(): Promise<void> {
       }
     }
   };
-  // console.log('HERRE',process.cwd());
   const outputFiles: Record<string, string> = {};
+  const usedFiles: Record<string, string> = {};
+  const markUsed = (path: string, output: SourceFile): SourceFile => {
+    if (extname(path)==='.tsp' && !NodeHost.getLibDirs().some(d => path.startsWith(d))) {
+      const parts = path.split(sep);
+      if (!parts.includes('node_modules') && !parts.includes('lib')) {
+        usedFiles[path] = output.text;
+      }
+    }
+    return output;
+  }
   // const trace = <T>(method: string, output: T, ...args: any[]): T => {
   //   console.error(method, ...args);
   //   console.error(method+' result=', output);
@@ -110,7 +179,7 @@ async function run(): Promise<void> {
       inputFiles[path] ? path : NodeHost.realpath(path),
       // path),
     readFile: async (path) => // trace('readFile',
-      inputFiles[path] || await NodeHost.readFile(path),
+      markUsed(path, inputFiles[path] || await NodeHost.readFile(path)),
       // path),
     stat: async (path) => // trace('stat',
       inputFiles[path] ? inputSourceStat : NodeHost.stat(path),
@@ -129,21 +198,28 @@ async function run(): Promise<void> {
   if (filenames.length!=1) {
     throw new Error(`too many files emitted: ${filenames.join()}`)
   }
-  if (!ebusdHostPort) {
+  if (!ebusdHostPort && !microEbusdTarget) {
     log(outputFiles[filenames[0]]);
   } else {
     const lines = outputFiles[filenames[0]].split('\n');
-    await sendToEbusd(lines, ebusdHostPort, log);
+    if (microEbusdTarget && filenames[0].startsWith('@ebusd/ebus-typespec/')) {
+      microEbusdTarget.name = filenames[0].substring('@ebusd/ebus-typespec/'.length);
+    }
+    await sendToEbusd(lines, usedFiles, ebusdHostPort!||microEbusdTarget, log);
   }
 }
 
-const sendToEbusd = async (inputLines: string[], ebusdHostPort: [string, number], log: (message?: any, ...optionalParams: any[]) => void) => {
+const sendToEbusd = async (inputLines: string[],
+  files: Record<string, string>,
+  target: [string, number]|MicroEbusdTarget,
+  log: (message?: any, ...optionalParams: any[]) => void) => {
+  const toMicroEbusd = !Array.isArray(target);
   // find the relevant line(s) from the output
   let removeLevel: boolean|undefined=undefined;
   const lines=inputLines.filter(line => {
-    if (removeLevel===undefined) {
+    if (!toMicroEbusd && removeLevel===undefined) {
       removeLevel=line.includes(',level,');
-      return;
+      return undefined;
     }
     if (!line||line.startsWith('#')||line.startsWith('*')) return;
     return line;
@@ -156,7 +232,49 @@ const sendToEbusd = async (inputLines: string[], ebusdHostPort: [string, number]
   if (!lines.length) {
     throw new Error('no usable result');
   }
-  const conn=createConnection({port: ebusdHostPort[1], host: ebusdHostPort[0], allowHalfOpen: false});
+  if (toMicroEbusd) {
+    const body: Pick<typeof target, 'build'|'name'|'inline'> & {lines: string[], files: typeof files}
+    = {build: target.build, inline: target.inline, name: target.name, lines, files};
+    const {message, inline} = await fetchTimeout(SVC_URL, {method: 'PUT', body: JSON.stringify(body), headers: {'Content-Type': 'application/json', 'X-MAC': target.id, 'X-SIG': target.auth}}, SVC_TIMEOUT, async (ret) => {
+      let message = '';
+      let inline: Uint8Array|undefined = undefined;
+      if (target.inline && ret.ok && ret.headers.get('Content-Type')==='application/octet-stream') {
+        inline = new Uint8Array(await ret.arrayBuffer());
+      } else {
+        let data: {error?: string, details?: unknown};
+        try {
+          if (ret.ok) {
+            data = await ret.json() as typeof data;
+          } else {
+            data = {error: `conversion service returned ${ret.status} ${ret.statusText}, ${await ret.text()}`};
+          }
+        } catch (e) {
+          data = {error: `${e}`};
+        }
+        if (!data || data?.error) {
+          throw new Error('conversion: failed with '+(data?.error||'unknown error'));
+        }
+        message = 'OK';
+      }
+      return {message, inline};
+    });
+    console.log('conversion: successful'+(message?', message: '+message:inline?`, ${inline.length} inline`:''));
+    const api = new URL(target.api);
+    api.pathname += 'ebus/reload';
+    await fetchTimeout(api, inline
+      ? {method: 'PUT', body: inline, headers: {'Content-Type': 'application/octet-stream'}}
+      : {method: 'PUT', body: '{"full": true}', headers: {'Content-Type': 'application/json'}}, MICROEBUSD_TIMEOUT, async (ret) => {
+      if (ret.ok && ret.headers.get('Content-Type')==='application/json') {
+        const data = (await ret.json()) as {status: string};
+        const logs = data?.status || 'unknown';
+        console.log(`micro-ebusd ${inline?'inline ':''}reload: ${logs}`);
+        return;
+      }
+      console.error(`micro-ebusd reload: ${ret.status} ${ret.statusText}, ${await ret.text()}`);
+    });
+    return;
+  }
+  const conn=createConnection({port: target[1], host: target[0], allowHalfOpen: false});
   conn.setEncoding('utf-8');
   let timer: NodeJS.Timeout|undefined;
   try {
@@ -168,7 +286,7 @@ const sendToEbusd = async (inputLines: string[], ebusdHostPort: [string, number]
       if (!line) {
         return;
       }
-      timer=setTimeout(() => conn.destroy(), 3000);
+      timer=setTimeout(() => conn.destroy(), EBUSD_TIMEOUT);
       const cmd=`read -V -def "${line}"`;
       log(cmd);
       conn.write(cmd+'\n');
