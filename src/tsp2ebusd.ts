@@ -219,10 +219,12 @@ const sendToEbusd = async (inputLines: string[],
   const lines=inputLines.filter(line => {
     if (!toMicroEbusd && removeLevel===undefined) {
       removeLevel=line.includes(',level,');
-      return undefined;
+      return;
     }
-    if (!line||line.startsWith('#')||line.startsWith('*')) return;
-    return line;
+    if (line && !line.startsWith('#')
+      && (toMicroEbusd || !line.startsWith('*'))) {
+      return line;
+    }
   }).map(line => {
     if (!removeLevel) return line;
     const parts=line.split(',');
