@@ -6,6 +6,7 @@ import {readFile} from "node:fs/promises";
 import {createConnection} from "node:net";
 import {createInterface} from "node:readline";
 import {extname, isAbsolute, resolve, sep} from "path";
+import {EbusdEmitterOptions} from "./lib.js";
 
 const EBUSD_TIMEOUT = 3000;
 const MICROEBUSD_TIMEOUT = 3000;
@@ -38,6 +39,8 @@ async function run(): Promise<void> {
   const args = process.argv.slice(2);
   let inFiles: string[] = [];
   let translations: string|undefined = undefined;
+  let withMinMax: boolean = true;
+  let withAttrs: string = '';
   let outFileName: string|undefined = undefined;
   let ebusdHostPort: [string, number]|undefined = undefined;
   let microEbusdTarget: MicroEbusdTarget|undefined = undefined;
@@ -50,17 +53,19 @@ async function run(): Promise<void> {
       inFiles = args.slice(idx);
       break;
     }
-    if (arg==='-h' || arg==='--help') {
+    if (arg==='-?' || arg==='-h' || arg==='--help') {
       const helpTxt = [
-        'usage: tsp2ebusd [-e host[:port]] [-m url [-i]] [-o outfile] [infile*]',
+        'usage: tsp2ebusd [-e HOST[:PORT]] [-m URL [-i]] [-o OUTFILE] [INFILE*]',
         'converts eBUS TypeSpec file(s) or stdin to an ebusd CSV file or stdout or a micro-ebusd instance.',
         'with:',
-        '  -t, --trans file         the translation JSON/YAML file',
-        '  -e, --ebusd host[:port]  the ebusd host and optional port of ebusd REPL to send the CSV output to (needs to have the "--define" feature enabled)',
-        '  -m, --micro-ebusd url    the micro-ebusd URL to send the output to, complete URL or just hostname with/without "https://" prefix if needed (uses conversion service and triggers micro-ebusd to load it)',
+        '  -t, --trans FILE         the translation JSON/YAML file',
+        '  --norange                whether to not emit value range',
+        '  -a, --attrs ATTRS        additional attributes to emit',
+        '  -e, --ebusd HOST[:PORT]  the ebusd host and optional port of ebusd REPL to send the CSV output to (needs to have the "--define" feature enabled)',
+        '  -m, --micro-ebusd URL    the micro-ebusd URL to send the output to, complete URL or just hostname with/without "https://" prefix if needed (uses conversion service and triggers micro-ebusd to load it)',
         '  -i, --inline             whether to send the conversion output inline to micro-ebusd (i.e. temporary only)',
-        '  -o, --output file        the output file to write to instead of stdout (or copy to for ebusd/micro-ebusd)',
-        '  infile                   the input file(s) to use instead of stdin',
+        '  -o, --output FILE        the output file to write to instead of stdout (or copy to for ebusd/micro-ebusd)',
+        '  INFILE                   the input file(s) to use instead of stdin',
       ];
       console.log(helpTxt.join('\n'));
       return;
@@ -111,6 +116,10 @@ async function run(): Promise<void> {
         throw new Error('pass micro-ebusd URL first');
       }
       microEbusdTarget.inline = true;
+    } else if (arg==='--norange') {
+      withMinMax = false;
+    } else if (arg==='-a' || arg==='--attrs') {
+      withAttrs = args[++idx];
     } else {
       throw new Error('invalid arguments');
     }
@@ -153,7 +162,9 @@ async function run(): Promise<void> {
     options: {
       '@ebusd/ebus-typespec': {
         translations,
-      }
+        withMinMax,
+        withAttrs,
+      } satisfies EbusdEmitterOptions,
     }
   };
   const outputFiles: Record<string, string> = {};
