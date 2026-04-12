@@ -102,7 +102,7 @@ describe("decorators", () => {
       expectDiagnostics(diagnostics, {
         severity: "error",
         code: "invalid-argument",
-        message: "Argument of type '0x100' is not assignable to parameter of type 'valueof Ebus.symbol'"
+        message: "Argument of type '256' is not assignable to parameter of type 'valueof Ebus.symbol'"
       })
     });
   });
