@@ -452,7 +452,7 @@ export function getChain(program: Program, target: Model): {length: number, dds:
  * @param first the primary inherited model.
  * @param other further inherited models.
  */
-export function $inherit(context: DecoratorContext, target: Model, first: Model, ...other: Model[]) {
+export function $inherit(context: DecoratorContext, target: Model|Namespace|UnionVariant, first: Model, ...other: Model[]) {
   if (context.program.stateMap(StateKeys.inherit).has(target)) {
     reportDiagnostic(context.program, {
       code: "multiple-decorator",
@@ -470,8 +470,38 @@ export function $inherit(context: DecoratorContext, target: Model, first: Model,
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getInherit(program: Program, target: Model): Model[] {
+export function getInherit(program: Program, target: Model|Namespace|UnionVariant): Model[] {
   return program.stateMap(StateKeys.inherit).get(target);
+}
+
+/**
+ * Implementation of the `@prefixName` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param prefix the explicit prefix to use or omitted for using the namespace/union variant name.
+ */
+export function $prefixName(context: DecoratorContext, target: Namespace|UnionVariant, prefix?: string) {
+  if (prefix!==undefined && !/^[a-z_][a-z0-9_]*$/i.test(prefix)) {
+    reportDiagnostic(context.program, {
+      code: "invalid-name",
+      target: context.getArgumentTarget(0)!,
+      format: { value: prefix },
+    });
+  }
+  context.program.stateMap(StateKeys.prefixName).set(target, prefix??null);
+}
+
+/**
+ * Accessor for the `@prefixName` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target (or the target name) or undefined.
+ */
+export function getPrefixName(program: Program, target: Namespace|UnionVariant): string|undefined {
+  const ret = program.stateMap(StateKeys.prefixName).get(target);
+  return ret===null ? target.name as string : ret;
 }
 
 const parseHex = (s: string|number[]): number[]|undefined|null => {

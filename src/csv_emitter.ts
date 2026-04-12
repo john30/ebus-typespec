@@ -6,7 +6,7 @@ import jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
   getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
-  getQq, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr
+  getPrefixName, getQq, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
@@ -80,6 +80,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     let nearestNamespace: string|undefined;
     let nearestCircuit: string|undefined;
     let nearestZz: number|undefined;
+    let nearestInherit: Model[]|undefined;
+    let prefix = '';
     for (const frame of [model, referencedBy]) {
       if (!frame) {
         continue;
@@ -95,6 +97,15 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }
         if (!nearestNamespace) {
           nearestNamespace = n.name;
+        }
+        if (!nearestInherit) {
+          nearestInherit = getInherit(program, n);
+        }
+        if (frame!==referencedBy) {
+          const add = getPrefixName(program, n);
+          if (add) {
+            prefix = add+prefix;
+          }
         }
         const zz = getZz(program, n);
         if (zz!==undefined) {
@@ -126,7 +137,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         nearestCircuit = nearestNamespace && nearestNamespace.toLowerCase()===fileCircuit ? nearestNamespace : fileCircuit;
       }
     }
-    return {nearestCircuit, nearestZz};
+    return {nearestCircuit, nearestZz, nearestInherit, prefix};
   }
   modelDeclaration(model: Model, name: string): EmitterOutput<string> {
     const program = this.emitter.getProgram();
@@ -136,7 +147,16 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       return this.emitter.result.none();
     }
     const sf = this.#getCurrentSourceFile();
-    let {nearestCircuit, nearestZz} = this.getNearestZzNamespace(sf, model, context.referencedBy);
+    let {nearestCircuit, nearestZz, nearestInherit, prefix} = this.getNearestZzNamespace(sf, model, context.referencedBy);
+    if (context.referencedBy && context.inherit) {
+      nearestInherit = context.inherit;
+    }
+    if (context.referencedBy && context.namePrefix) {
+      prefix = context.namePrefix;
+    }
+    if (prefix && !name.startsWith(prefix)) {
+      name = prefix+name;
+    }
     const circuit = nearestCircuit||'';
     if (nearestCircuit) {
       nearestCircuit = nearestCircuit.split('.')[0]; // strip off further other suffixes
@@ -151,7 +171,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     }
     const [idModel] = program.resolveTypeReference('Ebus.Id.Id');
     const conds = (context.conds||'')+this.mapConditions(idModel, sf, program, circuit, model, model.namespace);
-    for (const inheritFrom of getInherit(program, model)??[undefined]) {
+    for (const inheritFrom of (getInherit(program, model)||nearestInherit)??[undefined]) {
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
       const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
       let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? nearestZz;
@@ -232,6 +252,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         }); // impossible by decorators anyway
       } else {
         this.#idDuplicateTracker.track([sf?.path||'', conds, direction, qq, zz, ...id, idsuffix].join(), model);
+        this.#idDuplicateTracker.track([sf?.path||'', conds, direction, qq, zz, name].join(), model);
       }
       if (zz!==undefined && basename(sf.path).startsWith(hex(zz)+'.')) {
         // avoid inline zz when already part of file name
@@ -440,9 +461,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   }
 
   unionDeclaration(union: Union, name: string): EmitterOutput<string> {
-    if (name!=='_includes') {
-      return this.emitter.result.none();
-    }
+    const isIncludes = name==='_includes';
     const decls: string[] = [];
     const addInclude = (ns: Namespace, comment?: string, conds?: string, isLoad = false) => {
       const fp = fileParent(ns.node as Node);
@@ -463,7 +482,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       return this.emitter.result.none();
     }
     const [idModel] = program.resolveTypeReference('Ebus.Id.Id');
-    if (this.includes) {
+    if (isIncludes && this.includes) {
       const comment = this.#getDoc(union);
       if (comment) {
         decls.push(`# ${comment}`);
@@ -493,9 +512,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
       const namespace = uv.type as Namespace;
       const conds = this.mapConditions(idModel, sf, program, '', uv, union.namespace);
-      const isInclude = typeof uv.name === 'string' && uv.name.startsWith('_include');
-      const isLoad = !isInclude && typeof uv.name === 'string';
-      const referenceContext = this.#mkContext(namespace.node!, namespace, undefined, isLoad, isInclude);
+      const isInclude = isIncludes && typeof uv.name === 'string' && uv.name.startsWith('_include');
+      const isLoad = isIncludes && !isInclude && typeof uv.name === 'string';
+      const isCopy = isIncludes ? undefined : getInherit(program, uv);
+      const referenceContext = this.#mkContext(namespace.node!, namespace, undefined, isLoad, isInclude, isCopy);
       if (isLoad || isInclude) {
         if (Object.keys(referenceContext).length && !referenceContext.exclude
         && this.#sourceFileByPath.get(referenceContext.fullname)?.meta.refCount===1) {
@@ -505,7 +525,11 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       } else {
         current.referencedBy = union;
         current.conds = conds;
+        current.namePrefix = getPrefixName(program, uv);
+        current.inherit = getInherit(program, uv);
         this.emitter.emitTypeReference(namespace, {referenceContext: current})
+        delete current.inherit;
+        delete current.namePrefix;
         delete current.conds;
         delete current.referencedBy;
       }
@@ -613,12 +637,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     return this.#mkContext(model.node as Node, model.namespace, model);
   }
 
-  #mkContext(node: Node, namespace?: Namespace, typ?: Model, forLoad = false, forInclude = false): Context {
+  #mkContext(node: Node, namespace?: Namespace, typ?: Model, forLoad = false, forInclude = false, forCopy?: Model[]): Context {
     // if (this.#isStdType(model) && model.name === "object") {
     //   return {};
     // }
     const currentCtx = this.emitter.getContext();
-    if (currentCtx.referencedBy && !currentCtx.isLoad && !currentCtx.isInclude) {
+    if (currentCtx.referencedBy && !currentCtx.isLoad && !currentCtx.isInclude && !currentCtx.isCopy) {
       return currentCtx;
     }
     for (let n = namespace; n; n=n.namespace) {
@@ -665,6 +689,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       scope: sourceFile.globalScope,
       isLoad: forLoad,
       isInclude: forInclude,
+      isCopy: forCopy,
       fullname,
     };
   }

@@ -120,6 +120,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`The inheritance is too deep in ${"ref"}.`,
       },
     },
+    "invalid-name": {
+      severity: "error",
+      messages: {
+        default: paramMessage`The prefix name "${"value"}" is invalid.`,
+      },
+    },
     "duplicate-name": {
       severity: "error",
       messages: {
@@ -159,6 +165,7 @@ export const $lib = createTypeSpecLibrary({
     id: { description: "message ID" },
     chain: { description: "message chain" },
     inherit: { description: "inherited model(s)" },
+    prefixName: { description: "prefix name" },
     example: { description: "example data" },
     bcd: { description: 'BCD encoding' },
     hex: { description: 'HEX encoding' },

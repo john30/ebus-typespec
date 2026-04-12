@@ -111,6 +111,30 @@ describe("emitting models", () => {
       "r,Main,,Foo,,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x"
     );
   });
+  it("works with @inherit from namespace", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @zz(8)
+      @base(0,1,2)
+      /** a base */
+      model base {
+        /** the b */
+        b: UCH,
+      }
+      @inherit(base)
+      namespace heat {
+        @ext(3,4)
+        model Foo {
+          /** an x */
+          x: UCH,
+        }
+      }
+    `, undefined, {emitNamespace: true, emitTypes: ['test.heat.Foo']});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x"
+    );
+  });
   it("works with multi inherit", async () => {
     const files = await emit(`
       using Ebus.Num;
@@ -870,6 +894,165 @@ describe("emitting models", () => {
     assert.strictEqual(stripHeader(files["importfile.inc"]),
       "r,,,Foo,,,,0001,,uch,,UCH,,,"
     );
+  });
+  it("does not use namespace name as prefix without ,@prefixName", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      namespace X {
+        @zz(0x08)
+        @id(0x01, 0x02)
+        model Foo {
+          x: UCH,
+        }
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,08,0102,,x,,UCH,,,"
+    );
+  });
+  it("uses namespace name as prefix with @prefixName", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @prefixName
+      namespace X {
+        @zz(0x08)
+        @id(0x01, 0x02)
+        model Foo {
+          x: UCH,
+        }
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,XFoo,,,08,0102,,x,,UCH,,,"
+    );
+  });
+  it("uses explicit @prefixName", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @prefixName("ex")
+      namespace X {
+        @zz(0x08)
+        @id(0x01, 0x02)
+        model Foo {
+          x: UCH,
+        }
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,ExFoo,,,08,0102,,x,,UCH,,,"
+    );
+  });
+  it("copies imported namespace models with @prefixName", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      namespace Importfile_inc {
+        @base(0,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _copy {
+          /** included file */
+          @prefixName
+          Renamed: Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,RenamedFoo,,,15,0001,,uch,,UCH,,,"
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+  it("copies imported namespace models with explicit @prefixName", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      namespace Importfile_inc {
+        @base(0,1)
+        model r {}
+        @inherit(r)
+        @ext
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _copy {
+          /** included file */
+          @prefixName("RenameMe")
+          Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,RenameMeFoo,,,15,0001,,uch,,UCH,,,"
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+  it("uses @inherit from copy union variant and replaces namespace prefix", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      @base(0,1)
+      model r {}
+      @inherit(r)
+      @prefixName("Dont")
+      namespace Importfile_inc {
+        @ext
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        @base(3,2)
+        model r {}
+        /** included stuff */
+        union _copy {
+          /** included file */
+          @inherit(r)
+          @prefixName
+          Renamed: Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,RenamedFoo,,,15,0302,,uch,,UCH,,,"
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
   });
   it("emit diagnostic on invalid type", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
