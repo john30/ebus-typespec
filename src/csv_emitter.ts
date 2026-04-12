@@ -5,7 +5,7 @@ import {DuplicateTracker} from "@typespec/compiler/utils";
 import jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
-  getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
+  getAttrs, getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
   getPrefixName, getQq, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
@@ -28,11 +28,22 @@ const normName: Record<'circuit'|'message'|'field', (s?: string) => string|undef
 export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   #idDuplicateTracker = new DuplicateTracker<string, DiagnosticTarget>();
   #sourceFileByPath = new Map<string, SourceFile<any>>();
+  private readonly withUnitCategory: boolean;
+  private readonly withAttributes?: string[];
 
   constructor(emitter: AssetEmitter<string, EbusdEmitterOptions>, private includes?: boolean,
     private withMinMax?: boolean,
+    withAttrs?: string,
     private translations = new Map<string, string>()) {
     super(emitter);
+    let withUnitCategory = false;
+    if (withAttrs) {
+      const attrs = withAttrs.split(',').map(k => k.trim()).filter(k => k);
+      withUnitCategory = attrs.includes('category');
+      const withAttributes = attrs.filter(k => k!=='category');
+      this.withAttributes = withAttributes.length ? withAttributes.sort() : undefined;
+    }
+    this.withUnitCategory = withUnitCategory;
   }
 
   programContext(program: Program): Context {
@@ -281,7 +292,13 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     let lengthReported = false;
     let commentProp: ModelProperty|undefined;
     const chainFactor = getChain(program, model) ? 24 : 1; // something like 2x 12 months as limit
-    type Attrs = {pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean, divisor?: number, values?: string[], constValue?: string, min?: number, max?: number, step?: number, unit?: string, comment?: string};
+    type Attrs = {
+      pname: string, name: string, length?: number, remainLength?: boolean, dir?: 'm'|'s', writeOnly?: boolean,
+      divisor?: number, values?: string[], constValue?: string, min?: number, max?: number, step?: number,
+      unit?: [string, string?],
+      attrs?: {[key: string]: string|true},
+      comment?: string,
+    };
     for (let idx = 0; idx<properties.length; idx++) {
       const p = properties[idx];
       if (p.type.kind!=='Scalar' && p.type.kind!=='ModelProperty') {
@@ -396,6 +413,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
           }
         }
         res.unit ??= getUnit(program, s);
+        res.attrs ??= getAttrs(program, s);
         if (!isOwn) {
           if (commentProp) {
             res.comment ??= this.#getDoc(commentProp);
@@ -447,7 +465,9 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         typ,
         divisor,
         ...(this.withMinMax ? [res.min!==undefined && res.max!==undefined ? `${res.min}-${res.max}${res.step!==undefined?`:${res.step}`:''}` : ''] : []),
-        res.unit,
+        res.unit?.[0],
+        ...(this.withUnitCategory ? [res.unit?.[1] ? res.unit[1] : ''] : []),
+        ...(this.withAttributes ? this.withAttributes.map(k => res.attrs?.[k] ? res.attrs[k]===true?'true':escape(res.attrs[k]) : '') : []),
         escape(res.comment),
       ];
       if (first) {
@@ -600,7 +620,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         `type,circuit,level,name,comment,qq,zz,pbsb,id,`
         +`*name,part,type,divisor/values,`
         +(this.withMinMax?'range,':'')
-        +`unit,comment\n`
+        +`unit,`
+        +(this.withUnitCategory?'category,':'')
+        +(this.withAttributes?this.withAttributes.join()+',':'')
+        +`comment\n`
         +b.reduce()
         +content.filter(l=>l).join('\n')+'\n',
       path: sourceFile.path,
@@ -707,7 +730,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   
 }
 
-export async function getEbusdEmitterClass(host: CompilerHost, includes?: boolean, withMinMax?: boolean, translationFile?: string): Promise<typeof EbusdEmitter> {
+export async function getEbusdEmitterClass(host: CompilerHost, includes?: boolean, withMinMax?: boolean, withAttrs?: string, translationFile?: string): Promise<typeof EbusdEmitter> {
   let translations: Map<string, string>;
   if (translationFile) {
     const content = (await host.readFile(translationFile)).text;
@@ -726,7 +749,7 @@ export async function getEbusdEmitterClass(host: CompilerHost, includes?: boolea
 
   class ParamedEbusdEmitter extends EbusdEmitter {
     constructor(emitter: AssetEmitter<string, EbusdEmitterOptions>) {
-      super(emitter, includes, withMinMax, translations);
+      super(emitter, includes, withMinMax, withAttrs, translations);
     }
   };
   return ParamedEbusdEmitter;
@@ -735,7 +758,7 @@ export async function getEbusdEmitterClass(host: CompilerHost, includes?: boolea
 export async function $onEmit(context: EmitContext<EbusdEmitterOptions>) {
   const emitter =
   // context.options["file-type"]==='csv'?
-  createAssetEmitter(context.program, await getEbusdEmitterClass(context.program.host, context.options.includes, context.options.withMinMax, context.options.translations), context);
+  createAssetEmitter(context.program, await getEbusdEmitterClass(context.program.host, context.options.includes, context.options.withMinMax, context.options.withAttrs, context.options.translations), context);
   emitter.emitProgram();
   await emitter.writeOutput();
 }

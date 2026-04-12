@@ -718,9 +718,10 @@ export function getOut(program: Program, target: ModelProperty): {out: boolean, 
  * @param context Decorator context.
  * @param target Decorator target.
  * @param value the value to set.
+ * @param category the optional category.
  */
-export function $unit(context: DecoratorContext, target: Scalar|ModelProperty, value?: string) {
-  context.program.stateMap(StateKeys.unit).set(target, value);
+export function $unit(context: DecoratorContext, target: Scalar|ModelProperty, value: string, category?: string) {
+  context.program.stateMap(StateKeys.unit).set(target, [value, category]);
 }
 
 /**
@@ -730,8 +731,36 @@ export function $unit(context: DecoratorContext, target: Scalar|ModelProperty, v
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getUnit(program: Program, target: Scalar|ModelProperty): string | undefined {
+export function getUnit(program: Program, target: Scalar|ModelProperty): [string, string?] | undefined {
   return program.stateMap(StateKeys.unit).get(target);
+}
+
+/**
+ * Implementation of the `@attr` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param name the name of the attribute.
+ * @param value the optional attribute value (can be omitted for boolean).
+ */
+export function $attr(context: DecoratorContext, target: Scalar|ModelProperty, name: string, value?: string) {
+  let values = context.program.stateMap(StateKeys.attr).get(target);
+  if (!values) {
+    values = {};
+    context.program.stateMap(StateKeys.attr).set(target, values);
+  }
+  values[name] = value ?? true;
+}
+
+/**
+ * Accessor for the `@attr` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getAttrs(program: Program, target: Scalar|ModelProperty): {[key: string]: string|true} | undefined {
+  return program.stateMap(StateKeys.attr).get(target);
 }
 
 /**

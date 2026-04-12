@@ -60,6 +60,12 @@ File name with translations to use.
 
 Emit min+max values
 
+### `withAttrs`
+
+**Type:** `string`
+
+Name(s) of additional attributes to emit separated by comma, e.g. 'category' for unit category
+
 ## Linter usage
 
 Add the following in `tspconfig.yaml`:
@@ -93,6 +99,7 @@ Available ruleSets:
 
 ### Ebus
 
+- [`@attr`](#@attr)
 - [`@auth`](#@auth)
 - [`@base`](#@base)
 - [`@chain`](#@chain)
@@ -109,12 +116,32 @@ Available ruleSets:
 - [`@out`](#@out)
 - [`@passive`](#@passive)
 - [`@poll`](#@poll)
+- [`@prefixName`](#@prefixname)
 - [`@qq`](#@qq)
 - [`@step`](#@step)
 - [`@unit`](#@unit)
 - [`@values`](#@values)
 - [`@write`](#@write)
 - [`@zz`](#@zz)
+
+#### `@attr`
+
+Define an additional attribute.
+
+```typespec
+@Ebus.attr(name: valueof string, value?: valueof string)
+```
+
+##### Target
+
+`Scalar | ModelProperty`
+
+##### Parameters
+
+| Name  | Type             | Description                                                |
+| ----- | ---------------- | ---------------------------------------------------------- |
+| name  | `valueof string` | the name of the attribute.                                 |
+| value | `valueof string` | the optional attribute value (can be omitted for boolean). |
 
 #### `@auth`
 
@@ -355,7 +382,7 @@ Define the inherited model(s).
 
 ##### Target
 
-`Model`
+`Model | Namespace | UnionVariant`
 
 ##### Parameters
 
@@ -415,6 +442,24 @@ Define the poll priority (only for active read).
 | ----- | --------------- | ------------------------------------ |
 | value | `valueof uint8` | the poll priority (between 1 and 9). |
 
+#### `@prefixName`
+
+Define a name prefix for contained/referenced model(s).
+
+```typespec
+@Ebus.prefixName(prefix?: valueof string)
+```
+
+##### Target
+
+`Namespace | UnionVariant`
+
+##### Parameters
+
+| Name   | Type             | Description                                                                       |
+| ------ | ---------------- | --------------------------------------------------------------------------------- |
+| prefix | `valueof string` | the explicit prefix to use or omitted for using the namespace/union variant name. |
+
 #### `@qq`
 
 Define the source address.
@@ -453,10 +498,10 @@ Define the increment/decrement step value (useful in combination with `@minValue
 
 #### `@unit`
 
-Define the unit.
+Define the unit and optional category.
 
 ```typespec
-@Ebus.unit(value: valueof string)
+@Ebus.unit(value: valueof string, category?: valueof string)
 ```
 
 ##### Target
@@ -465,9 +510,10 @@ Define the unit.
 
 ##### Parameters
 
-| Name  | Type             | Description |
-| ----- | ---------------- | ----------- |
-| value | `valueof string` | the unit.   |
+| Name     | Type             | Description            |
+| -------- | ---------------- | ---------------------- |
+| value    | `valueof string` | the unit.              |
+| category | `valueof string` | the optional category. |
 
 #### `@values`
 

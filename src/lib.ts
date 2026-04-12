@@ -9,6 +9,8 @@ export interface EbusdEmitterOptions {
   translations?: string;
   /** Emit min+max values. */
   withMinMax?: boolean;
+  /** Additional attributes to emit, separated by comma. */
+  withAttrs?: string;
 }
 
 export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
@@ -29,7 +31,13 @@ export const EmitterOptionsSchema: JSONSchemaType<EbusdEmitterOptions> = {
       type: "boolean",
       nullable: true,
       description: "Emit min+max values"
-    }
+    },
+    withAttrs: {
+      type: "string",
+      nullable: true,
+      description: "Name(s) of additional attributes to emit separated by comma, e.g. 'category' for unit category",
+      pattern: "^ *[a-zA-Z][a-zA-Z0-9]* *(, *[a-zA-Z][a-zA-Z0-9]+ *)*$"
+    },
   },
 }
 
@@ -172,7 +180,8 @@ export const $lib = createTypeSpecLibrary({
     maxBits: { description: 'max number of bits' },
     out: { description: 'outbound/inbound message part' },
     reverse: { description: "reverse representation" },
-    unit: { description: "unit" },
+    unit: { description: "unit and optional category" },
+    attr: { description: "additional attribute" },
     divisor: { description: "divisor" },
     step: { description: "step" },
     values: { description: "known values" },

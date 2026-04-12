@@ -126,10 +126,18 @@ extern dec out(target: ModelProperty, writeOnly?: valueof boolean);
 extern dec in(target: ModelProperty, writeOnly?: valueof boolean);
 
 /**
- * Define the unit.
+ * Define the unit and optional category.
  * @param value the unit.
+ * @param category the optional category.
  */
-extern dec unit(target: numeric|ModelProperty, value: valueof string);
+extern dec unit(target: numeric|ModelProperty, value: valueof string, category?: valueof string);
+
+/**
+ * Define an additional attribute.
+ * @param name the name of the attribute.
+ * @param value the optional attribute value (can be omitted for boolean).
+ */
+extern dec attr(target: Scalar|ModelProperty, name: valueof string, value?: valueof string);
 
 /**
  * Define the divisor.

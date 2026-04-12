@@ -6,14 +6,15 @@ import {emit, emitWithDiagnostics} from "./utils.js";
 const headerPrefix =
   `type,circuit,level,name,comment,qq,zz,pbsb,id,`
   +`*name,part,type,divisor/values`;
-const headerSuffix =  `,unit,comment\n`;
+const headerUnit =  `,unit`;
+const headerSuffix =  `,comment\n`;
 const defaultLines = ['*r', '*w', '*u', '*uw'];
-const stripHeader = (s: string, withMinMax?: boolean) => {
+const stripHeader = (s: string, withMinMax?: boolean, withAttrs?: string) => {
   if (!s) {
     return s;
   }
   if (s.startsWith(headerPrefix)) {
-    const headerLine = headerPrefix+(withMinMax?',range':'')+headerSuffix;
+    const headerLine = headerPrefix+(withMinMax?',range':'')+headerUnit+(withAttrs?','+withAttrs:'')+headerSuffix;
     if (s.startsWith(headerLine)) {
       s = s.substring(headerLine.length);
     }
@@ -1385,6 +1386,35 @@ describe("emitting models", () => {
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file, true),
       'r,Main,,Foo,,,,0706,,value,,SIN,,,,',
+    );
+  });
+  it("emits unit category", async () => {
+    const files = await emit(`
+      @id(7,6)
+      model Foo  {
+        @unit("°C", "temperature")
+        value: Num.UCH;
+      }
+    `, {withAttrs: "category,other"});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file, false, 'category,other'),
+      'r,Main,,Foo,,,,0706,,value,,UCH,,°C,temperature,,',
+    );
+  });
+  it("emits unit category, other attributes, and min/max", async () => {
+    const files = await emit(`
+      @id(7,6)
+      model Foo  {
+        /** the temperature, steps of 2 */
+        @unit("°C", "temperature")
+        @minValue(0) @maxValue(30) @step(2)
+        @attr("other", "none")
+        value: Num.UCH;
+      }
+    `, {withMinMax: true, withAttrs: "category,other"});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file, true, 'category,other'),
+      'r,Main,,Foo,,,,0706,,value,,UCH,,0-30:2,°C,temperature,none,"the temperature, steps of 2"',
     );
   });
 });
