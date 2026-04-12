@@ -59,7 +59,7 @@ async function run(): Promise<void> {
         '  -e, --ebusd host[:port]  the ebusd host and optional port of ebusd REPL to send the CSV output to (needs to have the "--define" feature enabled)',
         '  -m, --micro-ebusd url    the micro-ebusd URL to send the output to, complete URL or just hostname with/without "https://" prefix if needed (uses conversion service and triggers micro-ebusd to load it)',
         '  -i, --inline             whether to send the conversion output inline to micro-ebusd (i.e. temporary only)',
-        '  -o, --output file        the output file to write to instead of stdout',
+        '  -o, --output file        the output file to write to instead of stdout (or copy to for ebusd/micro-ebusd)',
         '  infile                   the input file(s) to use instead of stdin',
       ];
       console.log(helpTxt.join('\n'));
@@ -198,14 +198,17 @@ async function run(): Promise<void> {
   if (filenames.length!=1) {
     throw new Error(`too many files emitted: ${filenames.join()}`)
   }
+  const output = outputFiles[filenames[0]];
   if (!ebusdHostPort && !microEbusdTarget) {
-    log(outputFiles[filenames[0]]);
+    log(output);
   } else {
-    const lines = outputFiles[filenames[0]].split('\n');
+    if (outFile) {
+      log(output);
+    }
     if (microEbusdTarget && filenames[0].startsWith('@ebusd/ebus-typespec/')) {
       microEbusdTarget.name = filenames[0].substring('@ebusd/ebus-typespec/'.length);
     }
-    await sendToEbusd(lines, usedFiles, ebusdHostPort!||microEbusdTarget, log);
+    await sendToEbusd(output.split('\n'), usedFiles, ebusdHostPort!||microEbusdTarget, log);
   }
 }
 
