@@ -1,5 +1,5 @@
 import type {
-  DecoratorContext, Enum, IntrinsicScalarName, Model, ModelProperty, Namespace, Numeric, Program, Scalar, UnionVariant
+  DecoratorContext, Enum, IntrinsicScalarName, Model, ModelProperty, Namespace, Numeric, Program, Scalar, Union, UnionVariant
 } from "@typespec/compiler";
 import {
   getPropertyType, isNumeric, isNumericType, setTypeSpecNamespace
@@ -452,7 +452,7 @@ export function getChain(program: Program, target: Model): {length: number, dds:
  * @param first the primary inherited model.
  * @param other further inherited models.
  */
-export function $inherit(context: DecoratorContext, target: Model|Namespace|UnionVariant, first: Model, ...other: Model[]) {
+export function $inherit(context: DecoratorContext, target: Model|Namespace|Union|UnionVariant, first: Model, ...other: Model[]) {
   if (context.program.stateMap(StateKeys.inherit).has(target)) {
     reportDiagnostic(context.program, {
       code: "multiple-decorator",
@@ -470,8 +470,29 @@ export function $inherit(context: DecoratorContext, target: Model|Namespace|Unio
  * @param target Decorator target.
  * @returns value if provided on the given target or undefined.
  */
-export function getInherit(program: Program, target: Model|Namespace|UnionVariant): Model[] {
+export function getInherit(program: Program, target: Model|Namespace|Union|UnionVariant): Model[] {
   return program.stateMap(StateKeys.inherit).get(target);
+}
+
+/**
+ * Implementation of the `@readonly` decorator.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ */
+export function $readonly(context: DecoratorContext, target: Model) {
+  context.program.stateMap(StateKeys.readonly).set(target, true);
+}
+
+/**
+ * Accessor for the `@readonly` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns value if provided on the given target or undefined.
+ */
+export function getReadonly(program: Program, target: Model): boolean {
+  return program.stateMap(StateKeys.readonly).has(target);
 }
 
 /**
@@ -481,7 +502,7 @@ export function getInherit(program: Program, target: Model|Namespace|UnionVarian
  * @param target Decorator target.
  * @param prefix the explicit prefix to use or omitted for using the namespace/union variant name.
  */
-export function $prefixName(context: DecoratorContext, target: Namespace|UnionVariant, prefix?: string) {
+export function $prefixName(context: DecoratorContext, target: Namespace|Union|UnionVariant, prefix?: string) {
   if (prefix!==undefined && !/^[a-z_][a-z0-9_]*$/i.test(prefix)) {
     reportDiagnostic(context.program, {
       code: "invalid-name",
@@ -499,7 +520,7 @@ export function $prefixName(context: DecoratorContext, target: Namespace|UnionVa
  * @param target Decorator target.
  * @returns value if provided on the given target (or the target name) or undefined.
  */
-export function getPrefixName(program: Program, target: Namespace|UnionVariant): string|undefined {
+export function getPrefixName(program: Program, target: Namespace|Union|UnionVariant): string|undefined {
   const ret = program.stateMap(StateKeys.prefixName).get(target);
   return ret===null ? target.name as string : ret;
 }

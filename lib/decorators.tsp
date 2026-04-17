@@ -97,13 +97,18 @@ extern dec chain(target: Model, length: valueof uint8, dd: valueof symbol[], ...
  * Define the inherited model(s).
  * @param models inherited models.
  */
-extern dec inherit(target: Model|Namespace|UnionVariant, ...models: Model[]);
+extern dec inherit(target: Model|Namespace|Union|UnionVariant, ...models: Model[]);
+
+/**
+ * Define a model as read only.
+ */
+extern dec readonly(target: Model);
 
 /**
  * Define a name prefix for contained/referenced model(s).
  * @param prefix the explicit prefix to use or omitted for using the namespace/union variant name.
  */
-extern dec prefixName(target: Namespace|UnionVariant, prefix?: valueof string);
+extern dec prefixName(target: Namespace|Union|UnionVariant, prefix?: valueof string);
 
 /**
  * Define a data example.

@@ -118,6 +118,7 @@ Available ruleSets:
 - [`@poll`](#@poll)
 - [`@prefixName`](#@prefixname)
 - [`@qq`](#@qq)
+- [`@readonly`](#@readonly)
 - [`@step`](#@step)
 - [`@unit`](#@unit)
 - [`@values`](#@values)
@@ -382,7 +383,7 @@ Define the inherited model(s).
 
 ##### Target
 
-`Model | Namespace | UnionVariant`
+`Model | Namespace | Union | UnionVariant`
 
 ##### Parameters
 
@@ -452,7 +453,7 @@ Define a name prefix for contained/referenced model(s).
 
 ##### Target
 
-`Namespace | UnionVariant`
+`Namespace | Union | UnionVariant`
 
 ##### Parameters
 
@@ -477,6 +478,22 @@ Define the source address.
 | Name  | Type                        | Description            |
 | ----- | --------------------------- | ---------------------- |
 | value | [valueof `source`](#source) | the source address QQ. |
+
+#### `@readonly`
+
+Define a model as read only.
+
+```typespec
+@Ebus.readonly
+```
+
+##### Target
+
+`Model`
+
+##### Parameters
+
+None
 
 #### `@step`
 

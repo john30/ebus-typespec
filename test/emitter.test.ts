@@ -159,6 +159,29 @@ describe("emitting models", () => {
       "w,Main,,Foo,,,,0001,,x,,UCH,,,"
     );
   });
+  it("works with multi inherit and readonly", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @base(0,1)
+      model r {
+      }
+      @write
+      @base(0,1)
+      model w {
+      }
+      @ext
+      @inherit(r,w)
+      @readonly
+      model Foo {
+        x: UCH,
+        y?: UCH,
+      }
+    `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,,,,0001,,x,,UCH,,,,y,,UCH,,,"
+    );
+  });
   it("works with multi inherit and limit in", async () => {
     const files = await emit(`
       using Ebus.Num;
@@ -896,7 +919,7 @@ describe("emitting models", () => {
       "r,,,Foo,,,,0001,,uch,,UCH,,,"
     );
   });
-  it("does not use namespace name as prefix without ,@prefixName", async () => {
+  it("does not use namespace name as prefix without @prefixName", async () => {
     const files = await emit(`
       using Ebus.Num;
       namespace X {
@@ -1052,6 +1075,125 @@ describe("emitting models", () => {
     assert.strictEqual(stripHeader(files["main.csv"]),
       "r,Circ,,Bar,,,15,0002,,\n"+
       "r,Circ,,RenamedFoo,,,15,0302,,uch,,UCH,,,"
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+  it("uses @inherit from copy union and replaces namespace prefix", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      @base(0,1)
+      model r {}
+      @inherit(r)
+      @prefixName("Dont")
+      namespace Importfile_inc {
+        @ext
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        @base(3,2)
+        model r {}
+        @inherit(r)
+        /** included stuff */
+        union _copy {
+          /** included file */
+          @prefixName
+          Renamed: Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,RenamedFoo,,,15,0302,,uch,,UCH,,,"
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+  it("uses multi @inherit from copy union and replaces namespace prefix", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      @base(0,3)
+      model r {}
+      @base(0,4)
+      @write
+      model w {}
+      @inherit(r,w)
+      @prefixName("Dont")
+      namespace Importfile_inc {
+        @ext
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _copy {
+          /** included file */
+          @prefixName
+          Renamed: Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,RenamedFoo,,,15,0003,,uch,,UCH,,,\n"+
+      "w,Circ,,RenamedFoo,,,15,0004,,uch,,UCH,,,"
+    );
+    assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
+  });
+  it("uses multi @inherit from copy union with readonly and replaces namespace prefix", async () => {
+    const importTsp = `
+      import "ebus"; using Ebus;
+      @base(0,3)
+      model r {}
+      @base(0,4)
+      @write
+      model w {}
+      @inherit(r,w)
+      @prefixName("Dont")
+      namespace Importfile_inc {
+        @ext
+        @readonly
+        model Foo {
+          uch: Num.UCH,
+        }
+      }
+    `;
+    const files = await emit(`
+      @zz(0x15)
+      namespace Circ {
+        @id(0,2)
+        model Bar {
+        }
+        /** included stuff */
+        union _copy {
+          /** included file */
+          @prefixName
+          Renamed: Importfile_inc,
+        }
+      }
+    `, {}, {emitNamespace: true,
+      extraSpecFiles: [{name: 'Importfile_inc.tsp', code: importTsp}],
+    });
+    assert.strictEqual(stripHeader(files["main.csv"]),
+      "r,Circ,,Bar,,,15,0002,,\n"+
+      "r,Circ,,RenamedFoo,,,15,0003,,uch,,UCH,,,"
     );
     assert.strictEqual(Object.keys(files).length, 1); // no other fiile emitted
   });

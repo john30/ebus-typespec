@@ -173,6 +173,7 @@ export const $lib = createTypeSpecLibrary({
     id: { description: "message ID" },
     chain: { description: "message chain" },
     inherit: { description: "inherited model(s)" },
+    readonly: { description: "limit inherited model(s) to read only" },
     prefixName: { description: "prefix name" },
     example: { description: "example data" },
     bcd: { description: 'BCD encoding' },

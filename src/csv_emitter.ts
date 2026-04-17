@@ -6,7 +6,7 @@ import jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
   getAttrs, getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
-  getPrefixName, getQq, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr
+  getPrefixName, getQq, getReadonly, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
@@ -53,18 +53,19 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
     };
   }
 
-  mapConditions(idModel: Type|undefined, sf: SourceFile<object>, program: Program, circuit: string, model: Model|UnionVariant, fallbackNs?: Namespace): string {
+  mapConditions(idModel: Type|undefined, sf: SourceFile<object>, program: Program, circuit: string, model: Model|UnionVariant, fallbackNs?: Namespace, prefix?: string): string {
     const conds: [ModelProperty|Model, number|undefined, ...string[]][] = getConditions(program, model)||(fallbackNs&&getConditions(program, fallbackNs));
     // const ns = target.kind==='UnionVariant' ? target.type.kind==='Namespace' ? target.type.namespace : undefined : target.namespace;
     // let ownZz = ns ? getZz(context.program, ns) : undefined;
+    const context = this.emitter.getContext();
     return conds?.map(c => {
       const values = c.length>2 ? (c[2].match(/^[<>=]/)?'':'=')+c.slice(2).join(';') : '';
       const ref = c[0];
       let propName = ref.kind==='ModelProperty' ? ref.name : '';
       const model = propName ? (ref as ModelProperty).model : ref as Model;
-      const {nearestZz: modelZz, nearestCircuit: modelCirc} = model ? this.getNearestZzNamespace(sf, model) : {};
+      const {nearestZz: modelZz, nearestCircuit: modelCirc, prefix: fallbackPrefix} = model ? this.getNearestZzNamespace(sf, model, context.referencedBy) : {};
       const zz = c[1]!==undefined ? c[1] : modelZz;
-      let modelName = model?.name;
+      let modelName = model?.name ? (prefix||fallbackPrefix||'')+model.name : '';
       let condName = (modelName+(zz===undefined?'':'_'+hex(zz))+(propName==='value'?'':'_'+propName)).toLowerCase();
       let circuitName = '';
       if (idModel && model===idModel) {
@@ -181,9 +182,15 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
     }
     const [idModel] = program.resolveTypeReference('Ebus.Id.Id');
-    const conds = (context.conds||'')+this.mapConditions(idModel, sf, program, circuit, model, model.namespace);
+    const conds = (context.conds||'')+this.mapConditions(idModel, sf, program, circuit, model, model.namespace, prefix);
     for (const inheritFrom of (getInherit(program, model)||nearestInherit)??[undefined]) {
       let write = getWrite(program, model) ?? getWrite(program, inheritFrom);
+      if (write) {
+        const readonly = getReadonly(program, model) ?? getWrite(program, inheritFrom);
+        if (readonly) {
+          continue;
+        }
+      }
       const passive = getPassive(program, model) ?? getPassive(program, inheritFrom);
       let zz = getZz(program, model) ?? getZz(program, inheritFrom) ?? nearestZz;
       if (write===false) {
@@ -534,7 +541,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       const conds = this.mapConditions(idModel, sf, program, '', uv, union.namespace);
       const isInclude = isIncludes && typeof uv.name === 'string' && uv.name.startsWith('_include');
       const isLoad = isIncludes && !isInclude && typeof uv.name === 'string';
-      const isCopy = isIncludes ? undefined : getInherit(program, uv);
+      const isCopy = isIncludes ? undefined : (getInherit(program, uv) ?? getInherit(program, union));
       const referenceContext = this.#mkContext(namespace.node!, namespace, undefined, isLoad, isInclude, isCopy);
       if (isLoad || isInclude) {
         if (Object.keys(referenceContext).length && !referenceContext.exclude
@@ -545,8 +552,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       } else {
         current.referencedBy = union;
         current.conds = conds;
-        current.namePrefix = getPrefixName(program, uv);
-        current.inherit = getInherit(program, uv);
+        current.namePrefix = getPrefixName(program, uv) ?? getPrefixName(program, union);
+        current.inherit = getInherit(program, uv) ?? getInherit(program, union);
         this.emitter.emitTypeReference(namespace, {referenceContext: current})
         delete current.inherit;
         delete current.namePrefix;
