@@ -1530,6 +1530,35 @@ describe("emitting models", () => {
       'r,Main,,Foo,,,,0706,,value,,SIN,,,,',
     );
   });
+  it("does not emit base min/max with divisor", async () => {
+    const files = await emit(`
+      @id(7,6)
+      model Foo  {
+        @divisor(10)
+        value: Num.SIR;
+      }
+    `, {withMinMax: true});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file, true),
+      'r,Main,,Foo,,,,0706,,value,,SIR,10,,,',
+    );
+  });
+  it("does not emit base min/max on template divisor", async () => {
+    const files = await emit(`
+      model div10 {
+        @divisor(10)
+        value: Num.SIR;
+      }
+      @id(7,6)
+      model Foo  {
+        value: div10;
+      }
+    `, {withMinMax: true});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file, true),
+      'r,Main,,Foo,,,,0706,,value,,SIR,10,,,',
+    );
+  });
   it("emits unit category", async () => {
     const files = await emit(`
       @id(7,6)

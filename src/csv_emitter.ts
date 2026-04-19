@@ -410,7 +410,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
             }
           }
         }
-        if (!res.values && !res.constValue) {
+        if (!isOwn && !res.values && !res.constValue) {
           const minv = getMinValue(program, s);
           const maxv = getMaxValue(program, s);
           if (minv !== undefined && maxv !== undefined) {
