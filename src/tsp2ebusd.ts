@@ -40,7 +40,7 @@ async function run(): Promise<void> {
   let inFiles: string[] = [];
   let translations: string|undefined = undefined;
   let withMinMax: boolean = true;
-  let withAttrs: string = '';
+  let withAttrs: string|undefined = undefined;
   let outFileName: string|undefined = undefined;
   let ebusdHostPort: [string, number]|undefined = undefined;
   let microEbusdTarget: MicroEbusdTarget|undefined = undefined;
