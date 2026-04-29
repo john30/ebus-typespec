@@ -102,6 +102,8 @@ async function run(): Promise<void> {
       url.pathname += 'api/v1/';
       const statusUrl = new URL(url);
       statusUrl.pathname += 'status';
+      statusUrl.username = '';
+      statusUrl.password = '';
       console.log('connecting micro-ebusd...');
       microEbusdTarget = await fetchTimeout(statusUrl, {}, MICROEBUSD_TIMEOUT, async (ret) => {
         const data = (await ret.json()) as {id: string, build: string, ebus: {proto: string, auth: string}};
@@ -277,9 +279,14 @@ const sendToEbusd = async (inputLines: string[],
     console.log('conversion: successful'+(message?', message: '+message:inline?`, ${inline.length} inline`:''));
     const api = new URL(target.api);
     api.pathname += 'ebus/reload';
+    api.username = '';
+    api.password = '';
+    const auth = target.api.username ? {Authorization: 'Basic '+Buffer.from(target.api.username+':'+(target.api.password??'')).toString('base64')} : {};
+    // note: NODE_TLS_REJECT_UNAUTHORIZED=0 helps for self-signed certificate
     await fetchTimeout(api, inline
-      ? {method: 'PUT', body: inline, headers: {'Content-Type': 'application/octet-stream'}}
-      : {method: 'PUT', body: '{"full": true}', headers: {'Content-Type': 'application/json'}}, MICROEBUSD_TIMEOUT, async (ret) => {
+      ? {method: 'PUT', body: inline, headers: {...auth, 'Content-Type': 'application/octet-stream'}}
+      : {method: 'PUT', body: '{"full": true}', headers: {...auth, 'Content-Type': 'application/json'}},
+      MICROEBUSD_TIMEOUT, async (ret) => {
       if (ret.ok && ret.headers.get('Content-Type')==='application/json') {
         const data = (await ret.json()) as {status: string};
         const logs = data?.status || 'unknown';

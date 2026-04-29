@@ -65,7 +65,10 @@ that transfers the `Message` from source `0xff` where the target `0x08` replied 
 ## Scripts
 This library also provides the following scripts via npm:
 
-* `tsp2ebusd`: converts TypSpec file(s) or stdin to an ebusd CSV file or stdout and can also send the output directly to an ebusd instance having the "--define" feature enabled.
+* `tsp2ebusd`:  
+  converts TypSpec file(s) or stdin to an ebusd CSV file or stdout
+  and can also send the output directly to an ebusd instance having the [define feature enabled with "--enabledefine"](https://github.com/john30/ebusd/wiki/2.-Run#daemon-options)
+  or to [micro-ebusd](https://github.com/john30/ebusd-esp32/).
 
 ## Documentation
 See [here for the documentation](docs.md) generated from the source.
