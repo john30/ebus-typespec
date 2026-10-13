@@ -7,6 +7,7 @@ using Ebus.Str;
 namespace Id {
 
   /** known manufacturer IDs */
+  #suppress "@typespec/library-linter/missing-documentation" "manufacturer names"
   enum Values_manufacturers {
     Dungs: 0x06,
     "FH Ostfalia": 0x0f,

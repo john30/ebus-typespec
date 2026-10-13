@@ -1,6 +1,6 @@
 {
   "name": "@ebusd/ebus-typespec",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "author": "John Baier",
   "description": "TypeSpec library for defining eBUS messages and emitting to ebusd CSV.",
   "homepage": "https://github.com/john30/ebus-typespec",
@@ -35,7 +35,7 @@
     "tsp2ebusd": "dist/src/tsp2ebusd.js"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "files": [
     "lib/*.tsp",
@@ -44,21 +44,21 @@
     "*.md"
   ],
   "peerDependencies": {
-    "@typespec/compiler": "^1.13.0"
+    "@typespec/compiler": "~1.17.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "latest",
-    "@typespec/compiler": "^1.13.0",
-    "@typespec/library-linter": "~0.83.0",
+    "@typespec/compiler": "~1.17.0",
+    "@typespec/library-linter": "~0.87.0",
     "@typespec/tspd": "latest",
-    "typedoc": "^0.28.19",
-    "typedoc-plugin-markdown": "^4.12.0",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.13.1",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@typespec/asset-emitter": "^0.79.1",
-    "js-yaml": "^4.2.0"
+    "@typespec/asset-emitter": "~0.79.3",
+    "js-yaml": "^5.4.3"
   },
   "scripts": {
     "build": "tsc && npm run build:tsp",

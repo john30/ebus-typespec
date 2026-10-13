@@ -5,7 +5,9 @@ scalar symbol extends uint8;
 
 /** List of special symbols. */
 union Symbols {
+  /** the synchronisation symbol. */
   SYN: 0xaa,
+  /** the escape symbol. */
   ESC: 0xa9,
   symbol,
 }

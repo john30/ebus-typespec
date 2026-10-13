@@ -2,7 +2,7 @@ import {CodeTypeEmitter, StringBuilder, code, createAssetEmitter, type AssetEmit
 import {emitFile, getDoc as getDocNoTrans, getMaxLength, getMaxValue, getMinLength, getMinValue, getNamespaceFullName, isDeclaredInNamespace, isNumericType, type CompilerHost, type DiagnosticTarget, type EmitContext, type Model, type ModelProperty, type Namespace, type Program, type Scalar, type Type, type Union, type UnionVariant} from "@typespec/compiler";
 import type {IntersectionExpressionNode, JsNamespaceDeclarationNode, ModelExpressionNode, ModelStatementNode, NamespaceStatementNode, ObjectLiteralNode, TypeSpecScriptNode} from "@typespec/compiler/ast";
 import {DuplicateTracker} from "@typespec/compiler/utils";
-import jsYaml from "js-yaml";
+import * as jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
   getAttrs, getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
