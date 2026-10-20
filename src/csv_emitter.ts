@@ -212,8 +212,9 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       if (zz === 0xfe || isSourceAddr(zz)) {
         // special: broadcast or source as target
         if (passive===undefined) {
-          // auto for write depending on zz unless @passive was set
-          write ??= true;
+          // auto for write depending on zz unless @passive was set, or @poll asks for a polled read to the broadcast
+          // address: a query that makes another device broadcast its answer, which ebusd polls like any read
+          write ??= !(zz===0xfe && getPoll(program, model));
         }
         broadcastOrMasterTarget = true;
       } else if (zz===0xaa) { // explicit unset in child (see decorator handling)

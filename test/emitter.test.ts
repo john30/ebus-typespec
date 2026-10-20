@@ -1244,6 +1244,31 @@ describe("emitting models", () => {
       },
     ]);
   });
+  it("works with polled broadcast query", async () => {
+    const files = await emit(`
+      @zz(0xfe)
+      @poll(3)
+      @id(0x20, 0x01, 0x6a, 0x71)
+      /** a query */
+      model Q {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r3,Main,,Q,a query,,fe,2001,6a71,"
+    );
+  });
+  it("works with broadcast write without poll", async () => {
+    const files = await emit(`
+      @zz(0xfe)
+      @id(0x20, 0x01, 0x6a, 0x71)
+      /** a write */
+      model W {}
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "w,Main,,W,a write,,fe,2001,6a71,"
+    );
+  });
   it("emit diagnostic on invalid @in with broadcast", async () => {
     const [_, diagnostics] = await emitWithDiagnostics(`
       @id(1,0)
