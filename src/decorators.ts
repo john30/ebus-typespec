@@ -49,6 +49,14 @@ export function $conditionExt(context: DecoratorContext, target: Model|Namespace
 
 function conditionImpl(context: DecoratorContext, target: Model|Namespace|UnionVariant, property: ModelProperty|Model, zz: Numeric|undefined, ...values: string[]) {
   const dest = zz!==undefined ? getNum(zz) : undefined;
+  if (dest===0xfe || isSourceAddr(dest)) {
+    reportDiagnostic(context.program, {
+      code: "banned-target-address",
+      target: context.getArgumentTarget(1)!,
+      format: { value: zz!.toString() },
+    });
+    return;
+  }
   const prev = (context.program.stateMap(StateKeys.condition).get(target)||[]) as [ModelProperty|Model, number|undefined, ...string[]][];
   context.program.stateMap(StateKeys.condition).set(target, [...prev, [property, dest, ...values]]);
 }

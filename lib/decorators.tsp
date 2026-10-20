@@ -21,7 +21,7 @@ extern dec condition(target: Namespace|Model|UnionVariant, property: ModelProper
  * Define a condition for the whole message by checking another target address model or property.
  * This decorator and `@condition` can be used multiple times to check that all conditions are met.
  * @param property the referenced model property, or a model in case of existance check or single property only.
- * @param zz the target address ZZ.
+ * @param zz the target address ZZ of a slave (not broadcast or a master address).
  * @param values the optional alternative values the property needs to match (one of the values must match for the condition to be met).
  * For numeric values, a single value (e.g. "18"), a value range separated by dash (e.g. "19-22"), or a value range with comparison (e.g. "<=5", ">10") can be used.
  * For string values, the value needs to be put in single quotes (e.g. 'abc').

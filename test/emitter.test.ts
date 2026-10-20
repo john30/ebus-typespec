@@ -564,7 +564,7 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[bar_disc],,,bar,,disc\n"+
+      "*[bar_disc],Main,,bar,,disc\n"+
       "r,Main,,Bar,,,,0002,,disc,,UCH,,,\n"+
       "[bar_disc=1]r,Main,,Foo,,,,0001,,"
     );
@@ -591,9 +591,48 @@ describe("emitting models", () => {
     `);
     const file = files["main.csv"];
     assert.strictEqual(stripHeader(file),
-      "*[bar_08_disc],,,bar,,disc,08\n"+
+      "*[bar_08_disc],Main,,bar,,disc,08\n"+
       "r,Main,,Bar,,,,0002,,disc,,UCH,,,\n"+
       "[bar_08_disc=1]r,Main,,Foo,,,,0001,,"
+    );
+  });
+  it("works with own condition on own zz", async () => {
+    const files = await emit(`
+      @zz(0x08)
+      namespace Ns {
+        @id(0,2)
+        @zz(0x15)
+        model Bar {disc: Num.UCH}
+        @id(0,1)
+        @condition(Bar.disc, "1")
+        model Foo {}
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "*[bar_15_disc],Ns,,bar,,disc,15\n"+
+      "r,Ns,,Bar,,,15,0002,,disc,,UCH,,,\n"+
+      "[bar_15_disc=1]r,Ns,,Foo,,,08,0001,,"
+    );
+  });
+  it("works with own condition on broadcast", async () => {
+    const files = await emit(`
+      @zz(0x08)
+      namespace Ns {
+        @id(0,2)
+        @passive
+        @zz(BROADCAST)
+        model Bar {@out disc: Num.UCH}
+        @id(0,1)
+        @condition(Bar.disc, "1")
+        model Foo {}
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "*[bar_disc],Ns,,bar,,disc\n"+
+      "u,Ns,,Bar,,,fe,0002,,disc,m,UCH,,,\n"+
+      "[bar_disc=1]r,Ns,,Foo,,,08,0001,,"
     );
   });
   it("works with cross condition", async () => { // experimental

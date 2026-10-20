@@ -15,6 +15,27 @@ type Node = TypeSpecScriptNode | NamespaceStatementNode | JsNamespaceDeclaration
 const hex = (v?: number): string => v===undefined?'':(0x100|v).toString(16).substring(1);
 const hexs = (vs?: number[]): string => vs?vs.map(hex).join(''):'';
 const fileParent = (n: Node): TypeSpecScriptNode['file'] => (n as TypeSpecScriptNode).file || n.parent && fileParent(n.parent as Node);
+
+/** The circuit as written on a message row: empty when the file name (ZZ.ID[.CIRCUIT]...) already implies it. */
+const rowCircuit = (circuit: string|undefined, path: string): string|undefined => {
+  if (!circuit) {
+    return circuit;
+  }
+  circuit = circuit.split('.')[0]; // strip off further other suffixes
+  const circuitLower = circuit.toLowerCase();
+  const name = basename(path, extname(path));
+  const parts = name.split('.');
+  if (parts.length>1 && parts[0].match(/^[0-9a-fA-F]{2,2}$/)) {
+    parts.splice(0, 1); // remove zz part
+    if (parts[0] === circuitLower) {
+      return '';
+    }
+  }
+  if ((name+'.').includes('.'+circuitLower+'.')) {
+    return undefined;
+  }
+  return circuit;
+};
 const isSourceFileWithPath = (scope: Scope<object>): scope is SourceFileScope<object> => scope.kind === "sourceFile" && !!scope.sourceFile.path;
 const escape = (s?: string) => s&&(s.includes('"')||s?.includes(',')) ? `"${s.replaceAll('"', '""')}"` : s;
 const pascalCase = (s?: string) => s ? s.substring(0,1).toUpperCase()+s.substring(1) : s;
@@ -64,7 +85,12 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       let propName = ref.kind==='ModelProperty' ? ref.name : '';
       const model = propName ? (ref as ModelProperty).model : ref as Model;
       const {nearestZz: modelZz, nearestCircuit: modelCirc, prefix: fallbackPrefix} = model ? this.getNearestZzNamespace(sf, model, context.referencedBy) : {};
-      const zz = c[1]!==undefined ? c[1] : modelZz;
+      const ownZz = model ? getZz(program, model) : undefined;
+      let zz = c[1]!==undefined ? c[1] : ownZz!==undefined ? (ownZz===0xaa ? undefined : ownZz) : modelZz;
+      if (zz===0xfe || isSourceAddr(zz)) {
+        // ebusd rejects a broadcast or master ZZ in a condition, and finds a message with its own ZZ by circuit and name
+        zz = undefined;
+      }
       let modelName = model?.name ? (prefix||fallbackPrefix||'')+model.name : '';
       let condName = (modelName+(zz===undefined?'':'_'+hex(zz))+(propName==='value'?'':'_'+propName)).toLowerCase();
       let circuitName = '';
@@ -76,6 +102,10 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
         if (modelCirc && modelCirc!==circuit) {
           circuitName = modelCirc;
           condName = modelCirc+'_'+condName;
+        } else {
+          // ebusd does not apply the file's default circuit to a condition and would match the name in any circuit,
+          // so name the circuit unless the file name already implies it (as on the message rows)
+          circuitName = normName.circuit(rowCircuit(modelCirc, sf.path))||'';
         }
         modelName = (modelName||'').toLowerCase();
       }
@@ -170,17 +200,7 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       name = prefix+name;
     }
     const circuit = nearestCircuit||'';
-    if (nearestCircuit) {
-      nearestCircuit = nearestCircuit.split('.')[0]; // strip off further other suffixes
-      const nearestCircuitLower = nearestCircuit.toLowerCase();
-      const parts = basename(sf.path, extname(sf.path)).split('.');
-      if (parts.length>1 && parts[0].match(/^[0-9a-fA-F]{2,2}$/)) {
-        parts.splice(0, 1); // remove zz part
-        if (parts[0] === nearestCircuitLower) {
-          nearestCircuit = '';
-        }
-      }
-    }
+    nearestCircuit = rowCircuit(nearestCircuit, sf.path);
     const [idModel] = program.resolveTypeReference('Ebus.Id.Id');
     const conds = (context.conds||'')+this.mapConditions(idModel, sf, program, circuit, model, model.namespace, prefix);
     for (const inheritFrom of (getInherit(program, model)||nearestInherit)??[undefined]) {
@@ -275,9 +295,6 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       if (zz!==undefined && basename(sf.path).startsWith(hex(zz)+'.')) {
         // avoid inline zz when already part of file name
         zz = undefined;
-      }
-      if (nearestCircuit && basename(sf.path).includes('.'+nearestCircuit.toLowerCase()+'.')) {
-        nearestCircuit = undefined;
       }
       const level = getAuth(program, model) ?? getAuth(program, inheritFrom);
       const poll = direction==='r' && !level && getPoll(program, model);

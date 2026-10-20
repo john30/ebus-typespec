@@ -87,6 +87,30 @@ describe("decorators", () => {
     // });
   });
 
+  describe("@conditionExt", () => {
+    it("emit diagnostic with broadcast zz", async () => {
+      const diagnostics = await runner.diagnose(
+        `@id(0,2) model Bar {disc: Num.UCH} @conditionExt(Bar.disc, 0xfe, "1") @test model Test {}`
+      );
+      expectDiagnostics(diagnostics, {
+        severity: "error",
+        code: "ebus/banned-target-address",
+        message: "Invalid target address \"254\"."
+      })
+    });
+
+    it("emit diagnostic with master zz", async () => {
+      const diagnostics = await runner.diagnose(
+        `@id(0,2) model Bar {disc: Num.UCH} @conditionExt(Bar.disc, 0x10, "1") @test model Test {}`
+      );
+      expectDiagnostics(diagnostics, {
+        severity: "error",
+        code: "ebus/banned-target-address",
+        message: "Invalid target address \"16\"."
+      })
+    });
+  });
+
   describe("@id", () => {
     it("set id on model", async () => {
       const { Test } = (await runner.compile(
