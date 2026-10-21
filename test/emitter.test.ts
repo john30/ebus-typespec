@@ -596,6 +596,56 @@ describe("emitting models", () => {
       "[bar_08_disc=1]r,Main,,Foo,,,,0001,,"
     );
   });
+  it("combines conditions of nested namespaces", async () => {
+    const files = await emit(`
+      namespace Ns {
+        @id(0,2)
+        model Bar {disc: Num.UCH}
+        @id(0,3)
+        model Baz {disc: Num.UCH}
+        @condition(Bar.disc, "1")
+        namespace Outer {
+          @condition(Baz.disc, "2")
+          namespace Inner {
+            @id(0,1)
+            model Foo {}
+          }
+        }
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "*[baz_disc],,,baz,,disc\n"+
+      "*[bar_disc],,,bar,,disc\n"+
+      "[baz_disc=2][bar_disc=1]r,Main,,Foo,,,,0001,,\n"+
+      "r,Main,,Bar,,,,0002,,disc,,UCH,,,\n"+
+      "r,Main,,Baz,,,,0003,,disc,,UCH,,,"
+    );
+  });
+  it("combines own and namespace conditions", async () => {
+    const files = await emit(`
+      namespace Ns {
+        @id(0,2)
+        model Bar {disc: Num.UCH}
+        @id(0,3)
+        model Baz {disc: Num.UCH}
+        @condition(Bar.disc, "1")
+        namespace Outer {
+          @id(0,1)
+          @condition(Baz.disc, "2")
+          model Foo {}
+        }
+      }
+    `);
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "*[baz_disc],,,baz,,disc\n"+
+      "*[bar_disc],,,bar,,disc\n"+
+      "[baz_disc=2][bar_disc=1]r,Main,,Foo,,,,0001,,\n"+
+      "r,Main,,Bar,,,,0002,,disc,,UCH,,,\n"+
+      "r,Main,,Baz,,,,0003,,disc,,UCH,,,"
+    );
+  });
   it("works with cross condition", async () => { // experimental
     const files = await emit(``, {}, {emitNamespace: true, extraSpecFiles: [
       {name: 'other.tsp', code: `

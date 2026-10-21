@@ -54,7 +54,11 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
   }
 
   mapConditions(idModel: Type|undefined, sf: SourceFile<object>, program: Program, circuit: string, model: Model|UnionVariant, fallbackNs?: Namespace, prefix?: string): string {
-    const conds: [ModelProperty|Model, number|undefined, ...string[]][] = getConditions(program, model)||(fallbackNs&&getConditions(program, fallbackNs));
+    // all of the model's own conditions and those of every enclosing namespace apply (ebusd combines them with AND)
+    const conds: [ModelProperty|Model, number|undefined, ...string[]][] = [...(getConditions(program, model)||[])];
+    for (let ns = fallbackNs; ns; ns = ns.namespace) {
+      conds.push(...(getConditions(program, ns)||[]));
+    }
     // const ns = target.kind==='UnionVariant' ? target.type.kind==='Namespace' ? target.type.namespace : undefined : target.namespace;
     // let ownZz = ns ? getZz(context.program, ns) : undefined;
     const context = this.emitter.getContext();
