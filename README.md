@@ -16,6 +16,8 @@ This is a short overview of the [decorators](lib/decorators.tsp) offered by the 
   when using inheritance:
   * base ID: `@base(PB, SB, ID*)`
   * ID extension: `@ext(ID*)`
+  * ID extension with a leading CRC-8 checksum: `@crc(poly, ID*)` computed when emitting,  
+    `@wcrc(ID*)` computed by ebusd when sending
   * inheritance: ``@inherit(...)`
 * message chaining: `@chain(...)`
 * message direction: `@write`, `@passive`

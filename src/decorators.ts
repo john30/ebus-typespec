@@ -1,8 +1,8 @@
 import type {
-  DecoratorContext, Enum, IntrinsicScalarName, Model, ModelProperty, Namespace, Numeric, Program, Scalar, Union, UnionVariant
+  DecoratorContext, Enum, IntrinsicScalarName, Model, ModelProperty, Namespace, Program, Scalar, Union, UnionVariant
 } from "@typespec/compiler";
 import {
-  getPropertyType, isNumeric, isNumericType, setTypeSpecNamespace
+  getPropertyType, isNumeric, isNumericType, Numeric, setTypeSpecNamespace
 } from "@typespec/compiler";
 import {StateKeys, reportDiagnostic} from "./lib.js";
 
@@ -358,6 +358,91 @@ export function $ext(context: DecoratorContext, target: Model, ...dd: Numeric[])
   const id: IdType = {id: dd, isExt: true};
   context.program.stateMap(StateKeys.id).set(target, id);
   context.program.stateSet(StateKeys.id).add(target);
+}
+
+/**
+ * Compute a CRC-8 checksum over the given bytes: no reflection, initial value = the first
+ * byte, then each further byte is folded in.
+ *
+ * @param poly the CRC-8 polynomial.
+ * @param dd the bytes to checksum (at least one).
+ * @returns the checksum byte.
+ */
+function crc8(poly: number, dd: number[]): number {
+  let crc = (dd[0] ?? 0) & 0xff;
+  for (let i = 1; i < dd.length; i++) {
+    for (let j = 0; j < 8; j++) {
+      crc = (crc & 0x80) ? ((crc << 1) ^ poly) & 0xff : (crc << 1) & 0xff;
+    }
+    crc = (crc ^ (dd[i] & 0xff)) & 0xff;
+  }
+  return crc;
+}
+
+/** the polynomial of the checksum ebusd computes at runtime for the WCRC marker. */
+const WCRC_POLY = 0x5c;
+
+/**
+ * Implementation of the `@crc` decorator. Like `@ext`, but the first ID byte is a CRC-8
+ * checksum computed over the remaining ID bytes, so a message address can be written without
+ * spelling out the checksum.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param poly the CRC-8 polynomial.
+ * @param dd further message ID parts the checksum is computed over.
+ */
+export function $crc(context: DecoratorContext, target: Model, poly: Numeric, ...dd: Numeric[]) {
+  if (context.program.stateMap(StateKeys.id).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'crc/@id/@base/@ext'},
+    });
+  }
+  const bytes = dd.map(v => getNum(v) as number);
+  const crc = crc8(getNum(poly) as number, bytes);
+  const id: IdType = {id: [Numeric(crc.toString()), ...dd], isExt: true};
+  context.program.stateMap(StateKeys.id).set(target, id);
+  context.program.stateSet(StateKeys.id).add(target);
+}
+
+/**
+ * Implementation of the `@wcrc` decorator. Like `@ext`, but the first ID byte stands for a
+ * checksum that ebusd computes at send time and verifies on receipt, for messages whose comment
+ * carries the WCRC marker. Use for writes, where the checksum covers the data and cannot be
+ * precomputed. See ebusd issue #167.
+ * The byte emitted is the checksum of the ID alone (the one of a request without data), which
+ * ebusd replaces when it knows the marker and which keeps a read valid when it does not.
+ *
+ * @param context Decorator context.
+ * @param target Decorator target.
+ * @param dd further message ID parts (without the checksum byte).
+ */
+export function $wcrc(context: DecoratorContext, target: Model, ...dd: Numeric[]) {
+  if (context.program.stateMap(StateKeys.id).has(target)) {
+    reportDiagnostic(context.program, {
+      code: "multiple-decorator",
+      target: context.getArgumentTarget(0)!,
+      format: { which: 'wcrc/@id/@base/@ext'},
+    });
+  }
+  const crc = crc8(WCRC_POLY, dd.map(v => getNum(v) as number));
+  const id: IdType = {id: [Numeric(crc.toString()), ...dd], isExt: true};
+  context.program.stateMap(StateKeys.id).set(target, id);
+  context.program.stateSet(StateKeys.id).add(target);
+  context.program.stateMap(StateKeys.wcrc).set(target, true);
+}
+
+/**
+ * Accessor for the `@wcrc` decorator.
+ *
+ * @param program TypeSpec program.
+ * @param target Decorator target.
+ * @returns true if the checksum of the message is computed at runtime.
+ */
+export function isWcrc(program: Program, target: Model): boolean {
+  return program.stateMap(StateKeys.wcrc).get(target) === true;
 }
 
 /**

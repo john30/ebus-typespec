@@ -86,6 +86,26 @@ extern dec base(target: Model, pb: valueof pb, sb: valueof sb, ...dd: valueof sy
 extern dec ext(target: Model, ...dd: valueof symbol[]);
 
 /**
+ * Like `@ext`, but the first ID byte is a CRC-8 checksum (no reflection, initial value = the
+ * first address byte) computed over the remaining ID bytes. Lets a message address be written
+ * without spelling out the checksum.
+ * @param poly the CRC-8 polynomial (e.g. 0x5c for Kromschröder/Weishaupt register reads).
+ * @param dd message ID extension parts the checksum is computed over.
+ */
+extern dec crc(target: Model, poly: valueof uint8, ...dd: valueof symbol[]);
+
+/**
+ * Like `@ext`, but the first ID byte stands for a checksum that ebusd computes at send time and
+ * verifies on receipt, for messages whose comment carries the WCRC marker.
+ * Use for writes, where the checksum covers the data and cannot be precomputed (ebusd #167).
+ * The byte emitted is the checksum of the ID alone (CRC-8, polynomial 0x5c, as `@crc`), i.e. the
+ * one of a request without data: a read defined this way is also valid for an ebusd that does
+ * not know the marker.
+ * @param dd message ID extension parts (without the checksum byte).
+ */
+extern dec wcrc(target: Model, ...dd: valueof symbol[]);
+
+/**
  * Define chained message IDs.
  * @param length the (maximum) length of a single message part of this chain, or 0 for default (=24).
  * @param dd second message ID part the chain is built from (first one taken from id or ext decorator).

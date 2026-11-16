@@ -6,7 +6,7 @@ import * as jsYaml from "js-yaml";
 import {basename, extname} from "path";
 import {
   getAttrs, getAuth, getChain, getConditions, getConstValue, getDivisor, getId, getInherit, getMaxBits, getOut, getPassive, getPoll,
-  getPrefixName, getQq, getReadonly, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr
+  getPrefixName, getQq, getReadonly, getSourceAddr, getStep, getUnit, getValues, getWrite, getZz, isSourceAddr, isWcrc
 } from "./decorators.js";
 import {StateKeys, reportDiagnostic, type EbusdEmitterOptions} from "./lib.js";
 
@@ -226,7 +226,8 @@ export class EbusdEmitter extends CodeTypeEmitter<EbusdEmitterOptions> {
       }
       const baseFields = inheritFrom&&this.modelPropertiesRw(inheritFrom, write&&!passive, broadcastOrMasterTarget, write);
       const fields = this.modelPropertiesRw(model, write&&!passive, broadcastOrMasterTarget, write);
-      const comment = this.#getDoc(model);
+      const wcrc = isWcrc(program, model) || (inheritFrom ? isWcrc(program, inheritFrom) : false);
+      const comment = wcrc ? ('[WCRC] ' + (this.#getDoc(model) || '')).trimEnd() : this.#getDoc(model);
       const qq = getQq(program, model) ?? getQq(program, inheritFrom); // todo could do same handling as for zz
       // when inheriting id, only one of them may have pbsb, rest of id is concatenated
       const baseId = getId(program, inheritFrom);

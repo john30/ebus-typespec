@@ -106,6 +106,7 @@ Available ruleSets:
 - [`@condition`](#@condition)
 - [`@conditionExt`](#@conditionext)
 - [`@constValue`](#@constvalue)
+- [`@crc`](#@crc)
 - [`@divisor`](#@divisor)
 - [`@example`](#@example)
 - [`@ext`](#@ext)
@@ -122,6 +123,7 @@ Available ruleSets:
 - [`@step`](#@step)
 - [`@unit`](#@unit)
 - [`@values`](#@values)
+- [`@wcrc`](#@wcrc)
 - [`@write`](#@write)
 - [`@zz`](#@zz)
 
@@ -260,6 +262,27 @@ Define the const value.
 | Name  | Type                        | Description      |
 | ----- | --------------------------- | ---------------- |
 | value | `valueof numeric \| string` | the const value. |
+
+#### `@crc`
+
+Like `@ext`, but the first ID byte is a CRC-8 checksum (no reflection, initial value = the
+first address byte) computed over the remaining ID bytes. Lets a message address be written
+without spelling out the checksum.
+
+```typespec
+@Ebus.crc(poly: valueof uint8, ...dd: valueof Ebus.symbol[])
+```
+
+##### Target
+
+`Model`
+
+##### Parameters
+
+| Name | Type               | Description                                                                 |
+| ---- | ------------------ | --------------------------------------------------------------------------- |
+| poly | `valueof uint8`    | the CRC-8 polynomial (e.g. 0x5c for Kromschröder/Weishaupt register reads). |
+| dd   | `valueof symbol[]` | message ID extension parts the checksum is computed over.                   |
 
 #### `@divisor`
 
@@ -549,6 +572,29 @@ Define the known values.
 | Name   | Type   | Description       |
 | ------ | ------ | ----------------- |
 | values | `Enum` | the known values. |
+
+#### `@wcrc`
+
+Like `@ext`, but the first ID byte stands for a checksum that ebusd computes at send time and
+verifies on receipt, for messages whose comment carries the WCRC marker.
+Use for writes, where the checksum covers the data and cannot be precomputed (ebusd #167).
+The byte emitted is the checksum of the ID alone (CRC-8, polynomial 0x5c, as `@crc`), i.e. the
+one of a request without data: a read defined this way is also valid for an ebusd that does
+not know the marker.
+
+```typespec
+@Ebus.wcrc(...dd: valueof Ebus.symbol[])
+```
+
+##### Target
+
+`Model`
+
+##### Parameters
+
+| Name | Type               | Description                                             |
+| ---- | ------------------ | ------------------------------------------------------- |
+| dd   | `valueof symbol[]` | message ID extension parts (without the checksum byte). |
 
 #### `@write`
 

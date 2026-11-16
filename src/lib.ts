@@ -171,6 +171,7 @@ export const $lib = createTypeSpecLibrary({
     qq: { description: "source address QQ" },
     zz: { description: "target address ZZ" },
     id: { description: "message ID" },
+    wcrc: { description: "CRC computed at runtime" },
     chain: { description: "message chain" },
     inherit: { description: "inherited model(s)" },
     readonly: { description: "limit inherited model(s) to read only" },
