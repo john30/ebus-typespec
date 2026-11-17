@@ -112,6 +112,40 @@ describe("emitting models", () => {
       "r,Main,,Foo,,,08,0001,020304,b,,UCH,,,the b,x,,UCH,,,an x"
     );
   });
+  it("works with @crc (precomputed checksum)", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @base(0x50, 0x22)
+      model base {}
+      @crc(0x5c, 0x0c, 0x00)
+      @inherit(base)
+      /** outside */
+      model Foo {
+        value: UCH,
+      }
+    `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,outside,,,5022,740c00,value,,UCH,,,"
+    );
+  });
+  it("works with @wcrc (runtime checksum marker, checksum of the ID as placeholder)", async () => {
+    const files = await emit(`
+      using Ebus.Num;
+      @base(0x50, 0x22)
+      model base {}
+      @wcrc(0x0c, 0x00)
+      @inherit(base)
+      /** outside */
+      model Foo {
+        value: UCH,
+      }
+    `, undefined, {emitNamespace: true, emitTypes: ['test.Foo']});
+    const file = files["main.csv"];
+    assert.strictEqual(stripHeader(file),
+      "r,Main,,Foo,[WCRC] outside,,,5022,740c00,value,,UCH,,,"
+    );
+  });
   it("works with @inherit from namespace", async () => {
     const files = await emit(`
       using Ebus.Num;
